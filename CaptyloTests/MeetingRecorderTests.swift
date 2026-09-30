@@ -175,6 +175,41 @@ struct MeetingRecorderTests {
         #expect(meeting.status == .completed)
     }
 
+    /// A call app keeps its output running and plays exact zeros while the other side is quiet
+    /// (the user presents for minutes). That is one silent run: the tap is rebuilt once, not every
+    /// `stallAfter` seconds, and the one gap is marked where the silence began. Real audio from
+    /// the other side lets the next silent run rebuild again.
+    @Test func aLongSilenceRebuildsTheSystemTapOnce() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let system = FakeAudioSource()
+        let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
+        await recorder.start()
+        let id = try #require(recorder.currentMeetingID)
+        system.push(speech())
+        for _ in 0..<20 { system.push(silence()) }
+        await waitUntil { system.startCount >= 2 && system.isRunning }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(system.startCount == 2)
+
+        // The rebuilt tap keeps getting the call's zeros: still the same run.
+        for _ in 0..<13 { system.push(silence()) }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(system.startCount == 2)
+
+        system.push(speech())
+        for _ in 0..<7 { system.push(silence()) }
+        await waitUntil { system.startCount == 3 && system.isRunning }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(system.startCount == 3)
+        #expect(recorder.systemAudioIssue == nil)
+
+        await recorder.stop()
+        let meeting = try #require(try await db.meeting(id: id))
+        #expect(meeting.interruptions.count == 2)
+        // The silence began `stallAfter` (6 s) before the stall was detected, at the meeting's start here.
+        #expect(meeting.interruptions.first == 0)
+    }
+
     @Test func secondStartWhileRecordingIsIgnored() async throws {
         let db = Database(modelContainer: try Store.makeInMemoryContainer())
         let mic = FakeAudioSource()

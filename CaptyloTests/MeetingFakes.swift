@@ -86,6 +86,8 @@ final class FakeAudioSource: MeetingAudioSource, @unchecked Sendable {
     var failOnStart = false
     var startCount: Int { counts.withLock { $0.starts } }
     var stopCount: Int { counts.withLock { $0.stops } }
+    /// A sink is installed: `push` reaches the current session.
+    var isRunning: Bool { sink.withLock { $0 != nil } }
     var level: Float { 0 }
 
     func start(onSamples: @escaping @Sendable ([Float]) -> Void) throws {

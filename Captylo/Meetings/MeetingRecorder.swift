@@ -52,7 +52,7 @@ final class MeetingRecorder {
     /// Set from the first line of `start` until it returns: a second click must not open a second meeting.
     @ObservationIgnored private var isStarting = false
     @ObservationIgnored private var recovery: Task<Void, Never>?
-    @ObservationIgnored private let watchdog = OSAllocatedUnfairLock(initialState: SilenceWatchdog())
+    @ObservationIgnored private let systemWatch = OSAllocatedUnfairLock(initialState: SystemTrackWatch())
 
     init(environment: MeetingEnvironment) {
         env = environment
@@ -154,7 +154,7 @@ final class MeetingRecorder {
         liveSegments = []
         partials = [:]
         interruptions = []
-        watchdog.withLock { $0 = SilenceWatchdog() }
+        systemWatch.withLock { $0 = SystemTrackWatch() }
         // Before the sources: a take already muting the output is undone right away.
         env.setMuteSuppressed(true)
 
@@ -221,16 +221,14 @@ final class MeetingRecorder {
     private func makeSystemSink(feed: MeetingTrackFeed) -> @Sendable ([Float]) -> Void {
         systemSession += 1
         let session = systemSession
-        let watchdog = self.watchdog
+        let watch = self.systemWatch
         let expecting = env.expectingSystemAudio
         return { [weak self] samples in
             feed.deliver(samples, session: session)
             let silent = !samples.contains { $0 != 0 }
             let expectingAudio = silent && expecting()
-            let (verdict, firstAudio) = watchdog.withLock { dog -> (SilenceWatchdog.Verdict, Bool) in
-                let heardBefore = dog.heardAudio
-                let verdict = dog.observe(samples, expectingAudio: expectingAudio)
-                return (verdict, !heardBefore && dog.heardAudio)
+            let (verdict, firstAudio) = watch.withLock {
+                $0.observe(samples, silent: silent, expectingAudio: expectingAudio)
             }
             guard verdict != .ok || firstAudio else { return }
             Task { @MainActor in
@@ -260,10 +258,12 @@ final class MeetingRecorder {
 
     /// The HAL zero-buffer bug: the tap heard audio, then only zeros while apps still play.
     /// The tap is rebuilt on `control` (in order with a later stop) as a new feed session, so the
-    /// time it takes is padded; the gap stays on the meeting as "przerwa w nagraniu".
+    /// time it takes is padded; the gap stays on the meeting as "przerwa w nagraniu", at the
+    /// moment the zeros began. Once per silent run (`SystemTrackWatch`).
     private func rebuildSystem(meetingID: UUID) {
         guard let system, let feed = feeds[.them] else { return }
-        interruptions.append(elapsed())
+        let stallAfter = systemWatch.withLock { $0.dog.stallAfter }
+        interruptions.append(max(0, elapsed() - stallAfter))
         Log.audio.warning("System audio stalled, rebuilding the tap")
         let sink = makeSystemSink(feed: feed)
         control.async { [weak self] in
@@ -420,5 +420,33 @@ final class MeetingRecorder {
         } catch {
             Log.data.error("Meeting could not be updated: \(error.localizedDescription, privacy: .public)")
         }
+    }
+}
+
+/// The "Rozmówcy" watchdog and what the recorder does with its verdicts, behind one lock: the
+/// sink runs on the tap's queue.
+private struct SystemTrackWatch: Sendable {
+    var dog = SilenceWatchdog()
+    /// Set by the `.stalled` verdict that asks for a rebuild, cleared by the next real audio.
+    /// A call app keeps its output running and plays exact zeros while the other side is quiet,
+    /// so a long quiet stretch would otherwise rebuild the tap, and add a "przerwa w nagraniu",
+    /// every `stallAfter` seconds. A rebuild that brought no audio back is not repeated until
+    /// the other side is heard again.
+    private var rebuiltThisRun = false
+
+    /// The verdict to act on, and whether `samples` are the first real audio of the meeting.
+    mutating func observe(_ samples: [Float], silent: Bool, expectingAudio: Bool) -> (verdict: SilenceWatchdog.Verdict, firstAudio: Bool) {
+        let heardBefore = dog.heardAudio
+        var verdict = dog.observe(samples, expectingAudio: expectingAudio)
+        if !silent {
+            rebuiltThisRun = false
+        } else if verdict == .stalled {
+            if rebuiltThisRun {
+                verdict = .ok
+            } else {
+                rebuiltThisRun = true
+            }
+        }
+        return (verdict, !heardBefore && dog.heardAudio)
     }
 }
