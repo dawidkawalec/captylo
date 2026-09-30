@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Background layer: the dusk plate from icon.svg, full-bleed (Icon Composer masks it). -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1131" r="534" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="512" cy="472" r="447" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <rect width="1024" height="1024" fill="url(#halo)"/>
+</svg>

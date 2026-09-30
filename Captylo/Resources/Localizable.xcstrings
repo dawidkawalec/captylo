@@ -1,0 +1,5828 @@
+{
+  "sourceLanguage": "pl",
+  "strings": {
+    "Captylo sam uzupełnia ten opis co kilka Twoich poprawek stylu: powitania, interpunkcję, ton. Działa z trybami AI. Możesz go dowolnie zmienić.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo updates this description by itself every few style corrections you make: greetings, punctuation, tone. Works with AI modes. Change it any way you like." } }
+      }
+    },
+    "Nowe poprawki stylu: %lld z %lld do następnej aktualizacji.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New style corrections: %1$lld of %2$lld until the next update." } }
+      }
+    },
+    "Twój styl": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your style" } }
+      }
+    },
+    "Włącz tryb AI, aby Captylo uczył się Twojego stylu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Turn on an AI mode so Captylo can learn your style." } }
+      }
+    },
+    "Wyczyść": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear" } }
+      }
+    },
+    "Zaktualizuj teraz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Update now" } }
+      }
+    },
+    "Captylo nie czyta tu poprawek. Menedżery haseł, terminale i pola haseł są wykluczone zawsze.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo does not read corrections here. Password managers, terminals and password fields are always excluded." } }
+      }
+    },
+    "Dodaj aplikację": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add app" } }
+      }
+    },
+    "Ile słów na 100 wklejonych poprawiasz ręcznie (ostatnie 14 dni). Im mniej, tym lepiej Captylo zna Twoje słowa.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "How many of every 100 pasted words you fix by hand (last 14 days). The lower, the better Captylo knows your words." } }
+      }
+    },
+    "Poprawki/100 słów": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fixes/100 words" } }
+      }
+    },
+    "Pokazuj powiadomienia o nauce": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show learning notifications" } }
+      }
+    },
+    "Wyklucz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Exclude" } }
+      }
+    },
+    "Wykluczone aplikacje": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Excluded apps" } }
+      }
+    },
+    "Cofnij": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Undo" } }
+      }
+    },
+    "Dodano do słownika: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Added to the dictionary: %@" } }
+      }
+    },
+    "Gdy przeliterujesz słowo na głos albo poprawisz wklejony tekst, Captylo zapamięta poprawną wersję. Wszystko zostaje na tym Macu, a nauczone słowa zobaczysz i cofniesz w Słowniku.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "When you spell a word out loud or fix pasted text, Captylo remembers the right version. Everything stays on this Mac, and you can see and undo what it learned in Dictionary." } }
+      }
+    },
+    "Literowanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Spelled" } }
+      }
+    },
+    "Nauczone": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learned" } }
+      }
+    },
+    "Nauczone reguły i słowa znikną ze słownika. Twoje własne wpisy zostaną.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learned rules and words will be removed from the dictionary. Your own entries stay." } }
+      }
+    },
+    "Nauka": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learning" } }
+      }
+    },
+    "Nauka jest wyłączona w Ustawieniach. Nauczone słowa nadal działają.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learning is off in Settings. Learned words still work." } }
+      }
+    },
+    "Nic jeszcze. Przeliteruj trudne słowo na głos, np. „Brzęk, pisane B R Z Ę K”.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing yet. Spell a tricky word out loud, for example “Brzęk, spelled B R Z Ę K”." } }
+      }
+    },
+    "Podpowiedź AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI hint" } }
+      }
+    },
+    "Poprawka": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Correction" } }
+      }
+    },
+    "Reguła": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rule" } }
+      }
+    },
+    "Słowa, których Captylo nauczył się z Twoich poprawek i literowania na głos. Reguła zamiany działa zawsze, podpowiedź pomaga tylko poprawianiu przez AI. Cofnięte słowo nie wróci.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Words Captylo learned from your corrections and from spelling out loud. A replacement rule always applies, a hint only helps the AI cleanup. An undone word never comes back." } }
+      }
+    },
+    "Ucz się z moich poprawek": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learn from my corrections" } }
+      }
+    },
+    "Wyczyść naukę": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear learning" } }
+      }
+    },
+    "Wyczyścić wszystko, czego Captylo się nauczył?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear everything Captylo has learned?" } }
+      }
+    },
+    "Zapamiętałem: %@ → %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remembered: %1$@ → %2$@" } }
+      }
+    },
+    "%@ (kopia)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (copy)"
+          }
+        }
+      }
+    },
+    "%@ / %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / %2$@"
+          }
+        }
+      }
+    },
+    "%@ / %@ za 1M": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / %2$@ per 1M"
+          }
+        }
+      }
+    },
+    "%@ mln": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@M"
+          }
+        }
+      }
+    },
+    "%@ tys.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@K"
+          }
+        }
+      }
+    },
+    "%lld d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld d"
+          }
+        }
+      }
+    },
+    "%lld godz.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h"
+          }
+        }
+      }
+    },
+    "%lld godz. %lld min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld h %2$lld min"
+          }
+        }
+      }
+    },
+    "%lld dniach": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld dniach"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld dniach"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld dniu"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld dniach"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "(pusty tekst)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(empty text)"
+          }
+        }
+      }
+    },
+    "25 języków": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "25 languages"
+          }
+        }
+      }
+    },
+    "AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI"
+          }
+        }
+      }
+    },
+    "AI nie zwróciło tekstu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI returned no text."
+          }
+        }
+      }
+    },
+    "AI pominięte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI skipped"
+          }
+        }
+      }
+    },
+    "AI pominięte: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI skipped: %@"
+          }
+        }
+      }
+    },
+    "AI: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI: %@"
+          }
+        }
+      }
+    },
+    "Kopiuj wersję AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy AI version"
+          }
+        }
+      }
+    },
+    "Ma wersję AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Has an AI version"
+          }
+        }
+      }
+    },
+    "Po AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After AI"
+          }
+        }
+      }
+    },
+    "Po AI · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After AI · %@"
+          }
+        }
+      }
+    },
+    "Przetwarzam przez AI...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing with AI..."
+          }
+        }
+      }
+    },
+    "Przetwarzam...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing..."
+          }
+        }
+      }
+    },
+    "Przetwórz oryginał wybranym trybem AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run the original through the chosen AI mode"
+          }
+        }
+      }
+    },
+    "Przetwórz przez AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Process with AI"
+          }
+        }
+      }
+    },
+    "Tekst poprawiony przez AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text improved by AI"
+          }
+        }
+      }
+    },
+    "Akapity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paragraphs"
+          }
+        }
+      }
+    },
+    "Anulowano.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelled."
+          }
+        }
+      }
+    },
+    "Anuluj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Aplikacja": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
+          }
+        }
+      }
+    },
+    "Automatycznie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        }
+      }
+    },
+    "Automatycznie kopiuj transkrypcję": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy the transcript automatically"
+          }
+        }
+      }
+    },
+    "Bez AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI"
+          }
+        }
+      }
+    },
+    "Bez uprawnienia Dostępność skrót nie działa, a tekst trafi tylko do schowka. Wróć do kroku Uprawnienia.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without Accessibility permission the shortcut does not work and text only goes to the clipboard. Go back to the Permissions step."
+          }
+        }
+      }
+    },
+    "Brak dostępu do mikrofonu. Włącz go w Ustawieniach systemowych.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No microphone access. Turn it on in System Settings."
+          }
+        }
+      }
+    },
+    "Brak klucza API. Dodaj go w zakładce Modele.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No API key. Add it on the Models tab."
+          }
+        }
+      }
+    },
+    "Brak klucza AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI key"
+          }
+        }
+      }
+    },
+    "Błąd AI %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI error %@"
+          }
+        }
+      }
+    },
+    "Błąd sieci": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network error"
+          }
+        }
+      }
+    },
+    "Brak klucza AI. Dodaj go na ekranie Modele, w panelu Poprawianie przez AI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI key. Add it on the Models screen, in the AI cleanup panel."
+          }
+        }
+      }
+    },
+    "Brak modeli pasujących do zapytania.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No models match the search."
+          }
+        }
+      }
+    },
+    "Brak reguł. Dodaj pierwszą poniżej.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rules. Add the first one below."
+          }
+        }
+      }
+    },
+    "Brak słów. Dodaj pierwsze poniżej.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No words. Add the first ones below."
+          }
+        }
+      }
+    },
+    "Brak uprawnienia Dostępność": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Accessibility permission"
+          }
+        }
+      }
+    },
+    "Brak uprawnienia Dostępność. Tekst skopiowano do schowka.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Accessibility permission. The text was copied to the clipboard."
+          }
+        }
+      }
+    },
+    "Brak uprawnienia Dostępność: skrót i wklejanie nie działają.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Accessibility permission: the shortcut and pasting do not work."
+          }
+        }
+      }
+    },
+    "Brak wyników": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No results"
+          }
+        }
+      }
+    },
+    "Błąd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        }
+      }
+    },
+    "Błąd nagrywania (kod %d).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording error (code %d)."
+          }
+        }
+      }
+    },
+    "Błąd serwera (%lld).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server error (%lld)."
+          }
+        }
+      }
+    },
+    "Błąd sieci: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network error: %@"
+          }
+        }
+      }
+    },
+    "Captylo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo"
+          }
+        }
+      }
+    },
+    "Captylo, nagrywanie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo, recording"
+          }
+        }
+      }
+    },
+    "Chmura nie odpowiedziała, użyto Parakeet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud did not respond, Parakeet was used."
+          }
+        }
+      }
+    },
+    "Czas nagrania": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording time"
+          }
+        }
+      }
+    },
+    "Czekam na skrót...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for a shortcut..."
+          }
+        }
+      }
+    },
+    "Czyszczenie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleanup"
+          }
+        }
+      }
+    },
+    "%@ s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ s"
+          }
+        }
+      }
+    },
+    "%lld ms": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ms"
+          }
+        }
+      }
+    },
+    "Aktywny tryb": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active mode"
+          }
+        }
+      }
+    },
+    "Edytuj tryby...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit modes..."
+          }
+        }
+      }
+    },
+    "Iskry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sparkles"
+          }
+        }
+      }
+    },
+    "Różdżka": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magic wand"
+          }
+        }
+      }
+    },
+    "Globus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Globe"
+          }
+        }
+      }
+    },
+    "Litera w dymku": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letter in a bubble"
+          }
+        }
+      }
+    },
+    "Lista": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List"
+          }
+        }
+      }
+    },
+    "Koperta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envelope"
+          }
+        }
+      }
+    },
+    "Dymek": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speech bubble"
+          }
+        }
+      }
+    },
+    "Dokument": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document"
+          }
+        }
+      }
+    },
+    "Ołówek": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pencil"
+          }
+        }
+      }
+    },
+    "Cytat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quote"
+          }
+        }
+      }
+    },
+    "Żarówka": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light bulb"
+          }
+        }
+      }
+    },
+    "Teczka": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Briefcase"
+          }
+        }
+      }
+    },
+    "Osoby": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People"
+          }
+        }
+      }
+    },
+    "Kalendarz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar"
+          }
+        }
+      }
+    },
+    "Rozmowa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversation"
+          }
+        }
+      }
+    },
+    "Czekam na odpowiedź modelu...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the model..."
+          }
+        }
+      }
+    },
+    "Dłuższy limit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Longer limit"
+          }
+        }
+      }
+    },
+    "Dodaj tryb": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add mode"
+          }
+        }
+      }
+    },
+    "Duplikuj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate"
+          }
+        }
+      }
+    },
+    "Edytuj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        }
+      }
+    },
+    "Edytuj tryb": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit mode"
+          }
+        }
+      }
+    },
+    "Gdy AI nie odpowie w limicie czasu trybu, wklejany jest surowy tekst.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the AI does not answer within the mode's time limit, the raw text is pasted."
+          }
+        }
+      }
+    },
+    "Ikona": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon"
+          }
+        }
+      }
+    },
+    "Kliknij, aby używać tego trybu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to use this mode"
+          }
+        }
+      }
+    },
+    "Krótszy limit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shorter limit"
+          }
+        }
+      }
+    },
+    "Limit czasu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time limit"
+          }
+        }
+      }
+    },
+    "limit %@ s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "limit %@ s"
+          }
+        }
+      }
+    },
+    "Nazwa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "Nazwa trybu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mode name"
+          }
+        }
+      }
+    },
+    "no to yyy jutro spotkanie o dziesiątej, trzeba przygotować ofertę dla klienta i zadzwonić do Marka, a i jeszcze faktura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "so uhh tomorrow meeting at ten, need to prepare the offer for the client and call Mark, oh and also the invoice"
+          }
+        }
+      }
+    },
+    "Opcje trybu %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options for mode %@"
+          }
+        }
+      }
+    },
+    "Po tym czasie wklejany jest surowy tekst.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After this time the raw text is pasted."
+          }
+        }
+      }
+    },
+    "Podaj nazwę trybu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a name for the mode."
+          }
+        }
+      }
+    },
+    "Poprawianie przez AI jest wyłączone, więc dyktaty wklejają się bez zmian. Kliknij tryb, aby je włączyć.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI cleanup is off, so dictations are pasted unchanged. Click a mode to turn it on."
+          }
+        }
+      }
+    },
+    "Prompt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt"
+          }
+        }
+      }
+    },
+    "Prompt nie może być pusty.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The prompt cannot be empty."
+          }
+        }
+      }
+    },
+    "Przerabia tekst: tłumaczy, porządkuje, zmienia formę. Odrzucana jest tylko pusta lub ucięta odpowiedź.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewrites the text: translates, organizes, changes the form. Only an empty or cut-off answer is rejected."
+          }
+        }
+      }
+    },
+    "Przeróbka": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewrite"
+          }
+        }
+      }
+    },
+    "Przesuń niżej": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move down"
+          }
+        }
+      }
+    },
+    "Przesuń wyżej": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move up"
+          }
+        }
+      }
+    },
+    "Przykład": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sample"
+          }
+        }
+      }
+    },
+    "Przykładowy dyktat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sample dictation"
+          }
+        }
+      }
+    },
+    "Przywrócić domyślne tryby?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore the default modes?"
+          }
+        }
+      }
+    },
+    "Przywróć": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
+          }
+        }
+      }
+    },
+    "Przywróć domyślne tryby": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore default modes"
+          }
+        }
+      }
+    },
+    "Przywróć oryginalny": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore original"
+          }
+        }
+      }
+    },
+    "Przywróć przykładowy dyktat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore the sample dictation"
+          }
+        }
+      }
+    },
+    "Rodzaj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kind"
+          }
+        }
+      }
+    },
+    "Sprawdź tryb na przykładowym dyktacie, także przed zapisaniem zmian. Test używa wybranego modelu i Twojego klucza API do AI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try the mode on a sample dictation, even before saving your changes. The test uses the selected model and your AI API key."
+          }
+        }
+      }
+    },
+    "Ten prompt nie używa Słownika, więc model nie zobaczy Twoich słów.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This prompt does not use the Dictionary, so the model will not see your words."
+          }
+        }
+      }
+    },
+    "Ten tryb jest używany przy dyktowaniu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This mode is used when you dictate"
+          }
+        }
+      }
+    },
+    "Testuj tryb": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test mode"
+          }
+        }
+      }
+    },
+    "To trwało dłużej niż limit trybu (%@). Przy dyktowaniu wkleiłby się surowy tekst.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This took longer than the mode's limit (%@). When dictating, the raw text would have been pasted."
+          }
+        }
+      }
+    },
+    "Tego nie da się cofnąć.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This cannot be undone."
+          }
+        }
+      }
+    },
+    "Tryb decyduje, co AI zrobi z dyktatem: poprawi go, przetłumaczy albo przerobi na e-mail lub listę zadań. Kliknij tryb, aby go używać.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The mode decides what the AI does with a dictation: cleans it up, translates it or turns it into an e-mail or a task list. Click a mode to use it."
+          }
+        }
+      }
+    },
+    "Tryb wbudowany wróci po kliknięciu Przywróć domyślne tryby.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A built-in mode comes back when you click Restore default modes."
+          }
+        }
+      }
+    },
+    "Tryby AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI modes"
+          }
+        }
+      }
+    },
+    "Tylko poprawia: ten sam język i sens, długość zbliżona do dyktatu. Do 3 słów AI jest pomijane.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only cleans up: same language and meaning, length close to the dictation. At 3 words or fewer the AI is skipped."
+          }
+        }
+      }
+    },
+    "Usunąć tryb „%@”?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the mode \"%@\"?"
+          }
+        }
+      }
+    },
+    "Ustawia ten tryb jako aktywny": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Makes this mode active"
+          }
+        }
+      }
+    },
+    "Używaj tego trybu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use this mode"
+          }
+        }
+      }
+    },
+    "Wbudowane tryby wrócą do oryginalnych nazw, promptów i limitów, a usunięte pojawią się ponownie. Twoje własne tryby zostaną bez zmian.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The built-in modes go back to their original names, prompts and limits, and deleted ones come back. Your own modes stay as they are."
+          }
+        }
+      }
+    },
+    "Wbudowany": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in"
+          }
+        }
+      }
+    },
+    "Więcej": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        }
+      }
+    },
+    "Wpisz lub wklej przykładowy dyktat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type or paste a sample dictation"
+          }
+        }
+      }
+    },
+    "Wynik": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Result"
+          }
+        }
+      }
+    },
+    "Znacznik %@ zostanie zastąpiony listą słów ze Słownika (przy pustym Słowniku ta linia znika). Zakończ prompt poleceniem, by model zwrócił tylko wynik.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The %@ tag is replaced with the word list from the Dictionary (with an empty Dictionary that line is dropped). End the prompt by telling the model to output only the result."
+          }
+        }
+      }
+    },
+    "Dalej": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        }
+      }
+    },
+    "Dane: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data: %@"
+          }
+        }
+      }
+    },
+    "Do globalnego skrótu i wklejania tekstu tam, gdzie piszesz. Captylo nie czyta ekranu ani innych aplikacji.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the global shortcut and for pasting text where you type. Captylo does not read the screen or other apps."
+          }
+        }
+      }
+    },
+    "Do nagrywania Twojego głosu. Dźwięk jest przetwarzany lokalnie, nic nie wychodzi z tego Maca bez Twojej zgody.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To record your voice. Audio is processed locally, nothing leaves this Mac without your consent."
+          }
+        }
+      }
+    },
+    "Dodaj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        }
+      }
+    },
+    "Dodaj słowa oddzielone przecinkami": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add words separated by commas"
+          }
+        }
+      }
+    },
+    "Dodaj wypełniacz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a filler"
+          }
+        }
+      }
+    },
+    "Domyślny systemowy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System default"
+          }
+        }
+      }
+    },
+    "Dostępność": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility"
+          }
+        }
+      }
+    },
+    "Dotyczy tylko plików audio; teksty i statystyki zostają.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies to audio files only; texts and statistics stay."
+          }
+        }
+      }
+    },
+    "Dwa razy Esc podczas nagrywania anuluje bez wklejania.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pressing Esc twice while recording cancels without pasting."
+          }
+        }
+      }
+    },
+    "Dwa uprawnienia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two permissions"
+          }
+        }
+      }
+    },
+    "Działa! Tak samo zadziała w każdej aplikacji.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It works! It works the same way in every app."
+          }
+        }
+      }
+    },
+    "Dziennie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily"
+          }
+        }
+      }
+    },
+    "Dzień": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day"
+          }
+        }
+      }
+    },
+    "Dźwięki": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sounds"
+          }
+        }
+      }
+    },
+    "Dźwięki usuwane z transkrypcji (\"yyy\", \"hmm\"). Prawdziwe słowa zostawiamy w spokoju.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sounds removed from transcripts (\"um\", \"hmm\"). Real words are left alone."
+          }
+        }
+      }
+    },
+    "E-mail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email"
+          }
+        }
+      }
+    },
+    "Eksportuj CSV": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export CSV"
+          }
+        }
+      }
+    },
+    "Dzisiaj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        }
+      }
+    },
+    "Edytuj regułę": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit rule"
+          }
+        }
+      }
+    },
+    "Kliknij, aby edytować": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to edit"
+          }
+        }
+      }
+    },
+    "Lista zadań": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task list"
+          }
+        }
+      }
+    },
+    "Mój prompt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My prompt"
+          }
+        }
+      }
+    },
+    "Nieoczekiwana odpowiedź AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected AI response"
+          }
+        }
+      }
+    },
+    "Nowy tryb": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New mode"
+          }
+        }
+      }
+    },
+    "Odrzucono: odpowiedź ucięta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected: response cut off"
+          }
+        }
+      }
+    },
+    "Odrzucono: pusta odpowiedź": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected: empty response"
+          }
+        }
+      }
+    },
+    "Odrzucono: wynik podejrzanie długi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected: suspiciously long result"
+          }
+        }
+      }
+    },
+    "Odrzucono: wynik podejrzanie krótki": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected: suspiciously short result"
+          }
+        }
+      }
+    },
+    "Odznacz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect"
+          }
+        }
+      }
+    },
+    "Po angielsku": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In English"
+          }
+        }
+      }
+    },
+    "Przekroczono limit %@ s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exceeded the %@ s limit"
+          }
+        }
+      }
+    },
+    "Tekst jest za krótki dla tego trybu (3 słowa lub mniej).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The text is too short for this mode (3 words or fewer)."
+          }
+        }
+      }
+    },
+    "Ten wpis nie ma tekstu do przetworzenia.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This entry has no text to process."
+          }
+        }
+      }
+    },
+    "Uporządkuj myśli": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organize thoughts"
+          }
+        }
+      }
+    },
+    "Wczoraj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday"
+          }
+        }
+      }
+    },
+    "Za krótkie (3 słowa lub mniej)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too short (3 words or fewer)"
+          }
+        }
+      }
+    },
+    "Zaznacz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
+          }
+        }
+      }
+    },
+    "Zaznacz wpisy kółkiem po lewej": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select entries with the circle on the left"
+          }
+        }
+      }
+    },
+    "Eksportuj JSON": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export JSON"
+          }
+        }
+      }
+    },
+    "Chmura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud"
+          }
+        }
+      }
+    },
+    "Folder modelu jest współdzielony z poprzednią aplikacją do dyktowania. Po usunięciu ona również straci model i będzie musiała pobrać go ponownie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model folder is shared with the previous dictation app. After deleting it, that app loses the model too and will have to download it again."
+          }
+        }
+      }
+    },
+    "Gdy silnik usłyszy jedno z wyrażeń po lewej, w tekście pojawi się wersja po prawej. Kilka wariantów oddziel przecinkami. To jedyny sposób, aby Parakeet poprawnie pisał nazwy własne.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the engine hears one of the phrases on the left, the text gets the version on the right. Separate several variants with commas. This is the only way to make Parakeet spell proper names correctly."
+          }
+        }
+      }
+    },
+    "Gotowe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "Gotowe transkrypcje trafiają do Historii.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished transcripts go to History."
+          }
+        }
+      }
+    },
+    "Gotowy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready"
+          }
+        }
+      }
+    },
+    "Historia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        }
+      }
+    },
+    "Historia jest pusta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History is empty"
+          }
+        }
+      }
+    },
+    "Historia jest pusta.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History is empty."
+          }
+        }
+      }
+    },
+    "Importuj JSON": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import JSON"
+          }
+        }
+      }
+    },
+    "Jeden skrót, dwa sposoby użycia. Domyślnie prawy Option.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One shortcut, two ways to use it. Right Option by default."
+          }
+        }
+      }
+    },
+    "Język": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
+    "Język transkrypcji": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcription language"
+          }
+        }
+      }
+    },
+    "Klawisz %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ key"
+          }
+        }
+      }
+    },
+    "Klucz API chmury": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud API key"
+          }
+        }
+      }
+    },
+    "Klucz API do AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI API key"
+          }
+        }
+      }
+    },
+    "Klucz jest zapisany w pęku kluczy.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key is saved in the keychain."
+          }
+        }
+      }
+    },
+    "Klucz zapisany w pęku kluczy.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key saved in the keychain."
+          }
+        }
+      }
+    },
+    "Klucz zapisany, ale model %@ nie jest już dostępny. Wybierz inny.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key saved, but the model %@ is no longer available. Pick another one."
+          }
+        }
+      }
+    },
+    "Kolejka": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queue"
+          }
+        }
+      }
+    },
+    "Konfiguracja zajmie około minuty. Wszystko działa lokalnie na tym Macu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setup takes about a minute. Everything runs locally on this Mac."
+          }
+        }
+      }
+    },
+    "Kopiuj oryginał": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy original"
+          }
+        }
+      }
+    },
+    "Kopiuj ostatnią transkrypcję": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy last transcript"
+          }
+        }
+      }
+    },
+    "Kopiuj tekst": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy text"
+          }
+        }
+      }
+    },
+    "Krok %lld z %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Krótkie naciśnięcie włącza dyktowanie do następnego naciśnięcia. Przytrzymanie nagrywa tak długo, jak trzymasz klawisz. Esc dwa razy anuluje.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A short press starts dictation until the next press. Holding records for as long as you hold the key. Esc twice cancels."
+          }
+        }
+      }
+    },
+    "Lewy ⇧": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left ⇧"
+          }
+        }
+      }
+    },
+    "Lewy ⌃": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left ⌃"
+          }
+        }
+      }
+    },
+    "Lewy ⌘": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left ⌘"
+          }
+        }
+      }
+    },
+    "Lewy ⌥": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left ⌥"
+          }
+        }
+      }
+    },
+    "Lista jest pusta, wypełniacze nie są usuwane.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The list is empty, fillers are not removed."
+          }
+        }
+      }
+    },
+    "Lista modeli nie jest jeszcze pobrana.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model list has not been downloaded yet."
+          }
+        }
+      }
+    },
+    "Lokalnie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local"
+          }
+        }
+      }
+    },
+    "Maksymalnie %lld znaków na słowo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At most %lld characters per word."
+          }
+        }
+      }
+    },
+    "Miara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metric"
+          }
+        }
+      }
+    },
+    "Mikrofon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone"
+          }
+        }
+      }
+    },
+    "Mikrofon zgłasza nieprawidłowy format dźwięku.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The microphone reports an invalid audio format."
+          }
+        }
+      }
+    },
+    "Minuty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutes"
+          }
+        }
+      }
+    },
+    "Model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        }
+      }
+    },
+    "Model Parakeet nie jest gotowy. Pobierz go w zakładce Modele.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Parakeet model is not ready. Download it on the Models tab."
+          }
+        }
+      }
+    },
+    "Model Parakeet nie jest pobrany, więc dyktowanie jeszcze nie zadziała.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Parakeet model is not downloaded, so dictation will not work yet."
+          }
+        }
+      }
+    },
+    "Model Parakeet nie jest pobrany. Dyktowanie nie zadziała, dopóki go nie pobierzesz.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Parakeet model is not downloaded. Dictation will not work until you download it."
+          }
+        }
+      }
+    },
+    "Model Parakeet v3 nie jest pobrany (ok. 600 MB, 25 języków, działa bez internetu).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Parakeet v3 model is not downloaded (about 600 MB, 25 languages, works offline)."
+          }
+        }
+      }
+    },
+    "Model gotowy do pracy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model ready"
+          }
+        }
+      }
+    },
+    "Model lokalny (Parakeet)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local model (Parakeet)"
+          }
+        }
+      }
+    },
+    "Model nie jest jeszcze pobrany. Pobranie zajmuje chwilę, potem działa bez internetu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model is not downloaded yet. The download takes a moment, then it works offline."
+          }
+        }
+      }
+    },
+    "Model nie odpowiedział na czas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model did not respond in time."
+          }
+        }
+      }
+    },
+    "Model rozpoznawania mowy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speech recognition model"
+          }
+        }
+      }
+    },
+    "Model wciąż się pobiera (%lld%%). Dyktowanie zadziała, gdy pobieranie się skończy.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model is still downloading (%lld%%). Dictation will work once the download finishes."
+          }
+        }
+      }
+    },
+    "Model zwrócił pustą odpowiedź.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model returned an empty response."
+          }
+        }
+      }
+    },
+    "Modele": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Models"
+          }
+        }
+      }
+    },
+    "Mów, a tekst pojawi się tutaj.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speak and the text appears here."
+          }
+        }
+      }
+    },
+    "Mów, a tekst pojawia się tam, gdzie piszesz.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speak, and the text appears wherever you type."
+          }
+        }
+      }
+    },
+    "Naciśnij Esc ponownie, aby anulować": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press Esc again to cancel"
+          }
+        }
+      }
+    },
+    "Naciśnij krótko: nagrywanie zostaje włączone, kolejne naciśnięcie je kończy.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press briefly: recording turns on, the next press ends it."
+          }
+        }
+      }
+    },
+    "Naciśnij nowy skrót. Esc anuluje.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press a new shortcut. Esc cancels."
+          }
+        }
+      }
+    },
+    "Naciśnij skrót...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press a shortcut..."
+          }
+        }
+      }
+    },
+    "Nadal brak dostępu. macOS często wymaga ponownego uruchomienia aplikacji po włączeniu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still no access. macOS often needs the app to be restarted after the permission is turned on."
+          }
+        }
+      }
+    },
+    "Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje Parakeet, jeśli jest pobrany.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recordings are sent to cloud transcription. When the cloud does not respond, Captylo uses Parakeet if it is downloaded."
+          }
+        }
+      }
+    },
+    "Nagranie było za krótkie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recording was too short."
+          }
+        }
+      }
+    },
+    "Nagranie jest puste.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recording is empty."
+          }
+        }
+      }
+    },
+    "Nagranie jest za duże, aby wysłać je do chmury.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recording is too large to send to the cloud."
+          }
+        }
+      }
+    },
+    "Nagrany czas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorded time"
+          }
+        }
+      }
+    },
+    "Nagrywanie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording"
+          }
+        }
+      }
+    },
+    "Nagrywanie... mów swobodnie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording... speak freely"
+          }
+        }
+      }
+    },
+    "Nazwy własne, marki i żargon. Te słowa podpowiadają silnikowi w chmurze i poprawianiu przez AI. Parakeet ich nie widzi: dla niego dodaj regułę w sekcji Zamiany.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proper names, brands and jargon. These words guide the cloud engine and the AI cleanup. Parakeet does not see them: add a rule in Replacements for it."
+          }
+        }
+      }
+    },
+    "Nic nie pasuje do „%@”.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing matches “%@”."
+          }
+        }
+      }
+    },
+    "Nic nie usłyszałem.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I did not hear anything."
+          }
+        }
+      }
+    },
+    "Nie udało się odczytać nagrania.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the recording."
+          }
+        }
+      }
+    },
+    "Nie udało się odczytać pliku audio: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the audio file: %@"
+          }
+        }
+      }
+    },
+    "Nie udało się odczytać pliku.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the file."
+          }
+        }
+      }
+    },
+    "Nie udało się odczytać słownika": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the dictionary"
+          }
+        }
+      }
+    },
+    "Nie udało się otworzyć bazy historii. Ta sesja działa na bazie tymczasowej, nowe dyktowania nie zostaną zapisane.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not open the history database. This session uses a temporary database, new dictations will not be saved."
+          }
+        }
+      }
+    },
+    "Nie udało się otworzyć nagrania.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not open the recording."
+          }
+        }
+      }
+    },
+    "Nie udało się przygotować konwersji dźwięku.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not prepare the audio conversion."
+          }
+        }
+      }
+    },
+    "Nie udało się uruchomić nagrywania: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not start recording: %@"
+          }
+        }
+      }
+    },
+    "Nie udało się usunąć modelu: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not delete the model: %@"
+          }
+        }
+      }
+    },
+    "Nie udało się utworzyć pliku nagrania: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not create the recording file: %@"
+          }
+        }
+      }
+    },
+    "Nie udało się wczytać statystyk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load the statistics."
+          }
+        }
+      }
+    },
+    "Nie udało się wybrać mikrofonu: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not select the microphone: %@"
+          }
+        }
+      }
+    },
+    "Nie udało się zapisać klucza w pęku kluczy (kod %@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save the key in the keychain (code %@)."
+          }
+        }
+      }
+    },
+    "Nie udało się zapisać klucza w pęku kluczy: %@ (kod %@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save the key in the keychain: %1$@ (code %2$@)."
+          }
+        }
+      }
+    },
+    "Nie udało się zapisać słownika. Zmiany działają tylko do zamknięcia aplikacji.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save the dictionary. The changes only last until you quit the app."
+          }
+        }
+      }
+    },
+    "Nie udało się zapisać pliku WAV: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save the WAV file: %@"
+          }
+        }
+      }
+    },
+    "Nie udało się zapisać pliku: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save the file: %@"
+          }
+        }
+      }
+    },
+    "Nie znaleziono mikrofonu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No microphone found."
+          }
+        }
+      }
+    },
+    "Nie znaleziono mikrofonu. Pokrywa jest zamknięta, podłącz zewnętrzny mikrofon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No microphone found. The lid is closed, connect an external microphone."
+          }
+        }
+      }
+    },
+    "Nie znaleziono wpisu w historii.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History entry not found."
+          }
+        }
+      }
+    },
+    "Model niedostępny": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model unavailable"
+          }
+        }
+      }
+    },
+    "Nieobsługiwany format pliku (.%@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsupported file format (.%@)."
+          }
+        }
+      }
+    },
+    "Nieoczekiwana odpowiedź AI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected AI response."
+          }
+        }
+      }
+    },
+    "Nieprawidłowa odpowiedź serwera.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid server response."
+          }
+        }
+      }
+    },
+    "Nieprawidłowy klawisz modyfikatora.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid modifier key."
+          }
+        }
+      }
+    },
+    "Nieprawidłowy klucz API": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid API key"
+          }
+        }
+      }
+    },
+    "Nieprawidłowy klucz AI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid AI key."
+          }
+        }
+      }
+    },
+    "Nieprawidłowy skrót.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid shortcut."
+          }
+        }
+      }
+    },
+    "Nieznany stan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown state"
+          }
+        }
+      }
+    },
+    "Nigdy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "OK, %lld ms": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK, %lld ms"
+          }
+        }
+      }
+    },
+    "OK, klucz działa.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK, the key works."
+          }
+        }
+      }
+    },
+    "Oczekuje": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting"
+          }
+        }
+      }
+    },
+    "Od następnego nagrania": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the next recording"
+          }
+        }
+      }
+    },
+    "Odczytuję plik...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading the file..."
+          }
+        }
+      }
+    },
+    "Odmówiono. Włącz w Ustawieniach systemowych > Prywatność > Mikrofon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denied. Turn it on in System Settings > Privacy > Microphone."
+          }
+        }
+      }
+    },
+    "Odpowiedź modelu ma podejrzaną długość.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model response has a suspicious length."
+          }
+        }
+      }
+    },
+    "Odpowiedź modelu została ucięta.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model response was cut off."
+          }
+        }
+      }
+    },
+    "Odtwórz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        }
+      }
+    },
+    "Odśwież listę modeli": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh the model list"
+          }
+        }
+      }
+    },
+    "AI: błąd serwera (kod %@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI: server error (code %@)."
+          }
+        }
+      }
+    },
+    "AI: przekroczono limit zapytań. Spróbuj za chwilę.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI: rate limit reached. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Optymalizuję model dla Twojego Maca (jednorazowo)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimizing the model for your Mac (one time)"
+          }
+        }
+      }
+    },
+    "Oryginał": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original"
+          }
+        }
+      }
+    },
+    "Ostrzeżenie o pamięci": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage warning"
+          }
+        }
+      }
+    },
+    "Otwórz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        }
+      }
+    },
+    "Otwórz Captylo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Captylo"
+          }
+        }
+      }
+    },
+    "Otwórz ustawienia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open settings"
+          }
+        }
+      }
+    },
+    "Otwórz ustawienia klawiatury": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open keyboard settings"
+          }
+        }
+      }
+    },
+    "Parakeet (lokalnie)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parakeet (local)"
+          }
+        }
+      }
+    },
+    "Parakeet TDT 0.6b v3": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parakeet TDT 0.6b v3"
+          }
+        }
+      }
+    },
+    "Parakeet działa w całości na Twoim Macu: bez internetu, bez wysyłania nagrań.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parakeet runs entirely on your Mac: no internet, no uploaded recordings."
+          }
+        }
+      }
+    },
+    "Pauza": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        }
+      }
+    },
+    "Plik audio jest pusty.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The audio file is empty."
+          }
+        }
+      }
+    },
+    "Plik nagrania już nie istnieje.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recording file no longer exists."
+          }
+        }
+      }
+    },
+    "Plik nie zawiera ścieżki audio.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file has no audio track."
+          }
+        }
+      }
+    },
+    "Plik słownika był uszkodzony, więc Captylo zaczęło od domyślnego. Oryginał zachowano jako %@. Po poprawieniu możesz go wczytać przyciskiem Importuj JSON.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The dictionary file was damaged, so Captylo started from the default one. The original was kept as %@. Once fixed, you can load it with Import JSON."
+          }
+        }
+      }
+    },
+    "Pobieram model... %lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading the model... %lld%%"
+          }
+        }
+      }
+    },
+    "Pobierz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        }
+      }
+    },
+    "Skąd wziąć klucz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where to get a key"
+          }
+        }
+      }
+    },
+    "Pobierz model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download the model"
+          }
+        }
+      }
+    },
+    "Pobrany model jest niekompletny. Spróbuj ponownie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded model is incomplete. Try again."
+          }
+        }
+      }
+    },
+    "Podaj przynajmniej jedno słowo do zamiany.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter at least one word to replace."
+          }
+        }
+      }
+    },
+    "Podaj tekst zamiany.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the replacement text."
+          }
+        }
+      }
+    },
+    "Podgląd na żywo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview"
+          }
+        }
+      }
+    },
+    "Podgląd na żywo jest wyłączony w ustawieniach.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview is turned off in Settings."
+          }
+        }
+      }
+    },
+    "Podyktowano %lld słów w %lld sesjach": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dictated %#@words@ in %#@sessions@"
+          },
+          "substitutions": {
+            "sessions": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg session"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg sessions"
+                    }
+                  }
+                }
+              }
+            },
+            "words": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg word"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg words"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podyktowano %#@words@ w %#@sessions@"
+          },
+          "substitutions": {
+            "sessions": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "few": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg sesjach"
+                    }
+                  },
+                  "many": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg sesjach"
+                    }
+                  },
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg sesji"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg sesjach"
+                    }
+                  }
+                }
+              }
+            },
+            "words": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "few": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg słowa"
+                    }
+                  },
+                  "many": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg słów"
+                    }
+                  },
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg słowo"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg słowa"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Pokaż": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show"
+          }
+        }
+      }
+    },
+    "Pokaż w Finderze": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        }
+      }
+    },
+    "Pokaż więcej": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        }
+      }
+    },
+    "Pokrywa jest zamknięta: wbudowany mikrofon jest pomijany.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The lid is closed: the built-in microphone is skipped."
+          }
+        }
+      }
+    },
+    "Polecany": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended"
+          }
+        }
+      }
+    },
+    "Pominięto nieobsługiwane pliki: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped unsupported files: %@"
+          }
+        }
+      }
+    },
+    "Pomiń wprowadzenie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip introduction"
+          }
+        }
+      }
+    },
+    "Poprawiaj transkrypcję przez AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean up the transcript with AI"
+          }
+        }
+      }
+    },
+    "Poprawiam z AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaning up with AI"
+          }
+        }
+      }
+    },
+    "Poprawiam z AI · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refining with AI · %@"
+          }
+        }
+      }
+    },
+    "Poprawiam z AI...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaning up with AI..."
+          }
+        }
+      }
+    },
+    "Poprawianie przez AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI cleanup"
+          }
+        }
+      }
+    },
+    "Postęp wprowadzenia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onboarding progress"
+          }
+        }
+      }
+    },
+    "Potrzebny, gdy chmura nie odpowie, i do podglądu na żywo podczas nagrywania.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needed when the cloud does not respond, and for the live preview while recording."
+          }
+        }
+      }
+    },
+    "Prawy ⇧": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right ⇧"
+          }
+        }
+      }
+    },
+    "Prawy ⌃": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right ⌃"
+          }
+        }
+      }
+    },
+    "Prawy ⌘": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right ⌘"
+          }
+        }
+      }
+    },
+    "Prawy ⌥": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right ⌥"
+          }
+        }
+      }
+    },
+    "Presety": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presets"
+          }
+        }
+      }
+    },
+    "Przejdź do Modele": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to Models"
+          }
+        }
+      }
+    },
+    "Przekroczono czas oczekiwania na odpowiedź serwera.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server took too long to respond."
+          }
+        }
+      }
+    },
+    "Przekroczono limit zapytań. Spróbuj ponownie za chwilę.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate limit reached. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Przenieś Captylo do folderu Programy, aby włączyć tę opcję.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move Captylo to the Applications folder to turn this on."
+          }
+        }
+      }
+    },
+    "Przetwarzanie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing"
+          }
+        }
+      }
+    },
+    "Przytrzymaj %@ i powiedz coś. Puść klawisz, a tekst wklei się poniżej.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold %@ and say something. Release the key and the text is pasted below."
+          }
+        }
+      }
+    },
+    "Przytrzymaj skrót i zacznij mówić. Każde dyktowanie trafi tutaj.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold the shortcut and start speaking. Every dictation lands here."
+          }
+        }
+      }
+    },
+    "Przytrzymaj, mów i puść: tekst wkleja się po zwolnieniu klawisza.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold, speak and release: the text is pasted when you let go of the key."
+          }
+        }
+      }
+    },
+    "Przywracaj schowek": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore the clipboard"
+          }
+        }
+      }
+    },
+    "Przywróć domyślne": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore defaults"
+          }
+        }
+      }
+    },
+    "Przyznano": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Granted"
+          }
+        }
+      }
+    },
+    "Odmówiono": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denied"
+          }
+        }
+      }
+    },
+    "Zablokowane": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked"
+          }
+        }
+      }
+    },
+    "Włącz w Ustawieniach systemowych > Prywatność > Mikrofon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn it on in System Settings > Privacy > Microphone."
+          }
+        }
+      }
+    },
+    "Po kliknięciu włącz Captylo na liście w Ustawieniach systemowych.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After clicking, turn on Captylo in the list in System Settings."
+          }
+        }
+      }
+    },
+    "Zaczynamy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get started"
+          }
+        }
+      }
+    },
+    "Rozwinięte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expanded"
+          }
+        }
+      }
+    },
+    "Zwinięte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapsed"
+          }
+        }
+      }
+    },
+    "Prędkość odtwarzania": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback speed"
+          }
+        }
+      }
+    },
+    "Pulpit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dashboard"
+          }
+        }
+      }
+    },
+    "Pęk kluczy nie odpowiedział na czas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The keychain did not respond in time"
+          }
+        }
+      }
+    },
+    "Pęk kluczy nie odpowiedział na czas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The keychain did not respond in time."
+          }
+        }
+      }
+    },
+    "Rozpocznij dyktowanie (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start dictation (%@)"
+          }
+        }
+      }
+    },
+    "Rozwiń": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand"
+          }
+        }
+      }
+    },
+    "STT %lld ms": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STT %lld ms"
+          }
+        }
+      }
+    },
+    "Serwer zwrócił pustą transkrypcję.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server returned an empty transcript."
+          }
+        }
+      }
+    },
+    "Sesje": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessions"
+          }
+        }
+      }
+    },
+    "Shift z klawiszem znakowym nie może być skrótem.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shift with a character key cannot be a shortcut."
+          }
+        }
+      }
+    },
+    "Silnik": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine"
+          }
+        }
+      }
+    },
+    "Silnik, który zamienia mowę na tekst, i opcjonalne poprawianie przez AI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The engine that turns speech into text, and optional AI cleanup."
+          }
+        }
+      }
+    },
+    "Silnik mowy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speech engine"
+          }
+        }
+      }
+    },
+    "Skopiowano - naciśnij ⌘V": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied - press ⌘V"
+          }
+        }
+      }
+    },
+    "Skrót": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut"
+          }
+        }
+      }
+    },
+    "Skrót do dyktowania": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dictation shortcut"
+          }
+        }
+      }
+    },
+    "Skrót musi zawierać modyfikator (⌃, ⌥, ⇧, ⌘ lub Fn).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The shortcut must include a modifier (⌃, ⌥, ⇧, ⌘ or Fn)."
+          }
+        }
+      }
+    },
+    "Skrót musi zawierać modyfikator.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The shortcut must include a modifier."
+          }
+        }
+      }
+    },
+    "Skrót nagrywania": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording shortcut"
+          }
+        }
+      }
+    },
+    "Spacja": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space"
+          }
+        }
+      }
+    },
+    "Spacja po wklejeniu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space after pasting"
+          }
+        }
+      }
+    },
+    "Sprawdź": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check"
+          }
+        }
+      }
+    },
+    "Spróbuj ponownie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "Stara wersja aplikacji": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Old version of the app"
+          }
+        }
+      }
+    },
+    "Strefa upuszczania plików": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File drop zone"
+          }
+        }
+      }
+    },
+    "Szukaj modelu (np. gemini, haiku)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search models (e.g. gemini, haiku)"
+          }
+        }
+      }
+    },
+    "Szukaj w transkrypcjach": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search transcripts"
+          }
+        }
+      }
+    },
+    "Słowa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words"
+          }
+        }
+      }
+    },
+    "Słowa i reguły, dzięki którym Captylo pisze Twoje nazwy poprawnie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words and rules that help Captylo spell your names correctly."
+          }
+        }
+      }
+    },
+    "Słowa/min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words/min"
+          }
+        }
+      }
+    },
+    "Słownictwo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vocabulary"
+          }
+        }
+      }
+    },
+    "Słownik": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dictionary"
+          }
+        }
+      }
+    },
+    "Słownik nie jest zapisany": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The dictionary is not saved"
+          }
+        }
+      }
+    },
+    "Słucham... mów swobodnie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening... speak freely"
+          }
+        }
+      }
+    },
+    "Tekst jest w schowku. Naciśnij ⌘V, aby go wkleić.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The text is on the clipboard. Press ⌘V to paste it."
+          }
+        }
+      }
+    },
+    "Ten skrót jest zarezerwowany przez system.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This shortcut is reserved by the system."
+          }
+        }
+      }
+    },
+    "Ten wpis nie ma zapisanego nagrania.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This entry has no saved recording."
+          }
+        }
+      }
+    },
+    "Teraz nagrywa: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now recording: %@"
+          }
+        }
+      }
+    },
+    "Testuj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test"
+          }
+        }
+      }
+    },
+    "To nie jest plik słownika Captylo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is not a Captylo dictionary file."
+          }
+        }
+      }
+    },
+    "Transkrybuj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribe"
+          }
+        }
+      }
+    },
+    "Transkrybuj ponownie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribe again"
+          }
+        }
+      }
+    },
+    "Transkrybuj w chmurze zamiast lokalnie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribe in the cloud instead of locally"
+          }
+        }
+      }
+    },
+    "Transkrybuję": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribing"
+          }
+        }
+      }
+    },
+    "Transkrybuję ponownie...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribing again..."
+          }
+        }
+      }
+    },
+    "Transkrybuję...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribing..."
+          }
+        }
+      }
+    },
+    "Transkrypcja na żywo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live transcript"
+          }
+        }
+      }
+    },
+    "Transkrypcja nie powiodła się.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcription failed."
+          }
+        }
+      }
+    },
+    "Transkrypcja pliku": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File transcription"
+          }
+        }
+      }
+    },
+    "Transkrypcja w chmurze wysyła nagranie na serwer. Gdy chmura zawiedzie, Captylo wraca do Parakeet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud transcription sends the recording to a server. When the cloud fails, Captylo falls back to Parakeet."
+          }
+        }
+      }
+    },
+    "Trend": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trend"
+          }
+        }
+      }
+    },
+    "Tryb": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mode"
+          }
+        }
+      }
+    },
+    "Tryb AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI mode"
+          }
+        }
+      }
+    },
+    "Tutaj pojawi się to, co powiesz. Pole nie przyjmuje pisania, tylko dyktowanie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you say will appear here. The field does not accept typing, only dictation."
+          }
+        }
+      }
+    },
+    "Ukryj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide"
+          }
+        }
+      }
+    },
+    "Ukryj ikonę w Docku": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide the Dock icon"
+          }
+        }
+      }
+    },
+    "Uprawnienia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permissions"
+          }
+        }
+      }
+    },
+    "Upuść nagranie lub film, a gotowy tekst trafi do Historii.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop a recording or a video, and the finished text lands in History."
+          }
+        }
+      }
+    },
+    "Upuść tutaj pliki audio lub wideo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop audio or video files here"
+          }
+        }
+      }
+    },
+    "Uruchamiaj przy logowaniu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch at login"
+          }
+        }
+      }
+    },
+    "Uruchom": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run"
+          }
+        }
+      }
+    },
+    "Uruchom ponownie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart"
+          }
+        }
+      }
+    },
+    "Uruchom wprowadzenie ponownie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run the onboarding again"
+          }
+        }
+      }
+    },
+    "Uruchomiona": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running"
+          }
+        }
+      }
+    },
+    "Uruchomiona jest stara wersja (%@). Obie używają tego samego skrótu, więc nagranie i wklejenie zdarzyłyby się dwa razy.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The old version (%@) is running. Both use the same shortcut, so recording and pasting would happen twice."
+          }
+        }
+      }
+    },
+    "Uruchomiona jest stara wersja aplikacji, która używa tego samego skrótu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An old version of the app that uses the same shortcut is running."
+          }
+        }
+      }
+    },
+    "Ustawienia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "Ustawienia...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings..."
+          }
+        }
+      }
+    },
+    "Usuniętych wpisów i nagrań nie da się przywrócić. Statystyki na pulpicie pozostaną bez zmian.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted entries and recordings cannot be restored. Dashboard statistics stay unchanged."
+          }
+        }
+      }
+    },
+    "Usunąć model Parakeet?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the Parakeet model?"
+          }
+        }
+      }
+    },
+    "Usunąć ten wpis?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this entry?"
+          }
+        }
+      }
+    },
+    "Usunąć zaznaczone wpisy?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the selected entries?"
+          }
+        }
+      }
+    },
+    "Usuwaj nagrania po": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete recordings after"
+          }
+        }
+      }
+    },
+    "Usuń": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Usuń %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %@"
+          }
+        }
+      }
+    },
+    "Usuń regułę": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete rule"
+          }
+        }
+      }
+    },
+    "Usuń z kolejki": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from queue"
+          }
+        }
+      }
+    },
+    "Usuń zaznaczone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete selected"
+          }
+        }
+      }
+    },
+    "Usłyszane": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heard"
+          }
+        }
+      }
+    },
+    "Użyj chmury": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the cloud"
+          }
+        }
+      }
+    },
+    "W Ustawieniach systemowych > Klawiatura ustaw klawisz 🌐 na \"Nic nie rób\", inaczej Fn otworzy też emoji lub dyktowanie systemowe.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In System Settings > Keyboard set the 🌐 key to \"Do Nothing\", otherwise Fn also opens emoji or system dictation."
+          }
+        }
+      }
+    },
+    "Wersja": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        }
+      }
+    },
+    "Wersja %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
+    },
+    "Witaj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome"
+          }
+        }
+      }
+    },
+    "Wklejanie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasting"
+          }
+        }
+      }
+    },
+    "Wpisu i nagrania nie da się przywrócić. Statystyki na pulpicie pozostaną bez zmian.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entry and its recording cannot be restored. Dashboard statistics stay unchanged."
+          }
+        }
+      }
+    },
+    "Wpisz słowo lub frazę.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a word or phrase."
+          }
+        }
+      }
+    },
+    "Wprowadzenie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onboarding"
+          }
+        }
+      }
+    },
+    "Wprowadzenie pokaże się przy następnym uruchomieniu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The onboarding will show on the next launch."
+          }
+        }
+      }
+    },
+    "Wróć do kroku Model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the Model step"
+          }
+        }
+      }
+    },
+    "Wstecz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "Wstrzymano": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        }
+      }
+    },
+    "Wszystkie te słowa są już w słowniku.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All these words are already in the dictionary."
+          }
+        }
+      }
+    },
+    "Wybierz plik słownika (JSON)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a dictionary file (JSON)"
+          }
+        }
+      }
+    },
+    "Wybierz pliki": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose files"
+          }
+        }
+      }
+    },
+    "Wybierz pliki audio lub wideo do transkrypcji": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose audio or video files to transcribe"
+          }
+        }
+      }
+    },
+    "Wycisz system podczas nagrywania": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute the system while recording"
+          }
+        }
+      }
+    },
+    "Wygląd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        }
+      }
+    },
+    "Tło okna": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window background"
+          }
+        }
+      }
+    },
+    "Zmierzch to spokojne, żywe jezioro o zachodzie słońca, gradient powoli się porusza, szkło pokazuje pulpit za oknem.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dusk is a calm, living lake at sunset, the gradient drifts slowly, Glass shows the desktop behind the window."
+          }
+        }
+      }
+    },
+    "Szkło": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glass"
+          }
+        }
+      }
+    },
+    "Gradient": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gradient"
+          }
+        }
+      }
+    },
+    "Zmierzch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dusk"
+          }
+        }
+      }
+    },
+    "Wyczyść wyszukiwanie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        }
+      }
+    },
+    "Wyczyść zakończone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear finished"
+          }
+        }
+      }
+    },
+    "Wykres: %@, %@, %lld dni": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chart: %1$@, %2$@, %#@days@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wykres: %1$@, %2$@, %#@days@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "few": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg dni"
+                    }
+                  },
+                  "many": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg dni"
+                    }
+                  },
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg dzień"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg dnia"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Wykrywaj automatycznie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detect automatically"
+          }
+        }
+      }
+    },
+    "Wymagane": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required"
+          }
+        }
+      }
+    },
+    "Wymagane. Po kliknięciu włącz Captylo na liście w Ustawieniach systemowych.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required. After clicking, turn on Captylo in the list in System Settings."
+          }
+        }
+      }
+    },
+    "Wypełniacze": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fillers"
+          }
+        }
+      }
+    },
+    "Wypróbuj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try it"
+          }
+        }
+      }
+    },
+    "Włącz dostęp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow access"
+          }
+        }
+      }
+    },
+    "Wznów": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        }
+      }
+    },
+    "Z pliku": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From a file"
+          }
+        }
+      }
+    },
+    "Zablokowane przez ograniczenia systemu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked by system restrictions."
+          }
+        }
+      }
+    },
+    "Zacznij dyktować, aby zobaczyć zaoszczędzony czas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start dictating to see the time you save"
+          }
+        }
+      }
+    },
+    "Zaimportowano %lld nowych pozycji.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Imported %lld new item."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Imported %lld new items."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaimportowano %lld nowe pozycje."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaimportowano %lld nowych pozycji."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaimportowano %lld nową pozycję."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaimportowano %lld nowych pozycji."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Zakończ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop"
+          }
+        }
+      }
+    },
+    "Zakończ Captylo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Captylo"
+          }
+        }
+      }
+    },
+    "Zakończ dyktowanie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop dictation"
+          }
+        }
+      }
+    },
+    "Zakończ nagrywanie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop recording"
+          }
+        }
+      }
+    },
+    "Zakres": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Range"
+          }
+        }
+      }
+    },
+    "Zamiana": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replacement"
+          }
+        }
+      }
+    },
+    "Zamiana na": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace with"
+          }
+        }
+      }
+    },
+    "Zamiany": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replacements"
+          }
+        }
+      }
+    },
+    "Zamknij": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "Zamknij starą wersję": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit the old version"
+          }
+        }
+      }
+    },
+    "Oszczędzone klawisze": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keystrokes saved"
+          }
+        }
+      }
+    },
+    "Zaoszczędzone naciśnięcia klawiszy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keystrokes saved"
+          }
+        }
+      }
+    },
+    "Zaoszczędzony czas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time saved"
+          }
+        }
+      }
+    },
+    "Nagrania": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorded"
+          }
+        }
+      }
+    },
+    "Najedź na dzień, żeby zobaczyć, ile tego dnia podyktowano.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hover over a day to see how much you dictated."
+          }
+        }
+      }
+    },
+    "Aktywność": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activity"
+          }
+        }
+      }
+    },
+    "Dni z rzędu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Days in a row"
+          }
+        }
+      }
+    },
+    "Słowa dziś": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words today"
+          }
+        }
+      }
+    },
+    "godz.": {
+      "comment": "Unit after the Pulpit's big saved-hours number",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "h"
+          }
+        }
+      }
+    },
+    "min": {
+      "comment": "Unit after the Pulpit's big saved-minutes number",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "min"
+          }
+        }
+      }
+    },
+    "%lld z %lld dni": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld of %2$lld days"
+          }
+        }
+      }
+    },
+    "%@, słowa: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, words: %2$lld"
+          }
+        }
+      }
+    },
+    "Ciemny i Jasny to ruchomy gradient w kolorach marki, Zmierzch to żywe jezioro o zachodzie słońca, a Gradient to spokojne niebo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark and Light are a moving gradient in the brand colours, Dusk is a living lake at sunset, and Gradient is a calm sky."
+          }
+        }
+      }
+    },
+    "Ciemny": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        }
+      }
+    },
+    "Przyciemnienie tła": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background dimming"
+          }
+        }
+      }
+    },
+    "Ciemniejsze tło za panelami. Domyślnie 10%.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Darkens the background behind the panels. Default 10%."
+          }
+        }
+      }
+    },
+    "Przydymienie paneli": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel smoke"
+          }
+        }
+      }
+    },
+    "Ciemniejsze szkło paneli i paska bocznego. Domyślnie 20%.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Darkens the glass of the panels and the sidebar. Default 20%."
+          }
+        }
+      }
+    },
+    "Jasny": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        }
+      }
+    },
+    "Zaplanowane": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled"
+          }
+        }
+      }
+    },
+    "Zapisano %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved %@."
+          }
+        }
+      }
+    },
+    "Zapisany mikrofon (niepodłączony)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved microphone (not connected)"
+          }
+        }
+      }
+    },
+    "Zapisuj historię": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save history"
+          }
+        }
+      }
+    },
+    "Zapisz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "Zapisz transkrypcję po zakończeniu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the transcript when finished"
+          }
+        }
+      }
+    },
+    "Zapisz klucz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save key"
+          }
+        }
+      }
+    },
+    "Zapisz zmianę": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save change"
+          }
+        }
+      }
+    },
+    "Zaznaczono: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected: %lld"
+          }
+        }
+      }
+    },
+    "Zezwól": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow"
+          }
+        }
+      }
+    },
+    "Zmień": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
+          }
+        }
+      }
+    },
+    "Zwiń": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse"
+          }
+        }
+      }
+    },
+    "macOS czeka na Twoją zgodę w Ustawieniach systemowych > Ogólne > Logowanie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS is waiting for your approval in System Settings > General > Login Items."
+          }
+        }
+      }
+    },
+    "macOS pyta o nie raz. Bez nich Captylo nie usłyszy Cię ani nie wklei tekstu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS asks for them once. Without them Captylo cannot hear you or paste the text."
+          }
+        }
+      }
+    },
+    "no więc yyy jutro o dziesiątej mam spotkanie z Martą w sprawie oferty, trzeba przygotować wycenę, to znaczy dwie wyceny, i wysłać jej maila do piątku, a i jeszcze zadzwonić do księgowej": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "so um tomorrow at ten I have a meeting with Marta about the offer, I need to prepare a quote, I mean two quotes, and email her by Friday, oh and also call the accountant"
+          }
+        }
+      }
+    },
+    "np. Captylo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Captylo"
+          }
+        }
+      }
+    },
+    "np. kap tylo, kaptilo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. kap tylo, kaptilo"
+          }
+        }
+      }
+    },
+    "poprzednia aplikacja": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "previous app"
+          }
+        }
+      }
+    },
+    "razem %@ · śr. %@/dzień": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "total %1$@ · avg %2$@/day"
+          }
+        }
+      }
+    },
+    "sk-or-...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sk-or-..."
+          }
+        }
+      }
+    },
+    "wav, mp3, m4a, aiff, aac, flac, caf, mp4, mov": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "wav, mp3, m4a, aiff, aac, flac, caf, mp4, mov"
+          }
+        }
+      }
+    },
+    "xi-...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "xi-..."
+          }
+        }
+      }
+    },
+    "Łącznie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total"
+          }
+        }
+      }
+    },
+    "śr. %@/dzień · najlepiej %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "avg %1$@/day · best %2$@"
+          }
+        }
+      }
+    },
+    "„%@” jest już używane w innej regule.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” is already used in another rule."
+          }
+        }
+      }
+    },
+    "„%@” jest już w słowniku.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” is already in the dictionary."
+          }
+        }
+      }
+    },
+    "Baza historii nie jest dostępna, więc import nie zostałby zapisany.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The history database is not available, so the import would not be saved."
+          }
+        }
+      }
+    },
+    "Captylo przeniesie historię transkrypcji, wersje poprawione przez AI, statystyki i nagrania. Nagrania są podlinkowane, więc nie zajmują dodatkowego miejsca na dysku. Dane starej aplikacji zostają nietknięte. Import można bezpiecznie powtórzyć: wpisy, które już są w Captylo, zostaną pominięte.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo will bring over the transcription history, the AI-improved versions, the statistics and the recordings. Recordings are linked, so they take no extra disk space. The old app's data stays untouched. The import can be repeated safely: entries already in Captylo are skipped."
+          }
+        }
+      }
+    },
+    "Dane": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
+          }
+        }
+      }
+    },
+    "Dodane wpisy: %@ · z AI: %@ · nagrania: %@ · pominięte: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries added: %1$@ · with AI: %2$@ · recordings: %3$@ · skipped: %4$@"
+          }
+        }
+      }
+    },
+    "Działa inna kopia Captylo z tą samą bazą. Zamknij ją i spróbuj ponownie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another copy of Captylo is using the same database. Quit it and try again."
+          }
+        }
+      }
+    },
+    "Historia, wersje AI, statystyki i nagrania ze starej aplikacji.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History, AI versions, statistics and recordings from the old app."
+          }
+        }
+      }
+    },
+    "Import przerwany. Zapisane wpisy zostają, kolejny import dokończy resztę.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import stopped. Saved entries stay; the next import finishes the rest."
+          }
+        }
+      }
+    },
+    "Import ze starego VocaType": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import from the old VocaType"
+          }
+        }
+      }
+    },
+    "Importuj": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import"
+          }
+        }
+      }
+    },
+    "Importuj ponownie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import again"
+          }
+        }
+      }
+    },
+    "Importuję: %@ z %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importing: %1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "Nie udało się odczytać starej bazy: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the old database: %@"
+          }
+        }
+      }
+    },
+    "Nie udało się zapisać zaimportowanych wpisów: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save the imported entries: %@"
+          }
+        }
+      }
+    },
+    "Nie znaleziono danych starego VocaType na tym Macu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No data from the old VocaType was found on this Mac."
+          }
+        }
+      }
+    },
+    "Przerwij": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop"
+          }
+        }
+      }
+    },
+    "Sprawdzam dane starej wersji…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking the old version's data…"
+          }
+        }
+      }
+    },
+    "Transkrypcje: %@ · słowa: %@ · nagrania: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcriptions: %1$@ · words: %2$@ · recordings: %3$@"
+          }
+        }
+      }
+    },
+    "Wpisy bez nagrania (brak pliku, inny dysk lub limit usuwania): %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries without a recording (file missing, another disk or deletion limit): %@"
+          }
+        }
+      }
+    },
+    "Zaimportowano %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported %@"
+          }
+        }
+      }
+    },
+    "Zaimportować dane ze starego VocaType?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import data from the old VocaType?"
+          }
+        }
+      }
+    },
+    "Zamknij najpierw starą aplikację (%@), a potem spróbuj ponownie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit the old app (%@) first, then try again."
+          }
+        }
+      }
+    },
+    "Captylo Pro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo Pro"
+          }
+        }
+      }
+    },
+    "Postaw kawę twórcy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buy the maker a coffee"
+          }
+        }
+      }
+    },
+    "Transkrypcja w chmurze i tryby AI: e-mail, lista zadań, tekst po angielsku.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud transcription and AI modes: email, to-do list, English text."
+          }
+        }
+      }
+    },
+    "Captylo jest darmowe i takie zostanie. Jeśli oszczędza Ci czas, postaw kawę za 20 zł.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo is free and will stay free. If it saves you time, buy a coffee for 20 zł."
+          }
+        }
+      }
+    },
+    "Zobacz Pro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See Pro"
+          }
+        }
+      }
+    },
+    "Postaw kawę": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buy a coffee"
+          }
+        }
+      }
+    },
+    "Ukryj na dwa tygodnie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide for two weeks"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

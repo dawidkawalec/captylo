@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <title>Captylo - menu bar glyph (idle)</title>
+  <!--
+    Template image: pure black on transparent; macOS tints it for light and dark menu bars.
+    18 pt canvas (@1x = 18 px, @2x = 36 px, 1 unit = 0.5 pt).
+    A solid C (annulus centre 20.5,18, outer radius 14.5, inner radius 8.5, mouth +/-38 deg,
+    flat radial terminals) sliced into four vertical stripes on the waveform pitch:
+    stripes x 6-10 / 12-16 / 18-22 / 24-28 (4 units wide, 2-unit slits), so at @1x every
+    stripe is exactly 2 px wide with 1 px slits. The outer contour stays a true circle, so the
+    glyph reads as a round C at 18 pt (not as a "[:" bracket or a loading spinner), and the
+    slits keep the waveform. Stroke weight ~3 pt, close to SF Symbols regular in the menu bar.
+    Idle: the mouth stays empty. The rec dot appears only while recording
+    (menubar-recording.svg), so the idle glyph never competes with the orange mic indicator.
+  -->
+  <defs>
+    <clipPath id="stripes">
+      <rect x="6" y="0" width="4" height="36"/>
+      <rect x="12" y="0" width="4" height="36"/>
+      <rect x="18" y="0" width="4" height="36"/>
+      <rect x="24" y="0" width="4" height="36"/>
+    </clipPath>
+  </defs>
+  <g fill="#000000">
+    <path clip-path="url(#stripes)" d="M31.926 9.073 A14.5 14.5 0 1 0 31.926 26.927 L27.198 23.233 A8.5 8.5 0 1 1 27.198 12.767 Z"/>
+  </g>
+</svg>

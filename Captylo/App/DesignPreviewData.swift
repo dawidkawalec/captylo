@@ -1,0 +1,275 @@
+import Foundation
+import Security
+import SwiftData
+
+/// Fake world for `--design-preview`: a wiped defaults suite, an in-memory store with 42
+/// dictations over the last 14 days, a temp `dictionary.json`, a seeded key store, the Parakeet
+/// status "ready" and a small OpenRouter model list. Nothing here touches the user's data.
+@MainActor
+enum DesignPreviewData {
+    /// Throwaway defaults domain, wiped at every preview start.
+    static let suiteName = "com.captylo.app.design-preview"
+    /// Keychain service name used only if someone saves a key inside the preview.
+    static let keyService = "com.captylo.app.design-preview"
+    static let dictationCount = 42
+    static let dayRange = 14
+
+    // MARK: AppState
+
+    /// Builds the preview `AppState`. Call before anything reads `AppSettings()` (AppDelegate.init).
+    static func makeAppState() -> AppState {
+        let defaults = freshDefaults()
+        let settings = AppSettings(defaults: defaults)
+        seed(settings)
+
+        let container: ModelContainer
+        do {
+            container = try Store.makeInMemoryContainer()
+        } catch {
+            fatalError("Design preview: in-memory store failed: \(error)")
+        }
+
+        let keyStore = KeyStore(
+            service: keyService,
+            seed: [KeyStore.Account.openRouter: "sk-or-v1-design-preview-0000000000"],
+            reader: { _, _ in KeyStore.ReadResult(value: nil, status: errSecItemNotFound) }
+        )
+
+        let overrides = AppStateOverrides(
+            modelContainer: container,
+            dictionaryURL: writeDictionary(),
+            keyStore: keyStore,
+            systemMuteDefaults: defaults,
+            pinnedModelStatus: .ready,
+            pinnedAccessibilityTrust: true,
+            isDesignPreview: true
+        )
+        return AppState(settings: settings, overrides: overrides)
+    }
+
+    /// Inserts the sample history (the dashboard and Historia read it through `Database`).
+    static func populate(_ database: Database, now: Date = Date()) async {
+        for record in sampleRecords(now: now) {
+            do {
+                try await database.save(record)
+            } catch {
+                Log.data.error("Design preview: sample save failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    // MARK: Defaults
+
+    private static func freshDefaults() -> UserDefaults {
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            fatalError("Design preview: cannot open the defaults suite")
+        }
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
+    }
+
+    private static func seed(_ settings: AppSettings) {
+        if let style = WindowBackgroundStyle.previewOverride {
+            settings.windowBackground = style
+        }
+        settings.onboardingDone = true
+        settings.aiEnabled = true
+        settings.aiModel = "openai/gpt-4.1-mini"
+        // Built-ins plus one custom mode; "Czyszczenie" stays active.
+        settings.aiModes = BuiltInAIModes.all + [sampleCustomMode]
+        settings.aiActiveModeID = BuiltInAIModes.cleanupID
+        settings.dashboardRange = dayRange
+        settings.openRouterModelsCache = try? JSONEncoder().encode(openRouterModels)
+        settings.openRouterModelsCachedAt = Date()
+    }
+
+    // MARK: Dictionary
+
+    private static func writeDictionary() -> URL {
+        let folder = FileManager.default.temporaryDirectory
+            .appending(path: "captylo-design-preview-\(ProcessInfo.processInfo.processIdentifier)", directoryHint: .isDirectory)
+        let url = folder.appending(path: "dictionary.json")
+        let learnedRule = ReplacementRule(triggers: ["supa bejs"], replacement: "Supabase")
+        let data = DictionaryData(
+            vocabulary: ["Captylo", "Parakeet", "Notion", "Kubernetes", "Figma", "Dawid Kawalec", "PRD", "Supabase", "Honcho"],
+            replacements: [
+                ReplacementRule(triggers: ["kapytlo", "kaptylo"], replacement: "Captylo"),
+                ReplacementRule(triggers: ["pe er de"], replacement: "PRD"),
+                ReplacementRule(triggers: ["noszyn"], replacement: "Notion"),
+                learnedRule,
+            ]
+        )
+        // Sample self-learning memory next to it (AppState reads learning.json from the same folder).
+        // Five days of watched pastes, fewer fixes every day ("Poprawki/100 słów" on Pulpit: 2.4).
+        let editStats = (0..<5).map { offset in
+            DailyEditStat(
+                day: SelfLearning.dayKey(Date(timeIntervalSinceNow: -Double(4 - offset) * 86_400)),
+                words: 500,
+                changed: 16 - offset * 2
+            )
+        }
+        var learning = LearningData(learned: [
+            LearnedTerm(
+                pair: TermCorrection(misheard: "supa bejs", correct: "Supabase"),
+                source: .edit,
+                learnedAt: Date(timeIntervalSinceNow: -3_600),
+                ruleID: learnedRule.id,
+                addedToVocabulary: true
+            ),
+            LearnedTerm(
+                pair: TermCorrection(misheard: "honczo", correct: "Honcho"),
+                source: .voice,
+                addedToVocabulary: true
+            ),
+        ])
+        learning.editStats = editStats
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            try encoder.encode(data).write(to: url, options: .atomic)
+            encoder.dateEncodingStrategy = .iso8601
+            try encoder.encode(learning).write(to: folder.appending(path: "learning.json"), options: .atomic)
+        } catch {
+            Log.data.error("Design preview: dictionary write failed: \(error.localizedDescription, privacy: .public)")
+        }
+        return url
+    }
+
+    // MARK: OpenRouter fixture
+
+    static let openRouterModels: [OpenRouterModel] = [
+        OpenRouterModel(id: "openai/gpt-4.1-mini", name: "OpenAI: GPT-4.1 Mini", promptPrice: 0.0000004, completionPrice: 0.0000016, contextLength: 1_047_576),
+        OpenRouterModel(id: "openai/gpt-oss-120b", name: "OpenAI: gpt-oss-120b", promptPrice: 0.00000009, completionPrice: 0.00000045, contextLength: 131_072, supportsReasoning: true),
+        OpenRouterModel(id: "google/gemini-2.5-flash-lite", name: "Google: Gemini 2.5 Flash Lite", promptPrice: 0.0000001, completionPrice: 0.0000004, contextLength: 1_048_576),
+        OpenRouterModel(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5", promptPrice: 0.000001, completionPrice: 0.000005, contextLength: 200_000),
+        OpenRouterModel(id: "mistralai/mistral-small-3.2-24b-instruct", name: "Mistral: Mistral Small 3.2 24B", promptPrice: 0.00000005, completionPrice: 0.0000001, contextLength: 131_072),
+        OpenRouterModel(id: "meta-llama/llama-3.3-70b-instruct", name: "Meta: Llama 3.3 70B Instruct", promptPrice: 0.00000013, completionPrice: 0.0000004, contextLength: 131_072),
+    ]
+
+    // MARK: History
+
+    private static let texts: [String] = [
+        "Dobry pomysł na dzisiejsze spotkanie. Zaczniemy od przeglądu postępów w projekcie, a następnie omówimy kolejne kroki.",
+        "Cześć Marta, podsyłam poprawioną wersję oferty. Daj znać, czy zakres prac się zgadza.",
+        "Przypomnij mi jutro o dziesiątej, żeby zadzwonić do księgowej w sprawie faktur za wrzesień.",
+        "Wdrożenie na staging przeszło bez błędów. Proszę o testy formularza kontaktowego do końca dnia.",
+        "Lista zakupów: mleko owsiane, chleb żytni, pomidory, bazylia i dwa awokado.",
+        "W nowej wersji aplikacji skrót klawiszowy działa także w trybie pełnoekranowym.",
+        "Dziękuję za wczorajszą rozmowę. W załączniku przesyłam notatkę ze spotkania oraz harmonogram.",
+        "Musimy uprościć onboarding. Użytkownik powinien nagrać pierwsze zdanie w mniej niż minutę.",
+        "Zamówienie numer 4 8 2 1 zostało wysłane kurierem. Przewidywany czas dostawy to dwa dni robocze.",
+        "Plan na weekend: rower nad jeziorem w sobotę rano, a w niedzielę obiad u rodziców.",
+        "Kod wygląda dobrze, ale dodałbym test dla pustego pliku i dla bardzo długiego nagrania.",
+        "Ustalmy budżet kampanii na październik i sprawdźmy, które reklamy konwertowały najlepiej.",
+        "Hej, będę dziesięć minut spóźniony, zacznijcie beze mnie.",
+        "Podsumowanie sprintu: zamknęliśmy dwanaście zadań, trzy przechodzą na kolejny tydzień.",
+    ]
+
+    /// What AI did with a sample text: a version in some mode, or a note why there is none.
+    private struct SampleAI {
+        var mode: AIMode
+        var text: String?
+        var note: String?
+    }
+
+    /// Keyed by the index into `texts`; the others were dictated with AI off.
+    /// Index 0 is the newest row, so the `main-historia` preview shows a skipped row with its
+    /// reason above the fold.
+    private static var sampleAI: [Int: SampleAI] {
+        [
+            0: SampleAI(mode: BuiltInAIModes.cleanup, note: EnhancementFailure.deadline(seconds: 3).note),
+            1: SampleAI(mode: BuiltInAIModes.cleanup, text: "Cześć Marta, przesyłam poprawioną wersję oferty. Daj znać, czy zakres prac się zgadza."),
+            2: SampleAI(mode: BuiltInAIModes.tasks, text: "- [ ] Jutro o 10:00 zadzwonić do księgowej w sprawie faktur za wrzesień"),
+            3: SampleAI(mode: BuiltInAIModes.english, text: "The staging deployment went through without errors. Please test the contact form by the end of the day."),
+            4: SampleAI(mode: BuiltInAIModes.cleanup, note: EnhancementSkip.noKey.note),
+            6: SampleAI(mode: BuiltInAIModes.email, text: "Dzień dobry,\n\ndziękuję za wczorajszą rozmowę. W załączniku przesyłam notatkę ze spotkania oraz harmonogram.\n\nPozdrawiam"),
+            7: SampleAI(mode: BuiltInAIModes.organize, text: "Onboarding do uproszczenia:\n- użytkownik nagrywa pierwsze zdanie w mniej niż minutę"),
+            9: SampleAI(mode: BuiltInAIModes.cleanup, note: EnhancementFailure.http(status: 401).note),
+            10: SampleAI(mode: BuiltInAIModes.cleanup, note: EnhancementFailure.rejected(.tooShort).note),
+            12: SampleAI(mode: BuiltInAIModes.cleanup, text: "Hej, spóźnię się około dziesięciu minut. Zacznijcie beze mnie."),
+        ]
+    }
+
+    /// Row the `main-historia` preview opens: the newest one whose AI version came from a rewrite
+    /// mode (the original and the AI card then differ visibly), else the newest with any AI text.
+    static func historyRowToExpand(in records: [DictationRecord]) -> UUID? {
+        let withAI = records.filter { $0.enhancedText != nil }
+        let rewrite = withAI.first { $0.enhancementMode != nil && $0.enhancementMode != BuiltInAIModes.cleanup.name }
+        return (rewrite ?? withAI.first)?.id
+    }
+
+    /// A user-made mode next to the built-ins, so Modele shows a custom row too.
+    static var sampleCustomMode: AIMode {
+        AIMode(
+            id: UUID(uuidString: "0CA91000-0000-4000-8000-0000000000A1")!,
+            name: "Post na LinkedIn",
+            symbol: "text.bubble",
+            prompt: BuiltInAIModes.customTemplate.replacingOccurrences(
+                of: "describe the result you want here, for example \"a short LinkedIn post\"",
+                with: "a short LinkedIn post in a friendly, professional tone"
+            ),
+            kind: .rewrite,
+            deadlineSeconds: 8
+        )
+    }
+
+    /// 42 records spread over the last 14 days (more on weekdays), newest first.
+    static func sampleRecords(now: Date, calendar: Calendar = .current) -> [DictationRecord] {
+        var generator = SeededGenerator(seed: 0xCA97_1105)
+        var records: [DictationRecord] = []
+        records.reserveCapacity(dictationCount)
+        for index in 0..<dictationCount {
+            // Day 0 is today; a slight bias toward recent days makes the trend chart rise.
+            let day = min(dayRange - 1, Int(Double(index) / Double(dictationCount) * Double(dayRange)))
+            let hour = 8 + Int(generator.next() % 11)
+            let minute = Int(generator.next() % 60)
+            let startOfDay = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -day, to: now) ?? now)
+            var createdAt = calendar.date(bySettingHour: hour, minute: minute, second: 0, of: startOfDay) ?? startOfDay
+            if createdAt > now {
+                createdAt = now.addingTimeInterval(-Double(index + 1) * 600)
+            }
+            let textIndex = index % texts.count
+            let text = texts[textIndex]
+            let ai = sampleAI[textIndex]
+            let enhanced = ai?.text
+            let words = WordCounter.count(enhanced ?? text)
+            // About 150 words per minute of speech plus a little breathing room.
+            let duration = Double(words) / 2.4 + Double(generator.next() % 30) / 10
+            let isFile = index % 13 == 5
+            records.append(DictationRecord(
+                createdAt: createdAt,
+                text: text,
+                enhancedText: enhanced,
+                source: isFile ? .file : .dictation,
+                audioDuration: (duration * 10).rounded() / 10,
+                language: "pl",
+                modelName: "Parakeet v3",
+                transcriptionMs: 180 + Int(generator.next() % 220),
+                enhancementModel: enhanced == nil ? nil : "openai/gpt-4.1-mini",
+                enhancementMs: enhanced == nil ? nil : 620 + Int(generator.next() % 500),
+                enhancementMode: ai?.mode.name,
+                enhancementNote: ai?.note,
+                wordCount: words
+            ))
+        }
+        return records
+    }
+}
+
+/// Deterministic SplitMix64 so every preview run shows the same history.
+private struct SeededGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        state = seed
+    }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var value = state
+        value = (value ^ (value >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        value = (value ^ (value >> 27)) &* 0x94D0_49BB_1331_11EB
+        return value ^ (value >> 31)
+    }
+}

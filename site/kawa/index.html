@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Postaw kawę twórcy Captylo</title>
+<meta name="description" content="Captylo jest darmowe i takie zostanie. Jeśli oszczędza Ci czas, postaw kawę za 20 zł. Jednorazowo, bez subskrypcji.">
+<meta name="theme-color" content="#10272C">
+<link rel="canonical" href="https://captylo.com/kawa/">
+<link rel="icon" href="../favicon.ico?v=20260928c" sizes="any">
+<link rel="icon" href="../assets/brand/icon.svg?v=20260928c" type="image/svg+xml">
+<link rel="icon" href="../assets/icon-32.png?v=20260928c" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png?v=20260928c" sizes="180x180">
+<link rel="stylesheet" href="../assets/css/site.css?v=20260930a">
+<script src="../assets/js/grainient.js?v=20260930a" defer></script>
+<style>
+.kawa{margin:var(--edge);min-height:calc(100svh - 2 * var(--edge));border-radius:var(--r-tide);display:grid;place-items:center;padding:48px 16px}
+.kawa-card{width:min(520px,100%);text-align:center;padding:clamp(28px,6vw,48px)}
+.kawa-card .icon{width:96px;height:auto;margin:0 auto 26px;filter:drop-shadow(0 18px 28px rgba(4,18,21,.55))}
+.kawa-card h1{font-weight:800;font-size:clamp(30px,5vw,40px);line-height:1.05;letter-spacing:-.035em;color:#fff}
+.kawa-card p{margin-top:16px;font-size:17px;line-height:1.6;color:var(--w2)}
+.kawa-card .en{font-size:15px;color:var(--w3)}
+.kawa-card .btn{margin-top:28px}
+.kawa-card .back{display:inline-block;margin-top:22px;font-size:15px;color:var(--w2);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.3)}
+.kawa-card .back:hover{color:#fff}
+</style>
+</head>
+<body>
+<main class="tide kawa" data-grainient="dark" data-seed="33">
+  <div class="kawa-card glass">
+    <img class="icon" src="../assets/brand/icon.svg" alt="" width="1024" height="1024">
+    <h1>Postaw kawę twórcy Captylo</h1>
+    <p>Captylo jest darmowe i takie zostanie. Jeśli oszczędza Ci czas, postaw kawę za 20 zł. Jednorazowo, bez subskrypcji i bez zakładania konta.</p>
+    <p class="en" lang="en">Buy the maker of Captylo a coffee: a one-off 20 zł (about $5), no subscription.</p>
+    <!-- Stripe Payment Link: when it exists, replace this span with
+         <a class="btn btn-salt" href="https://buy.stripe.com/...">Postaw kawę za 20 zł</a> -->
+    <span class="btn btn-salt is-disabled" aria-disabled="true">Płatność ruszy wkrótce</span>
+    <br>
+    <a class="back" href="../">Wróć na captylo.com</a>
+  </div>
+</main>
+</body>
+</html>

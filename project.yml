@@ -1,0 +1,129 @@
+name: Captylo
+options:
+  bundleIdPrefix: com.captylo
+  deploymentTarget:
+    macOS: "14.4"
+  xcodeVersion: "26.0"
+  developmentLanguage: pl
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  groupSortPosition: top
+  minimumXcodeGenVersion: "2.40.0"
+
+packages:
+  FluidAudio:
+    url: https://github.com/FluidInference/FluidAudio.git
+    exactVersion: 0.17.4
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_HARDENED_RUNTIME: YES
+    ENABLE_APP_SANDBOX: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+    ARCHS: arm64
+    ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+  configs:
+    Debug:
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      SWIFT_COMPILATION_MODE: wholemodule
+
+targets:
+  Captylo:
+    type: application
+    platform: macOS
+    sources:
+      - path: Captylo
+        excludes:
+          - "**/*.md"
+    dependencies:
+      - package: FluidAudio
+    entitlements:
+      path: Captylo/Captylo.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.device.audio-input: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-only: true
+    info:
+      path: Captylo/Info.plist
+      properties:
+        CFBundleName: Captylo
+        CFBundleDisplayName: Captylo
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: pl
+        CFBundleLocalizations: [pl, en]
+        LSApplicationCategoryType: public.app-category.productivity
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSUIElement: false
+        NSHumanReadableCopyright: "Copyright 2026 Dawid Kawalec"
+        NSMicrophoneUsageDescription: Captylo nagrywa Twój głos, aby zamienić go na tekst.
+        NSSupportsAutomaticTermination: false
+        NSSupportsSuddenTermination: false
+        ITSAppUsesNonExemptEncryption: false
+        # Bundled Manrope + Inter (Resources/Fonts, SIL OFL), registered at launch.
+        ATSApplicationFontsPath: "."
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Audio
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.audio, public.movie]
+        CFBundleURLTypes:
+          - CFBundleURLName: com.captylo.app
+            CFBundleURLSchemes: [captylo]
+    settings:
+      base:
+        PRODUCT_NAME: Captylo
+        PRODUCT_MODULE_NAME: Captylo
+        PRODUCT_BUNDLE_IDENTIFIER: com.captylo.app
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        GENERATE_INFOPLIST_FILE: NO
+        COMBINE_HIDPI_IMAGES: YES
+    scheme:
+      testTargets:
+        - CaptyloTests
+      gatherCoverageData: false
+
+  CaptyloTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: CaptyloTests
+    dependencies:
+      - target: Captylo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.captylo.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Captylo.app/Contents/MacOS/Captylo"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  Captylo:
+    build:
+      targets:
+        Captylo: all
+        CaptyloTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - CaptyloTests
+    archive:
+      config: Release

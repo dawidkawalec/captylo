@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="215 212 600 600" width="600" height="600">
+  <title>Captylo - mark</title>
+  <!--
+    The Bar Arc C symbol alone, transparent background, for light surfaces (web, docs,
+    README, onboarding). Pills carry the mark-ink gradient (Indigo -> Violet -> Mauve),
+    the rec dot stays #FF3B30. Same geometry as icon.svg (1024 grid), cropped to a
+    600x600 square centred on the mark. For dark or photographic backgrounds use mark-white.svg.
+  -->
+  <defs>
+    <linearGradient id="ink" x1="0" y1="234" x2="0" y2="790" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3A3993"/>
+      <stop offset="0.55" stop-color="#6F6BD8"/>
+      <stop offset="1" stop-color="#C97DC0"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+  </defs>
+  <g fill="url(#ink)">
+    <rect x="270" y="358.8" width="40" height="306.3" rx="20"/>
+    <rect x="326" y="296.8" width="40" height="143.6" rx="20"/>
+    <rect x="326" y="583.6" width="40" height="143.6" rx="20"/>
+    <rect x="382" y="261.2" width="40" height="103.5" rx="20"/>
+    <rect x="382" y="659.3" width="40" height="103.5" rx="20"/>
+    <rect x="438" y="241.5" width="40" height="91.6" rx="20"/>
+    <rect x="438" y="690.9" width="40" height="91.6" rx="20"/>
+    <rect x="494" y="234.1" width="40" height="88.1" rx="20"/>
+    <rect x="494" y="701.8" width="40" height="88.1" rx="20"/>
+    <rect x="550" y="238.2" width="40" height="90.0" rx="20"/>
+    <rect x="550" y="695.8" width="40" height="90.0" rx="20"/>
+    <rect x="606" y="254.2" width="40" height="106.8" rx="20"/>
+    <rect x="606" y="663.0" width="40" height="106.8" rx="20"/>
+    <rect x="662" y="284.7" width="40" height="142.9" rx="20"/>
+    <rect x="662" y="596.5" width="40" height="142.9" rx="20"/>
+  </g>
+  <circle cx="738" cy="512" r="34" fill="#FF3B30" opacity="0.4" filter="url(#dotGlow)"/>
+  <circle cx="738" cy="512" r="22" fill="url(#dotFill)"/>
+</svg>

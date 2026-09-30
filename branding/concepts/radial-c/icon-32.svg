@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Captylo - app icon, 32px master (Radial C)</title>
+  <!--
+    Hand-tuned master for 32x32 renders (icon_32x32, icon_16x16@2x). Do not render at other sizes.
+    Same plate and the same 22 bar angles / rec dot position as icon.svg, but tuned for 1px = 32 units:
+    - bars 44 wide instead of 32 (1.4px instead of 1px), 10% longer, flat white (no shadow, bloom
+      or glass shading: those grey the mark out at 32px). Their inner ends now merge into one
+      clean counter while the outer ends keep the waveform texture, so the C reads first.
+    - rec dot r 40 (2.5px) with a tighter glow.
+    Tested against a pixel-quantized build (vertical/horizontal 2px bars with 1px gaps) and a
+    sparse 11-bar radial build: both read as a loading spinner at 1:1, this one reads as a C.
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="540" cy="500" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="64"/>
+  </g>
+
+  <g fill="#FFFFFF">
+    <rect x="544" y="261.4" width="44" height="48.4" rx="22" transform="rotate(28.957 566 504)"/>
+    <rect x="544" y="254.9" width="44" height="59.4" rx="22" transform="rotate(16.435 566 504)"/>
+    <rect x="544" y="236.7" width="44" height="90.2" rx="22" transform="rotate(3.913 566 504)"/>
+    <rect x="544" y="252.3" width="44" height="63.8" rx="22" transform="rotate(-8.609 566 504)"/>
+    <rect x="544" y="222.4" width="44" height="114.4" rx="22" transform="rotate(-21.13 566 504)"/>
+    <rect x="544" y="244.5" width="44" height="77" rx="22" transform="rotate(-33.652 566 504)"/>
+    <rect x="544" y="208.1" width="44" height="138.6" rx="22" transform="rotate(-46.174 566 504)"/>
+    <rect x="544" y="235.4" width="44" height="92.4" rx="22" transform="rotate(-58.696 566 504)"/>
+    <rect x="544" y="226.3" width="44" height="107.8" rx="22" transform="rotate(-71.217 566 504)"/>
+    <rect x="544" y="197.7" width="44" height="156.2" rx="22" transform="rotate(-83.739 566 504)"/>
+    <rect x="544" y="221.1" width="44" height="116.6" rx="22" transform="rotate(-96.261 566 504)"/>
+    <rect x="544" y="195.1" width="44" height="160.6" rx="22" transform="rotate(-108.783 566 504)"/>
+    <rect x="544" y="234.1" width="44" height="94.6" rx="22" transform="rotate(-121.304 566 504)"/>
+    <rect x="544" y="209.4" width="44" height="136.4" rx="22" transform="rotate(-133.826 566 504)"/>
+    <rect x="544" y="243.2" width="44" height="79.2" rx="22" transform="rotate(-146.348 566 504)"/>
+    <rect x="544" y="221.1" width="44" height="116.6" rx="22" transform="rotate(-158.87 566 504)"/>
+    <rect x="544" y="251" width="44" height="66" rx="22" transform="rotate(-171.391 566 504)"/>
+    <rect x="544" y="235.4" width="44" height="92.4" rx="22" transform="rotate(-183.913 566 504)"/>
+    <rect x="544" y="257.5" width="44" height="55" rx="22" transform="rotate(-196.435 566 504)"/>
+    <rect x="544" y="249.7" width="44" height="68.2" rx="22" transform="rotate(-208.957 566 504)"/>
+    <rect x="544" y="264" width="44" height="44" rx="22" transform="rotate(-221.478 566 504)"/>
+    <rect x="544" y="264.8" width="44" height="44" rx="22" transform="rotate(-234 566 504)"/>
+  </g>
+  <circle cx="741.72" cy="376.33" r="56" fill="#FF3B30" opacity="0.45" filter="url(#dotGlow)"/>
+  <circle cx="741.72" cy="376.33" r="40" fill="#FF3B30"/>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Foreground layer: the Bar Arc C pills, flat white; Liquid Glass adds material and light.
+       Geometry = icon.svg mapped from the 824 body onto the full 1024 layer canvas. -->
+  <g fill="#FFFFFF">
+    <rect x="211.26" y="321.66" width="49.71" height="380.69" rx="24.85"/>
+    <rect x="280.85" y="244.58" width="49.71" height="178.47" rx="24.85"/>
+    <rect x="280.85" y="600.96" width="49.71" height="178.47" rx="24.85"/>
+    <rect x="350.45" y="200.37" width="49.71" height="128.57" rx="24.85"/>
+    <rect x="350.45" y="695.06" width="49.71" height="128.57" rx="24.85"/>
+    <rect x="420.04" y="175.80" width="49.71" height="113.88" rx="24.85"/>
+    <rect x="420.04" y="734.32" width="49.71" height="113.88" rx="24.85"/>
+    <rect x="489.63" y="166.67" width="49.71" height="109.43" rx="24.85"/>
+    <rect x="489.63" y="747.91" width="49.71" height="109.43" rx="24.85"/>
+    <rect x="559.22" y="171.71" width="49.71" height="111.83" rx="24.85"/>
+    <rect x="559.22" y="740.46" width="49.71" height="111.83" rx="24.85"/>
+    <rect x="628.82" y="191.61" width="49.71" height="132.73" rx="24.85"/>
+    <rect x="628.82" y="699.66" width="49.71" height="132.73" rx="24.85"/>
+    <rect x="698.41" y="229.48" width="49.71" height="177.55" rx="24.85"/>
+    <rect x="698.41" y="616.97" width="49.71" height="177.55" rx="24.85"/>
+  </g>
+</svg>

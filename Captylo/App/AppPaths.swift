@@ -1,0 +1,49 @@
+import FluidAudio
+import Foundation
+
+/// Every on-disk location the app uses. Audio rows store only `<id>.wav`; resolve it here.
+enum AppPaths {
+    static let folderName = "Captylo"
+    static let storeFileName = "Captylo.store"
+
+    /// Environment variable that points the whole data folder somewhere else (support and
+    /// migration checks on a copy of the store). Legacy migration is skipped while it is set.
+    static let dataDirectoryOverrideKey = "CAPTYLO_DATA_DIR"
+
+    /// The override folder from `CAPTYLO_DATA_DIR`, nil for a normal run.
+    static let dataDirectoryOverride: URL? = {
+        guard let path = ProcessInfo.processInfo.environment[dataDirectoryOverrideKey], !path.isEmpty else { return nil }
+        return URL(filePath: (path as NSString).expandingTildeInPath, directoryHint: .isDirectory)
+    }()
+
+    /// `~/Library/Application Support/Captylo/` (or `CAPTYLO_DATA_DIR`).
+    static let dataDirectory: URL = dataDirectoryOverride ?? URL.applicationSupportDirectory
+        .appending(path: folderName, directoryHint: .isDirectory)
+
+    /// SwiftData store (`-wal` / `-shm` live next to it).
+    static var store: URL { dataDirectory.appending(path: storeFileName) }
+
+    static var dictionaryJSON: URL { dataDirectory.appending(path: "dictionary.json") }
+    /// Self-learning memory (candidates, learned terms, style), next to the dictionary.
+    static var learningJSON: URL { dataDirectory.appending(path: "learning.json") }
+
+    static var recordings: URL { dataDirectory.appending(path: "Recordings", directoryHint: .isDirectory) }
+
+    static func recordingURL(for id: UUID) -> URL {
+        recordings.appending(path: "\(id.uuidString).wav")
+    }
+
+    static func recordingURL(fileName: String) -> URL {
+        recordings.appending(path: fileName)
+    }
+
+    /// Creates the data and recordings directories (call before opening the store).
+    static func ensureDirectories() throws {
+        for directory in [dataDirectory, recordings] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+    }
+
+    /// `~/Library/Application Support/FluidAudio/Models/parakeet-tdt-0.6b-v3` (shared with the old app, gotcha 23).
+    static var parakeetModelDir: URL { AsrModels.defaultCacheDirectory(for: .v3) }
+}

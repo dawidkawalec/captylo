@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <title>Captylo - menu bar glyph (idle, Bar Arc)</title>
+  <!--
+    Template image: pure black on transparent; macOS tints it for light and dark menu bars.
+    18 pt canvas (@1x = 18 px, @2x = 36 px, 1 unit = 0.5 pt).
+    The Bar Arc C in 4 columns, 4 units wide on a 6-unit pitch (x 6 / 12 / 18 / 24).
+    Every edge and every y is even, so at @1x each pill is exactly 2 px wide with 1 px gaps.
+      spine    x  6-10  y  8-28
+      arm      x 12-16  y  4-12 / 24-32   (8 units)
+      crest    x 18-22  y  4-10 / 26-32   (6 units)
+      fade     x 24-28  y  8-12 / 24-28   (4 units: dots, the waveform fading out; the
+                                           terminals curl in, so the C stays round)
+    Arm pills stay 6-8 units long on purpose: shorter pieces turn into beads at @2x and the
+    C starts to look like a dotted loading spinner.
+    The mouth (x 30-34, y 16-20) stays empty; the rec dot appears there only while recording
+    (menubar-recording.svg), so the idle glyph never competes with the orange mic indicator.
+  -->
+  <g fill="#000000">
+    <rect x="6" y="8" width="4" height="20" rx="2"/>
+    <rect x="12" y="4" width="4" height="8" rx="2"/>
+    <rect x="12" y="24" width="4" height="8" rx="2"/>
+    <rect x="18" y="4" width="4" height="6" rx="2"/>
+    <rect x="18" y="26" width="4" height="6" rx="2"/>
+    <rect x="24" y="8" width="4" height="4" rx="2"/>
+    <rect x="24" y="24" width="4" height="4" rx="2"/>
+  </g>
+</svg>

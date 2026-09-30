@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Captylo - app icon</title>
+  <!--
+    Captylo master app icon, concept D "Speech C".
+    Grid: macOS 1024 canvas, opaque 824x824 continuous-corner squircle at (100,100)
+    (corner radius 185.4, 60% smoothing), template drop shadow (black 30%, y 10, blur 14).
+    Mark: a speech-bubble ring that reads as the letter C (centre-line radius 248, width 82,
+    open on the right between -40 and +40 degrees, round caps), with a bubble tail grown
+    out of its lower-left edge. Inside: 5 frosted-glass waveform pills (44 wide, 68 pitch,
+    heights 92 / 180 / 272 / 180 / 92), the same pill as the widget waveform.
+    The red rec dot (#FF3B30, r 37) sits in the mouth of the C on the ring's centre line:
+    the waveform's last sample leaving the bubble, and the widget's recording light.
+    Use icon-32.svg for 32 px and icon-16.svg for 16 px (hand-hinted masters).
+    Filters use color-interpolation-filters="sRGB"; the plate gradient never passes through
+    a filter (librsvg's 8-bit linearRGB filtering bands dark gradients).
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="512" cy="480" r="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="0.45" stop-color="#FDFCFF" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.86"/>
+    </linearGradient>
+    <linearGradient id="glassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#C9BFF2" stop-opacity="0"/>
+      <stop offset="1" stop-color="#A597E0" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="glassRim" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="0.25" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+    <filter id="markShadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15"/>
+      <feOffset dy="14" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.34"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <path id="cee" d="M733.39 314.23A289.00 289.00 0 0 0 287.40 681.87C313.84 714.51 327.25 773.29 319.53 800.21Q315.40 814.63 328.64 807.58C358.66 791.62 380.29 768.81 456.86 783.69A289.00 289.00 0 0 0 733.39 685.77A41.00 41.00 0 0 0 728.33 628.00A41.00 41.00 0 0 0 670.57 633.06A207.00 207.00 0 1 1 670.57 366.94A41.00 41.00 0 0 0 728.33 372.00A41.00 41.00 0 0 0 733.39 314.23Z"/>
+    <g id="bars">
+      <rect x="354.00" y="454.00" width="44.00" height="92.00" rx="22.00"/>
+      <rect x="422.00" y="410.00" width="44.00" height="180.00" rx="22.00"/>
+      <rect x="490.00" y="364.00" width="44.00" height="272.00" rx="22.00"/>
+      <rect x="558.00" y="410.00" width="44.00" height="180.00" rx="22.00"/>
+      <rect x="626.00" y="454.00" width="44.00" height="92.00" rx="22.00"/>
+    </g>
+    <clipPath id="ceeClip"><use href="#cee"/></clipPath>
+    <clipPath id="barsClip"><use href="#bars"/></clipPath>
+  </defs>
+
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  </g>
+
+  <!-- Speech C: bubble ring + tail, then the waveform inside it -->
+  <use href="#cee" filter="url(#markShadow)"/>
+  <use href="#bars" filter="url(#markShadow)"/>
+  <use href="#cee" fill="#FFFFFF" opacity="0.16" filter="url(#bloom)"/>
+  <use href="#cee" fill="url(#glass)"/>
+  <use href="#cee" fill="url(#glassShade)"/>
+  <g clip-path="url(#ceeClip)"><use href="#cee" fill="none" stroke="url(#glassRim)" stroke-width="5"/></g>
+  <use href="#bars" fill="url(#glass)"/>
+  <use href="#bars" fill="url(#glassShade)"/>
+  <g clip-path="url(#barsClip)"><use href="#bars" fill="none" stroke="url(#glassRim)" stroke-width="5"/></g>
+
+  <!-- Rec dot in the mouth of the C, on the ring's centre line -->
+  <circle cx="760.00" cy="500.00" r="57.35" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+  <circle cx="760.00" cy="500.00" r="37.00" fill="url(#dotFill)"/>
+</svg>

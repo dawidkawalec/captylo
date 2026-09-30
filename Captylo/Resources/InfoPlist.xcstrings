@@ -1,0 +1,24 @@
+{
+  "sourceLanguage": "pl",
+  "strings": {
+    "NSMicrophoneUsageDescription": {
+      "comment": "Privacy - Microphone Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo records your voice to turn it into text."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo nagrywa Twój głos, aby zamienić go na tekst."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

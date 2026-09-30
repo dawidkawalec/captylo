@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Captylo - app icon, 32px master</title>
+  <!--
+    Hand-hinted master for 32x32 renders (icon_32x32, icon_16x16@2x). 1 px = 32 units.
+    Same plate as icon.svg. C centre (17,16) px, outer r 10, inner r 5 (5 px stroke), so the
+    outer extremes sit on whole pixels (x 7, y 6 / 26). Waveform reduced to 3 bars, 1 px wide
+    on whole-pixel columns (x 15, 17, 19), XOR across the inner edge like the master.
+    Flat white, no shadows. Red dot 2.8 px in the lower terminal. Do not render at other sizes.
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="544" cy="512" r="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="26.88"/>
+    </filter>
+  </defs>
+
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="64"/>
+  </g>
+
+  <path fill="#FFFFFF" fill-rule="evenodd" d="M778.03 293.76A320 320 0 1 0 770.27 738.27A80 80 0 0 0 657.14 625.14A160 160 0 1 1 661.02 402.88A80 80 0 0 0 778.03 293.76ZM480 272A16 16 0 0 1 512 272L512 432A16 16 0 0 1 480 432ZM544 240A16 16 0 0 1 576 240L576 432A16 16 0 0 1 544 432ZM608 304A16 16 0 0 1 640 304L640 400A16 16 0 0 1 608 400Z"/>
+  <circle cx="713.6" cy="681.6" r="80.64" fill="#FF3B30" opacity="0.45" filter="url(#dotGlow)"/>
+  <circle cx="713.6" cy="681.6" r="44.8" fill="#FF3B30"/>
+</svg>

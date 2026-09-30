@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-en="Captylo - dictation for Mac, on-device and unlimited">Captylo - dyktowanie na Macu, lokalnie i bez limitu słów</title>
+<meta name="description" content="Przytrzymaj klawisz, mów i puść: tekst pojawia się przy kursorze w każdej aplikacji na Macu. Działa lokalnie i offline, za darmo i bez limitu słów. Pro z chmurą i trybami AI za 159 zł rocznie.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#10272C">
+<link rel="canonical" href="https://captylo.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Captylo">
+<meta property="og:url" content="https://captylo.com/">
+<meta property="og:title" content="Captylo - dyktowanie na Macu, lokalnie i bez limitu słów">
+<meta property="og:description" content="Przestań pisać, zacznij mówić. Tekst pojawia się przy kursorze w każdej aplikacji na Macu. Za darmo, offline i bez limitu słów.">
+<meta property="og:image" content="https://captylo.com/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pl_PL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Captylo - dyktowanie na Macu, lokalnie i bez limitu słów">
+<meta name="twitter:description" content="Przestań pisać, zacznij mówić. Tekst pojawia się przy kursorze w każdej aplikacji na Macu. Za darmo, offline i bez limitu słów.">
+<meta name="twitter:image" content="https://captylo.com/assets/og.jpg">
+<!-- Icons carry ?v= too: browsers keep favicons for a long time, and the old logo sat at these same URLs -->
+<link rel="icon" href="favicon.ico?v=20260928c" sizes="any">
+<link rel="icon" href="assets/brand/icon.svg?v=20260928c" type="image/svg+xml">
+<link rel="icon" href="assets/icon-32.png?v=20260928c" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/icon-64.png?v=20260928c" sizes="64x64" type="image/png">
+<link rel="icon" href="assets/icon-256.png?v=20260928c" sizes="256x256" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260928c" sizes="180x180">
+<link rel="preload" href="assets/fonts/Manrope-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<!-- /assets/* is cached for 7 days: bump ?v= on every change of these files -->
+<link rel="stylesheet" href="assets/css/site.css?v=20260930a">
+<script src="assets/js/grainient.js?v=20260930a" defer></script>
+<script src="assets/js/site.js?v=20260930a" defer></script>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" d="M16.4 12.6c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.3.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1.1-2.8-4.1zM13.9 5.1c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.2 4.2L19 7"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M11 3l1.8 4.7 4.7 1.8-4.7 1.8L11 16l-1.8-4.7-4.7-1.8 4.7-1.8zM18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v9H5zM3 18h18"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9.5a4.3 4.3 0 0 1-.5 8.5z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip" href="#main" data-en="Skip to content">Przejdź do treści</a>
+
+<header class="site-header" id="header">
+  <div class="bar">
+    <a class="brand" href="#top" aria-label="Captylo">
+      <img src="assets/brand/wordmark-white.svg" alt="Captylo" width="648" height="173">
+    </a>
+    <nav class="nav" aria-label="Sekcje strony" data-en-aria="Page sections">
+      <a href="#jak-to-dziala" data-en="How it works">Jak to działa</a>
+      <a href="#ai" data-en="AI modes">Tryby AI</a>
+      <a href="#aplikacja" data-en="The app">Aplikacja</a>
+      <a href="#prywatnosc" data-en="Privacy">Prywatność</a>
+      <a href="#cennik" data-en="Pricing">Cennik</a>
+    </nav>
+    <div class="bar-end">
+      <div class="lang" role="group" aria-label="Język strony" data-en-aria="Page language">
+        <button type="button" data-lang="pl" aria-pressed="true">PL</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <a class="btn btn-salt btn-sm" href="#pobierz"><svg class="ico" aria-hidden="true"><use href="#i-apple"/></svg><span data-en="Download">Pobierz</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO: the one orchestrated moment. Grainient field, headline, then the live demo -->
+  <section class="tide hero" id="top" data-grainient="dark" data-seed="3" aria-labelledby="hero-title">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="pill-note"><span class="dot-live" aria-hidden="true"></span><span data-en="Dictation for Mac · coming soon">Dyktowanie na Maca · już wkrótce</span></p>
+        <h1 id="hero-title"><span data-en="Stop typing.">Przestań pisać.</span><br><span data-en="Start talking.">Zacznij mówić.</span></h1>
+        <p class="lead" data-en="Hold a key, say what you mean, let go. Captylo pastes the text at your cursor in any Mac app. It runs on your Mac, offline and with no word limit, for free.">Przytrzymaj klawisz, powiedz, co masz na myśli, i puść. Captylo wkleja tekst przy kursorze w każdej aplikacji na Macu. Działa na Twoim Macu, offline i bez limitu słów, za darmo.</p>
+        <div class="cta-row">
+          <a class="btn btn-salt" href="#pobierz"><svg class="ico" aria-hidden="true"><use href="#i-apple"/></svg><span data-en="Download free">Pobierz za darmo</span></a>
+          <a class="btn btn-glass" href="#jak-to-dziala" data-en="See how it works">Zobacz, jak działa</a>
+        </div>
+      </div>
+
+      <div class="demo" id="demo" role="img" aria-label="Pokaz: przytrzymany prawy Option, widget Captylo nagrywa, a po puszczeniu klawisza tekst wkleja się w oknie wiadomości" data-en-aria="Demo: Right Option held, the Captylo widget records, and on release the text is pasted into the message window">
+        <div class="demo-window glass">
+          <div class="demo-titlebar">
+            <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="demo-app" id="demo-app">Wiadomości · #projekt</span>
+          </div>
+          <div class="demo-body">
+            <div class="demo-thread" id="demo-thread">
+              <div class="msg">
+                <span class="avatar" aria-hidden="true">M</span>
+                <div><b>Marta</b><p data-en="Can you send the offer before tomorrow's call?">Podeślesz ofertę przed jutrzejszym callem?</p></div>
+              </div>
+            </div>
+            <div class="demo-field" id="demo-field">
+              <span class="demo-text" id="demo-text"></span><span class="caret" aria-hidden="true"></span>
+              <span class="demo-placeholder" id="demo-placeholder" data-en="Write a message">Napisz wiadomość</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="widget" id="widget" aria-hidden="true">
+          <span class="orb"><svg><use href="#i-mic"/></svg><i class="rec"></i></span>
+          <span class="wave" id="wave"></span>
+          <span class="timer" id="timer">00:00</span>
+        </div>
+
+        <div class="hotkey" id="hotkey" aria-hidden="true">
+          <span class="keycap"><b>⌥</b><small>option</small></span>
+          <span class="hotkey-label" id="hotkey-label" data-en="Hold and speak">Przytrzymaj i mów</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FACTS -->
+  <section class="facts-strip" aria-label="W skrócie" data-en-aria="At a glance">
+    <ul>
+      <li><b data-en="No word limit">Bez limitu słów</b><span data-en="in the free plan, forever">w darmowym planie, na zawsze</span></li>
+      <li><b data-en="Works offline">Działa offline</b><span data-en="speech turns into text on your Mac">mowa zamienia się w tekst na Twoim Macu</span></li>
+      <li><b data-en="No account">Bez konta</b><span data-en="download, grant two permissions, speak">pobierasz, dajesz dwa uprawnienia, mówisz</span></li>
+      <li><b data-en="Polish and English">Po polsku i angielsku</b><span data-en="plus 23 other European languages">i 23 inne języki europejskie</span></li>
+    </ul>
+  </section>
+
+  <!-- SPEED -->
+  <section class="section speed" id="szybkosc" aria-labelledby="speed-title">
+    <div class="wrap split">
+      <div class="head">
+        <h2 id="speed-title" data-en="Your keyboard is slowing you down.">Klawiatura Cię spowalnia.</h2>
+        <p data-en="Most people type about 40 words a minute and speak about 150. That is almost four times faster. Captylo turns the difference into hours you get back, without changing the apps you already work in.">Na klawiaturze piszesz średnio około 40 słów na minutę, a mówisz około 150. To prawie cztery razy szybciej. Captylo zamienia tę różnicę w odzyskane godziny, bez zmiany aplikacji, w których już pracujesz.</p>
+      </div>
+      <div class="race" id="race" role="img" aria-label="Pisanie na klawiaturze: około 40 słów na minutę. Mówienie: około 150 słów na minutę." data-en-aria="Typing: about 40 words a minute. Speaking: about 150 words a minute.">
+        <div class="race-row">
+          <div class="race-label"><span data-en="Typing">Pisanie na klawiaturze</span><b data-en="~40 wpm">~40 słów/min</b></div>
+          <div class="race-track"><div class="race-fill" style="--w:26.6%"></div></div>
+        </div>
+        <div class="race-row is-voice">
+          <div class="race-label"><span data-en="Speaking with Captylo">Mówienie z Captylo</span><b data-en="~150 wpm">~150 słów/min</b></div>
+          <div class="race-track"><div class="race-fill tide" style="--w:100%" data-grainient="dark" data-seed="40" data-zoom="0.7"></div></div>
+        </div>
+        <small data-en="Typical adult averages. The Captylo dashboard shows your own numbers.">Typowe średnie dla dorosłych. Twoje własne liczby pokaże Pulpit w aplikacji.</small>
+      </div>
+    </div>
+    <div class="wrap">
+      <dl class="numbers">
+        <div><dt data-en="words dictated">podyktowanych słów</dt><dd data-en="504,627">504 627</dd></div>
+        <div><dt data-en="dictation sessions">sesji dyktowania</dt><dd data-en="9,454">9 454</dd></div>
+        <div><dt data-en="of typing saved">oszczędzonego pisania</dt><dd data-en="166 h">166 godz.</dd></div>
+      </dl>
+      <p class="numbers-note" data-en="Real numbers from the dashboard of Captylo's maker, including its predecessor app.">Prawdziwe liczby z Pulpitu twórcy Captylo, łącznie z aplikacją, która je poprzedzała.</p>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS: a real sequence, so the steps are numbered -->
+  <section class="section how" id="jak-to-dziala" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="head center">
+        <h2 id="how-title" data-en="Speak, and the text appears wherever you type.">Mów, a tekst pojawia się tam, gdzie piszesz.</h2>
+        <p data-en="No window to open, no button to hunt for. Dictation lives under one key and works in every app.">Bez otwierania okien i szukania przycisku. Dyktowanie mieszka pod jednym klawiszem i działa w każdej aplikacji.</p>
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <div class="tide step-visual" data-grainient="dark" data-seed="11" aria-hidden="true">
+            <span class="keycap keycap-lg is-down"><b>⌥</b><small>option</small></span>
+          </div>
+          <h3><span class="step-num">1</span><span data-en="Hold the key">Przytrzymaj klawisz</span></h3>
+          <p data-en="Right Option by default, or any shortcut you like. Hold it like a walkie-talkie, or tap once to keep dictating until the next tap.">Domyślnie prawy Option albo dowolny skrót, który ustawisz. Trzymasz go jak krótkofalówkę albo stukasz raz i dyktujesz do następnego stuknięcia.</p>
+        </li>
+        <li class="step">
+          <div class="tide step-visual" data-grainient="dark" data-seed="27" aria-hidden="true">
+            <div class="widget is-static">
+              <span class="orb"><svg><use href="#i-mic"/></svg><i class="rec"></i></span>
+              <span class="wave" data-wave="live"></span>
+              <span class="timer">00:18</span>
+            </div>
+          </div>
+          <h3><span class="step-num">2</span><span data-en="Speak the way you think">Mów tak, jak myślisz</span></h3>
+          <p data-en="No need to say &quot;comma&quot; or &quot;period&quot;. A small widget shows your voice and the text live, so you see right away what Captylo heard.">Nie musisz dyktować przecinków ani kropek. Mały widget pokazuje Twój głos i tekst na żywo, więc od razu widzisz, co Captylo usłyszało.</p>
+        </li>
+        <li class="step">
+          <div class="tide step-visual" data-grainient="dark" data-seed="53" aria-hidden="true">
+            <p class="pasted glass" data-en="Let's start with a review of the project progress.">Zaczniemy od przeglądu postępów w projekcie.</p>
+          </div>
+          <h3><span class="step-num">3</span><span data-en="Let go. It's typed.">Puść. Tekst już jest.</span></h3>
+          <p data-en="The text lands at your cursor: in Mail, Slack, Notion, your browser or your code editor. From key-up to paste takes under half a second.">Tekst ląduje przy kursorze: w Mailu, Slacku, Notion, przeglądarce albo edytorze kodu. Od puszczenia klawisza do wklejenia mija mniej niż pół sekundy.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- USE CASES: one scene at a time, picked by the visitor -->
+  <section class="section uses" id="do-czego" aria-labelledby="uses-title">
+    <div class="wrap">
+      <div class="head">
+        <h2 id="uses-title" data-en="Everywhere you type.">Wszędzie, gdzie piszesz.</h2>
+        <p data-en="Captylo has no editor of its own. It works inside the apps you already use, so there is nothing new to learn.">Captylo nie ma własnego edytora. Działa w aplikacjach, których już używasz, więc nie musisz uczyć się niczego nowego.</p>
+      </div>
+
+      <!-- A Mac desktop on the Grainient wallpaper: real-looking app windows, the widget records, the text lands at the cursor -->
+      <div class="dock-tabs" role="tablist" aria-label="Aplikacje" data-en-aria="Apps">
+        <button role="tab" id="dt-gmail" aria-controls="app-gmail" aria-selected="true"><span class="app-ico ico-gmail" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 6.5h17v11h-17z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3.5 7l8.5 6.5L20.5 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>Gmail</button>
+        <button role="tab" id="dt-word" aria-controls="app-word" aria-selected="false" tabindex="-1"><span class="app-ico ico-word" aria-hidden="true">W</span>Word</button>
+        <button role="tab" id="dt-code" aria-controls="app-code" aria-selected="false" tabindex="-1"><span class="app-ico ico-code" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>VS Code</button>
+        <button role="tab" id="dt-claude" aria-controls="app-claude" aria-selected="false" tabindex="-1"><span class="app-ico ico-claude" aria-hidden="true">✻</span>Claude Code</button>
+        <button role="tab" id="dt-tb" aria-controls="app-tb" aria-selected="false" tabindex="-1"><span class="app-ico ico-tb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5l8 5.5 8-5.5M4 7h16v10H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>Thunderbird</button>
+        <button role="tab" id="dt-slack" aria-controls="app-slack" aria-selected="false" tabindex="-1"><span class="app-ico ico-slack" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9.5 4.5L7.5 19.5M16.5 4.5l-2 15M5 9h15M4 15h15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Slack</button>
+      </div>
+
+      <div class="tide desk" id="desk" data-grainient="dark" data-seed="70" data-zoom="1.15">
+        <div class="menubar" aria-hidden="true">
+          <svg class="mb-apple" viewBox="0 0 24 24"><use href="#i-apple"/></svg>
+          <b id="mb-app">Safari</b>
+          <span class="mb-menus" id="mb-menus"></span>
+          <span class="mb-right"><span class="mb-captylo" id="mb-captylo"><img src="assets/brand/menubar.svg" alt="" width="18" height="18"></span><span class="mb-clock" data-en="Fri 12:30">pt 12:30</span></span>
+        </div>
+
+        <div class="desk-stage">
+          <!-- Gmail in the browser -->
+          <div class="app" role="tabpanel" id="app-gmail" aria-labelledby="dt-gmail">
+            <div class="win w-browser">
+              <div class="br-bar">
+                <span class="tl"><i></i><i></i><i></i></span>
+                <span class="br-arrows">‹ ›</span>
+                <span class="br-url"><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>mail.google.com</span>
+              </div>
+              <div class="gm">
+                <aside class="gm-nav">
+                  <p class="gm-logo"><span class="gm-burger"></span>Gmail</p>
+                  <span class="gm-new"><svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span data-en="Compose">Utwórz</span></span>
+                  <ul>
+                    <li class="on"><span data-en="Inbox">Odebrane</span><em>12</em></li>
+                    <li data-en="Starred">Oznaczone gwiazdką</li>
+                    <li data-en="Snoozed">Odłożone</li>
+                    <li data-en="Sent">Wysłane</li>
+                    <li data-en="Drafts">Wersje robocze</li>
+                  </ul>
+                </aside>
+                <div class="gm-main">
+                  <div class="gm-search" data-en="Search mail">Szukaj w poczcie</div>
+                  <div class="gm-list">
+                    <p class="unread"><b>Tomasz Nowak</b><span data-en="Materials for the quote - Attached are the specs and last year's scope">Materiały do wyceny - W załączniku specyfikacja i zakres z zeszłego roku</span><time>10:42</time></p>
+                    <p><b>Anna Kowalczyk</b><span data-en="New timeline - We moved the design review to next week">Nowy harmonogram - Przesunęliśmy review projektu na przyszły tydzień</span><time>09:15</time></p>
+                    <p><b>Faktury</b><span data-en="Invoice 09/2026 - The invoice is ready to download">Faktura 09/2026 - Faktura jest gotowa do pobrania</span><time data-en="Yesterday">wczoraj</time></p>
+                    <p><b>Marta Zielińska</b><span data-en="Friday call - Does 3 pm still work for you?">Call w piątek - Czy 15:00 nadal Ci pasuje?</span><time data-en="Yesterday">wczoraj</time></p>
+                    <p><b>Kalendarz</b><span data-en="Reminder: sprint planning, Monday 10:00">Przypomnienie: planowanie sprintu, poniedziałek 10:00</span><time data-en="Sep 25">25 wrz</time></p>
+                  </div>
+                </div>
+                <div class="gm-compose">
+                  <div class="gm-cw-head"><span data-en="Re: Materials for the quote">Re: Materiały do wyceny</span><span class="gm-cw-ctl">_ ⤢ ✕</span></div>
+                  <div class="gm-field"><span data-en="To">Do</span>Tomasz Nowak</div>
+                  <div class="gm-field" data-en="Re: Materials for the quote">Re: Materiały do wyceny</div>
+                  <div class="gm-body paste-target" data-app="gmail"></div>
+                  <div class="gm-cw-foot"><span class="gm-send" data-en="Send">Wyślij</span><span class="gm-tools" aria-hidden="true"><i>A</i><i>📎</i><i>🔗</i><i>☺</i></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Microsoft Word -->
+          <div class="app" role="tabpanel" id="app-word" aria-labelledby="dt-word" hidden>
+            <div class="win w-word">
+              <div class="wd-title">
+                <span class="tl"><i></i><i></i><i></i></span>
+                <span class="wd-auto" data-en="AutoSave">Autozapis</span><span class="wd-toggle"></span>
+                <b>Raport_Q3.docx</b>
+                <span class="wd-find" data-en="Search">Wyszukaj</span>
+              </div>
+              <div class="wd-tabs"><span class="on" data-en="Home">Narzędzia główne</span><span data-en="Insert">Wstawianie</span><span data-en="Draw">Rysowanie</span><span data-en="Design">Projektowanie</span><span data-en="Layout">Układ</span><span data-en="References">Odwołania</span><span data-en="Review">Recenzja</span><span data-en="View">Widok</span></div>
+              <div class="wd-ribbon">
+                <span class="wd-drop wd-font">Aptos</span><span class="wd-drop wd-size">12</span>
+                <span class="wd-sep"></span>
+                <span class="wd-b">B</span><span class="wd-i">I</span><span class="wd-u">U</span>
+                <span class="wd-sep"></span>
+                <span class="wd-align" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="wd-styles"><span><b>AaBbCcDd</b><small data-en="Normal">Normalny</small></span><span class="h"><b>AaBbCc</b><small data-en="Heading 1">Nagłówek 1</small></span><span class="t"><b>AaB</b><small data-en="Title">Tytuł</small></span></span>
+              </div>
+              <div class="wd-canvas">
+                <div class="wd-page">
+                  <p class="wd-h" data-en="Quarterly report Q3 2026">Raport kwartalny Q3 2026</p>
+                  <p class="wd-sub" data-en="1. Customers">1. Klienci</p>
+                  <div class="wd-p paste-target" data-app="word"></div>
+                </div>
+              </div>
+              <div class="wd-status"><span data-en="Page 1 of 3">Strona 1 z 3</span><span data-en="412 words">412 słów</span><span data-en="Polish">polski</span></div>
+            </div>
+          </div>
+
+          <!-- Visual Studio Code -->
+          <div class="app" role="tabpanel" id="app-code" aria-labelledby="dt-code" hidden>
+            <div class="win w-code">
+              <div class="vc-title"><span class="tl"><i></i><i></i><i></i></span><span class="vc-cmd"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>captylo</span></div>
+              <div class="vc-body">
+                <div class="vc-act" aria-hidden="true">
+                  <i class="on"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></i>
+                  <i><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.6"/></svg></i>
+                  <i><svg viewBox="0 0 24 24"><circle cx="7" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="9" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 8v8M17 11c0 3-4 3-8 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></i>
+                  <i><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></i>
+                  <i><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></i>
+                </div>
+                <div class="vc-side">
+                  <p class="vc-h" data-en="EXPLORER">EKSPLORATOR</p>
+                  <p class="vc-proj">⌄ CAPTYLO</p>
+                  <ul>
+                    <li class="d">› Captylo</li><li class="d">› CaptyloTests</li><li class="d">› docs</li><li class="d">› site</li>
+                    <li class="f"><i class="i-md">M↓</i>AGENTS.md</li><li class="f"><i class="i-mk">≡</i>Makefile</li><li class="f"><i class="i-yml">!</i>project.yml</li><li class="f on"><i class="i-md">M↓</i>README.md</li>
+                  </ul>
+                </div>
+                <div class="vc-ed">
+                  <div class="vc-tabs"><span class="on"><i class="i-md">M↓</i>README.md<b>×</b></span><span><i class="i-md">M↓</i>AGENTS.md</span></div>
+                  <div class="vc-crumbs">README.md › # Captylo</div>
+                  <div class="vc-code paste-target" data-app="code">
+                    <p class="h1"># Captylo</p>
+                    <p></p>
+                    <p data-en="Minimalist dictation for Mac: hold a key, speak, and the text lands at your cursor.">Minimalistyczne dyktowanie na Maca: przytrzymaj klawisz, mów, a tekst pojawia się przy kursorze.</p>
+                    <p></p>
+                    <p class="h2"><span data-en="## Requirements">## Wymagania</span></p>
+                    <p></p>
+                    <p><span class="li">-</span> <span data-en="macOS 14.4 or newer">macOS 14.4 lub nowszy</span></p>
+                    <p><span class="li">-</span> <span data-en="A Mac with Apple silicon">Mac z chipem Apple</span></p>
+                    <p></p>
+                    <p></p>
+                  </div>
+                </div>
+              </div>
+              <div class="vc-status"><span class="vc-remote">&gt;&lt;</span><span>⎇ main</span><span>⊗ 0 ⚠ 0</span><span class="r" data-en="Ln 10, Col 1">Wr 10, Kol 1</span><span>UTF-8</span><span>Markdown</span></div>
+            </div>
+          </div>
+
+          <!-- Terminal with Claude Code -->
+          <div class="app" role="tabpanel" id="app-claude" aria-labelledby="dt-claude" hidden>
+            <div class="win w-term">
+              <div class="tm-title"><span class="tl"><i></i><i></i><i></i></span><span>captylo - claude - 110×32</span></div>
+              <div class="tm-body">
+                <div class="cc-box">
+                  <p><span class="cc-star">✻</span> Welcome to <b>Claude Code</b>!</p>
+                  <p class="dim">/help for help, /status for your current setup</p>
+                  <p class="dim">cwd: /Users/dawid/code/captylo</p>
+                </div>
+                <p class="cc-past">&gt; <span data-en="run make test">uruchom make test</span></p>
+                <p class="cc-say"><span class="cc-dot">⏺</span> <b>Bash</b>(make test)</p>
+                <p class="cc-out">⎿  <span class="ok" data-en="✔ 128 tests passed in 4.2 s">✔ 128 testów przeszło w 4,2 s</span></p>
+                <p class="cc-say"><span class="cc-dot">⏺</span> <span data-en="All green. What next?">Wszystko na zielono. Co dalej?</span></p>
+                <div class="cc-input"><span class="cc-gt">&gt;</span><span class="cc-text paste-target" data-app="claude"></span></div>
+                <p class="cc-hint">? for shortcuts</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thunderbird compose -->
+          <div class="app" role="tabpanel" id="app-tb" aria-labelledby="dt-tb" hidden>
+            <div class="win w-tb">
+              <div class="tb-title"><span class="tl"><i></i><i></i><i></i></span><span data-en="Write: Friday release - Thunderbird">Napisz: Piątkowe wdrożenie - Thunderbird</span></div>
+              <div class="tb-tools">
+                <span class="tb-send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span data-en="Send">Wyślij</span></span>
+                <span data-en="Encrypt">Szyfruj</span><span data-en="Spelling ▾">Pisownia ▾</span><span data-en="Save ▾">Zapisz ▾</span><span class="r" data-en="Attach ▾">Załącz ▾</span>
+              </div>
+              <div class="tb-head">
+                <p><label data-en="From">Od</label><span class="tb-in">Dawid &lt;dawid@firma.pl&gt;</span></p>
+                <p><label data-en="To">Do</label><span class="tb-in"><span class="tb-pill" data-en="Product team">Zespół produktu</span></span></p>
+                <p><label data-en="Subject">Temat</label><span class="tb-in" data-en="Friday release">Piątkowe wdrożenie</span></p>
+              </div>
+              <div class="tb-fmt"><span data-en="Paragraph ▾">Akapit ▾</span><span data-en="Variable width ▾">Szerokość zmienna ▾</span><b>B</b><i>I</i><u>U</u><span>☰</span></div>
+              <div class="tb-body paste-target" data-app="tb"></div>
+            </div>
+          </div>
+
+          <!-- Slack -->
+          <div class="app" role="tabpanel" id="app-slack" aria-labelledby="dt-slack" hidden>
+            <div class="win w-slack">
+              <div class="sl-title"><span class="tl"><i></i><i></i><i></i></span><span class="sl-search" data-en="Search Acme Studio">Szukaj w Acme Studio</span></div>
+              <div class="sl-body">
+                <aside class="sl-side">
+                  <p class="sl-ws">Acme Studio</p>
+                  <p class="sl-h" data-en="Channels">Kanały</p>
+                  <p># general</p><p class="on"># projekt-acme</p><p># design</p>
+                  <p class="sl-h" data-en="Direct messages">Wiadomości bezpośrednie</p>
+                  <p><span class="sl-dot"></span>Anna Kowalczyk</p><p><span class="sl-dot off"></span>Tomasz Nowak</p>
+                </aside>
+                <div class="sl-chan">
+                  <p class="sl-name"># projekt-acme</p>
+                  <div class="sl-msgs">
+                    <div class="sl-msg"><span class="sl-av a">AK</span><div><p><b>Anna Kowalczyk</b><time>12:24</time></p><p lang="en">Hi Dawid, we moved the design review to next week. Does the new timeline work for your team?</p></div></div>
+                  </div>
+                  <div class="sl-compose">
+                    <div class="sl-fmt"><b>B</b><i>I</i><s>S</s><span>🔗</span><span>☰</span></div>
+                    <div class="sl-text paste-target" data-app="slack"></div>
+                    <div class="sl-foot"><span>+</span><span>@</span><span>☺</span><span class="sl-send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z" fill="currentColor"/></svg></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="widget desk-widget" id="desk-widget" aria-hidden="true">
+          <span class="orb"><svg><use href="#i-mic"/></svg><i class="rec"></i></span>
+          <span class="wave" id="desk-wave"></span>
+          <span class="timer" id="desk-timer">00:00</span>
+          <span class="desk-status" id="desk-status"></span>
+        </div>
+      </div>
+      <p class="desk-caption" id="desk-caption" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- AI MODES: full tide block, the visitor switches the mode -->
+  <section class="tide ai" id="ai" data-grainient="dark" data-seed="91" aria-labelledby="ai-title">
+    <div class="wrap split ai-inner">
+      <div class="head on-dark">
+        <p class="pill-note"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg><span data-en="AI modes in Pro">Tryby AI w planie Pro</span></p>
+        <h2 id="ai-title"><span data-en="Say it messy.">Powiedz byle jak.</span> <span data-en="Paste it clean.">Wklei się porządnie.</span></h2>
+        <p data-en="An AI mode polishes the dictation before it hits the screen: it drops the 'umm's and repeats, adds punctuation and, if you want, turns it into an email, a to-do list or English text.">Tryb AI poprawia dyktat, zanim trafi na ekran: usuwa „yyy” i powtórzenia, stawia przecinki, a jeśli chcesz, zamienia go w e-mail, listę zadań albo tekst po angielsku.</p>
+        <ul class="checks on-dark">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Speak Polish, paste English. Handy for international teams and clients.">Mówisz po polsku, a wkleja się po angielsku. Wygodne przy zagranicznych klientach i zespołach.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Your own modes: describe in plain words what the AI should do with the text.">Własne tryby: opisz zwykłymi słowami, co AI ma zrobić z tekstem.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Never a wait: if the AI is not done in 3 seconds, you get the raw text.">Nigdy nie czekasz: jeśli AI nie skończy w 3 sekundy, dostajesz surowy tekst.</span></li>
+        </ul>
+      </div>
+      <div class="ai-card glass" id="ai-card">
+        <div class="modes" role="radiogroup" aria-label="Tryb AI" data-en-aria="AI mode">
+          <button type="button" role="radio" aria-checked="true" data-mode="clean" data-en="Cleanup">Czyszczenie</button>
+          <button type="button" role="radio" aria-checked="false" data-mode="email" data-en="Email">E-mail</button>
+          <button type="button" role="radio" aria-checked="false" data-mode="todo" data-en="To-do list">Lista zadań</button>
+          <button type="button" role="radio" aria-checked="false" data-mode="english" data-en="In English">Po angielsku</button>
+          <button type="button" role="radio" aria-checked="false" data-mode="tidy" data-en="Tidy up my thoughts">Uporządkuj myśli</button>
+        </div>
+        <div class="ai-block raw">
+          <span class="ai-label" data-en="What you said">Co powiedziałeś</span>
+          <p id="ai-raw"></p>
+        </div>
+        <div class="ai-meta" aria-hidden="true">
+          <span class="ai-meta-line"></span>
+          <span class="ai-chip"><svg class="ico"><use href="#i-sparkles"/></svg><span id="ai-mode-name"></span><span id="ai-ms"></span></span>
+          <span class="ai-meta-line"></span>
+        </div>
+        <div class="ai-block clean" aria-live="polite">
+          <span class="ai-label" data-en="What gets pasted">Co się wkleiło</span>
+          <div id="ai-out"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SELF-LEARNING ("Nowość"): one correction, the "Zapamiętałem" toast,
+       the next dictation right, and the Settings switch. Plays once when seen, final state under Reduce Motion. -->
+  <section class="section learn" id="uczy-sie" aria-labelledby="learn-title">
+    <div class="wrap split">
+      <div class="head">
+        <p class="soon-note"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg><span data-en="New in Captylo">Nowość w Captylo</span></p>
+        <h2 id="learn-title" data-en="It learns how you write.">Uczy się, jak piszesz.</h2>
+        <p data-en="Fix a word once and Captylo remembers it for good. With every correction it knows the names you say and the way you write a little better.">Poprawiasz słowo raz, a Captylo pamięta je na stałe. Z każdą poprawką lepiej zna nazwy, które wypowiadasz, i sposób, w jaki piszesz.</p>
+        <ul class="checks">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="You fix the text as usual, in any app. Captylo notices the correction and adds it to your dictionary.">Poprawiasz tekst jak zwykle, w dowolnej aplikacji. Captylo zauważa poprawkę i dopisuje ją do słownika.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Spell a tricky name out loud, like 'Brzęk, spelled B&nbsp;R&nbsp;Z&nbsp;Ę&nbsp;K', and from then on it is written right.">Trudną nazwę przeliterujesz na głos, np. „Brzęk, pisane B&nbsp;R&nbsp;Z&nbsp;Ę&nbsp;K”. Od tej chwili zapisze ją poprawnie.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="With AI modes it also picks up your style: greetings, punctuation and tone, separately for email and chat.">Z trybami AI przejmuje też Twój styl: powitania, interpunkcję i ton, osobno dla maila i czatu.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Undo anything it learned with one click, or switch learning off in Settings. The memory stays on your Mac.">Każdą naukę cofniesz jednym kliknięciem, a całość wyłączysz przełącznikiem w Ustawieniach. Pamięć zostaje na Twoim Macu.</span></li>
+        </ul>
+      </div>
+      <div class="tide learn-stage" data-grainient="dark" data-seed="133" data-cx="0.1">
+        <div class="learn-card glass" id="learn" role="img" aria-label="Captylo wpisał „supa bejs”, poprawiasz to raz na „Supabase”, pojawia się komunikat „Zapamiętałem: supa bejs → Supabase” z przyciskiem Cofnij, a przy następnym dyktowaniu nazwa zapisuje się poprawnie. Pod spodem włączony przełącznik „Ucz się z moich poprawek”." data-en-aria="Captylo typed 'supa bejs', you fix it once to 'Supabase', a message says 'Remembered: supa bejs → Supabase' with an Undo button, and the next dictation spells the name right. Below, the 'Learn from my corrections' switch is on.">
+          <div class="learn-step" style="--i:0" aria-hidden="true">
+            <span class="ai-label" data-en="You dictate">Dyktujesz</span>
+            <p><span data-en="I'll push it to">Wrzucam to na</span> <span class="lw-miss">supa bejs</span> <span data-en="on Friday, let me know if that works.">w piątek, daj znać, czy pasuje.</span></p>
+          </div>
+          <div class="learn-step" style="--i:1" aria-hidden="true">
+            <span class="ai-label" data-en="You fix it once">Poprawiasz raz</span>
+            <p><span data-en="I'll push it to">Wrzucam to na</span> <s class="lw-old">supa bejs</s> <span class="lw-fix">Supabase</span> <span data-en="on Friday, let me know if that works.">w piątek, daj znać, czy pasuje.</span></p>
+          </div>
+          <div class="learn-toast" style="--i:2" aria-hidden="true">
+            <svg class="ico"><use href="#i-sparkles"/></svg>
+            <span><span data-en="Remembered:">Zapamiętałem:</span> supa bejs → Supabase</span>
+            <b data-en="Undo">Cofnij</b>
+          </div>
+          <div class="learn-step is-good" style="--i:3" aria-hidden="true">
+            <span class="ai-label" data-en="Next time">Następnym razem</span>
+            <p><span data-en="The">Migracja na</span> <span class="lw-ok">Supabase</span> <span data-en="migration is done, sending the link.">gotowa, wysyłam link.</span></p>
+          </div>
+          <div class="learn-switch" style="--i:4" aria-hidden="true">
+            <span class="learn-switch-text"><span data-en="Learn from my corrections">Ucz się z moich poprawek</span><small data-en="Only on this Mac · Settings">Tylko na tym Macu · Ustawienia</small></span>
+            <span class="sw is-on"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE APP: features, each one shown on a real screen of the app -->
+  <section class="section app" id="aplikacja" aria-labelledby="app-title">
+    <div class="wrap">
+      <div class="head center">
+        <h2 id="app-title" data-en="The small things that add up.">Małe rzeczy, które robią różnicę.</h2>
+        <p data-en="Everything dictation needs, nothing it doesn't. All of it is in the Free plan.">Wszystko, czego potrzebuje dyktowanie, i nic ponadto. Całość jest w planie Free.</p>
+      </div>
+      <div class="tour">
+        <div class="tour-tabs" role="tablist" aria-label="Funkcje aplikacji" data-en-aria="App features">
+          <button role="tab" id="tour-t-widget" aria-controls="tour-p-widget" aria-selected="true" data-en="Live preview">Podgląd na żywo</button>
+          <button role="tab" id="tour-t-history" aria-controls="tour-p-history" aria-selected="false" tabindex="-1" data-en="History">Historia</button>
+          <button role="tab" id="tour-t-dict" aria-controls="tour-p-dict" aria-selected="false" tabindex="-1" data-en="Dictionary">Słownik</button>
+          <button role="tab" id="tour-t-dash" aria-controls="tour-p-dash" aria-selected="false" tabindex="-1" data-en="Dashboard">Pulpit</button>
+          <button role="tab" id="tour-t-files" aria-controls="tour-p-files" aria-selected="false" tabindex="-1" data-en="Files">Pliki</button>
+        </div>
+        <div class="tide tour-stage" data-grainient="dark" data-seed="120" data-zoom="1.1">
+          <div class="tour-panel" role="tabpanel" id="tour-p-widget" aria-labelledby="tour-t-widget">
+            <div class="tour-text">
+              <h3 data-en="Live preview">Podgląd na żywo</h3>
+              <p data-en="A small glass widget shows your voice and the text as you speak. It never steals focus and disappears when you are done.">Mały szklany widget pokazuje Twój głos i tekst w trakcie mówienia. Nie zabiera fokusu i znika, gdy skończysz.</p>
+              <span class="tag" data-en="Compact or expanded">Kompaktowy lub rozwinięty</span>
+            </div>
+            <figure class="tour-shot is-widget">
+              <img src="assets/shots/widget-expanded.webp" width="880" height="1136" loading="lazy" alt="Rozwinięty widget Captylo: fala dźwięku, licznik 00:18, transkrypcja na żywo, wybór mikrofonu, języka i trybu AI oraz przyciski Pauza i Zakończ" data-en-alt="The expanded Captylo widget: waveform, a 00:18 timer, live transcript, microphone, language and AI mode pickers and the Pause and Finish buttons">
+            </figure>
+          </div>
+          <div class="tour-panel" role="tabpanel" id="tour-p-history" aria-labelledby="tour-t-history" hidden>
+            <div class="tour-text">
+              <h3 data-en="History with recordings">Historia z nagraniami</h3>
+              <p data-en="Every dictation comes back with its recording. Find it, replay it, copy it or run it through a different AI mode.">Każde dyktowanie wraca razem z nagraniem. Znajdziesz je, odsłuchasz, skopiujesz albo przerobisz innym trybem AI.</p>
+              <span class="tag" data-en="Search and CSV export">Wyszukiwanie i eksport CSV</span>
+            </div>
+            <figure class="tour-shot">
+              <img src="assets/shots/historia.webp" width="2240" height="1440" loading="lazy" alt="Okno Historia: dyktowania z dzisiaj z godziną i długością, rozwinięty wpis z oryginałem i wersją po AI w trybie Lista zadań" data-en-alt="The History window: today's dictations with time and length, one entry opened with the original and the AI version in the To-do list mode">
+            </figure>
+          </div>
+          <div class="tour-panel" role="tabpanel" id="tour-p-dict" aria-labelledby="tour-t-dict" hidden>
+            <div class="tour-text">
+              <h3 data-en="Your dictionary">Twój słownik</h3>
+              <p data-en="Teach Captylo names, brands and jargon. Replacement rules make sure 'kaptylo' always comes out as 'Captylo'.">Naucz Captylo nazwisk, nazw firm i żargonu. Reguły zamiany sprawią, że „kaptylo” zawsze zapisze się jako „Captylo”.</p>
+              <span class="tag" data-en="Import and export">Import i eksport</span>
+            </div>
+            <figure class="tour-shot">
+              <img src="assets/shots/slownik.webp" width="2240" height="1440" loading="lazy" alt="Okno Słownik: lista słownictwa i reguły zamiany" data-en-alt="The Dictionary window: vocabulary and replacement rules">
+            </figure>
+          </div>
+          <div class="tour-panel" role="tabpanel" id="tour-p-dash" aria-labelledby="tour-t-dash" hidden>
+            <div class="tour-text">
+              <h3 data-en="Dashboard">Pulpit</h3>
+              <p data-en="Words, sessions, speaking speed and the typing time you got back. Black on white, day by day.">Słowa, sesje, tempo mówienia i czas pisania, który odzyskałeś. Czarno na białym, dzień po dniu.</p>
+              <span class="tag" data-en="Your numbers">Twoje liczby</span>
+            </div>
+            <figure class="tour-shot">
+              <img src="assets/shots/pulpit.webp" width="2240" height="1440" loading="lazy" alt="Okno Pulpit: zaoszczędzony czas, dni z rzędu, kalendarz aktywności i wykres słów z ostatnich dni" data-en-alt="The Dashboard window: time saved, day streak, an activity calendar and a chart of words over the last days">
+            </figure>
+          </div>
+          <div class="tour-panel" role="tabpanel" id="tour-p-files" aria-labelledby="tour-t-files" hidden>
+            <div class="tour-text">
+              <h3 data-en="Audio and video files">Pliki audio i wideo</h3>
+              <p data-en="Drop in a meeting recording or a voice memo (mp3, m4a, wav, mp4, mov) and get the text, with your dictionary applied.">Wrzuć nagranie ze spotkania albo notatkę głosową (mp3, m4a, wav, mp4, mov) i dostań tekst, z Twoim słownikiem.</p>
+              <span class="tag" data-en="Queue of files">Kolejka plików</span>
+            </div>
+            <figure class="tour-shot">
+              <img src="assets/shots/plik.webp" width="2240" height="1440" loading="lazy" alt="Okno Transkrypcja pliku: pole do upuszczenia nagrania i kolejka plików" data-en-alt="The File transcription window: a drop zone for recordings and the file queue">
+            </figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section class="section privacy" id="prywatnosc" aria-labelledby="privacy-title">
+    <div class="wrap split">
+      <div class="head">
+        <h2 id="privacy-title" data-en="Your voice stays on your Mac.">Twój głos zostaje na Twoim Macu.</h2>
+        <p data-en="In the Free plan nothing leaves your computer. No account, no telemetry, no server listening in. The cloud is something you switch on yourself, if you want it.">W planie Free nic nie opuszcza komputera. Nie ma konta, telemetrii ani serwera, który słucha. Chmurę włączasz sam, jeśli jej chcesz.</p>
+        <ul class="checks">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Speech to text runs on your Mac. You need the internet once, to download the speech model.">Mowa na tekst działa na Twoim Macu. Internet jest potrzebny raz, do pobrania modelu mowy.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Recordings and history live on your disk. Delete any of them with one click.">Nagrania i historia leżą na Twoim dysku. Każde usuniesz jednym kliknięciem.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Cloud transcription and AI modes send data only after you turn them on.">Transkrypcja w chmurze i tryby AI wysyłają dane dopiero wtedy, gdy je włączysz.</span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="If the cloud fails, Captylo switches to the on-device model. You never lose a dictation.">Gdy chmura zawiedzie, Captylo przełącza się na model lokalny. Nie tracisz żadnego dyktatu.</span></li>
+        </ul>
+      </div>
+      <div class="tide privacy-stage" data-grainient="dark" data-seed="150" data-cx="0.1">
+        <div class="settings glass" role="img" aria-label="Ustawienia: transkrypcja na Twoim Macu jako domyślna, chmura jako opcja w planie Pro" data-en-aria="Settings: transcription on your Mac by default, the cloud as a Pro option">
+          <p class="settings-title" data-en="Where transcription happens">Gdzie dzieje się transkrypcja</p>
+          <div class="seg-pick" aria-hidden="true">
+            <span class="is-on"><svg class="ico"><use href="#i-laptop"/></svg><span data-en="On your Mac">Na Twoim Macu</span></span>
+            <span><svg class="ico"><use href="#i-cloud"/></svg><span data-en="Cloud · Pro">Chmura · Pro</span></span>
+          </div>
+          <div class="settings-rows">
+            <div><span data-en="Recordings">Nagrania</span><b data-en="Only on this Mac">Tylko na tym Macu</b></div>
+            <div><span data-en="Telemetry">Telemetria</span><b data-en="None">Brak</b></div>
+            <div><span data-en="Account">Konto</span><b data-en="Not needed">Niepotrzebne</b></div>
+            <div><span data-en="If the cloud fails">Awaria chmury</span><b data-en="Back to on-device">Powrót do trybu lokalnego</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORIES: opinions as Instagram-style stories (photo or video) from assets/stories/stories.json.
+       The section stays hidden while the list is empty; ?stories=demo previews the layout with sample cards. -->
+  <section class="tide stories" id="opinie" data-grainient="dark" data-seed="170" aria-labelledby="stories-title" hidden>
+    <div class="stories-inner">
+      <div class="stories-head">
+        <div class="head on-dark">
+          <h2 id="stories-title" data-en="People who talk instead of type.">Ludzie, którzy mówią zamiast pisać.</h2>
+          <p data-en="Short stories from people who use Captylo every day. Tap one to watch it full screen.">Krótkie historie od osób, które używają Captylo na co dzień. Stuknij, żeby obejrzeć na pełnym ekranie.</p>
+        </div>
+        <div class="st-arrows">
+          <button type="button" class="st-arrow" data-dir="-1" aria-label="Poprzednie" data-en-aria="Previous"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button type="button" class="st-arrow" data-dir="1" aria-label="Następne" data-en-aria="Next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <ul class="stories-track" id="stories-track"></ul>
+    </div>
+  </section>
+
+  <!-- THE MAKER: who builds Captylo and what it stands for (facts from kawalec.pl) -->
+  <section class="section maker" id="tworca" aria-labelledby="maker-title">
+    <div class="wrap maker-grid">
+      <figure class="maker-photo">
+        <img src="assets/dawid-kawalec.webp" width="704" height="880" loading="lazy" alt="Dawid Kawalec, twórca Captylo" data-en-alt="Dawid Kawalec, the maker of Captylo">
+        <figcaption class="maker-tag glass">
+          <b>Dawid Kawalec</b>
+          <span data-en="Maker of Captylo">Twórca Captylo</span>
+        </figcaption>
+      </figure>
+      <div class="maker-copy">
+        <h2 id="maker-title" data-en="I built Captylo because I talk faster than I type.">Zrobiłem Captylo, bo gadam szybciej, niż piszę.</h2>
+        <p class="maker-lead" data-en="Hi, I'm Dawid. I've been building digital products for over ten years, and these days I talk to my Mac more than I type on it: emails, prompts, notes. Over half a million words so far.">Cześć, jestem Dawid. Od ponad dziesięciu lat robię produkty cyfrowe, a dziś więcej do Maca mówię, niż na nim piszę: maile, prompty, notatki. Uzbierało się już ponad pół miliona słów.</p>
+        <p data-en="I couldn't find an app that really gets Polish, works without the internet and keeps my voice on my own computer. So I made one.">Nie znalazłem appki, która dobrze ogarnia polski, działa bez internetu i nie wysyła mojego głosu w świat. No to ją zrobiłem.</p>
+        <p class="maker-aside" data-en="And one more thing: I wanted it to be beautiful. Dictation apps that work already exist, but this one is in front of me all day, so Captylo had to be a pleasure to look at too.">I jeszcze jedno: chciałem, żeby była ładna. Działające appki do dyktowania już są, ale tę mam przed oczami cały dzień, więc Captylo miało też cieszyć oko.</p>
+
+        <div class="maker-foot">
+          <p class="maker-sign">Dawid Kawalec</p>
+          <ul class="maker-links">
+            <li><a href="mailto:hello@kawalec.pl">hello@kawalec.pl</a></li>
+            <li><a href="https://kawalec.pl" rel="me noopener" target="_blank">kawalec.pl</a></li>
+            <li><a href="https://www.linkedin.com/in/dawid-kawalec-13aa4016a" rel="me noopener" target="_blank">LinkedIn</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="section compare" id="porownanie" aria-labelledby="compare-title">
+    <div class="wrap">
+      <div class="head center">
+        <h2 id="compare-title" data-en="More for free. Less for Pro.">Więcej za darmo. Mniej za Pro.</h2>
+        <p data-en="How Captylo compares with popular dictation apps for Mac.">Jak Captylo wypada na tle popularnych aplikacji do dyktowania na Maca.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th scope="col"><span class="visually-hidden" data-en="Feature">Cecha</span></th><th scope="col" data-en="Typical app">Typowa aplikacja</th><th scope="col" class="is-us"><img src="assets/brand/wordmark.svg" alt="Captylo" width="648" height="173"></th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row" data-en="Free plan">Darmowy plan</th><td data-en="1,000 to 3,000 words, then a limit">1000-3000 słów, potem limit</td><td class="is-us" data-en="No word limit, forever">Bez limitu słów, na zawsze</td></tr>
+            <tr><th scope="row" data-en="Paid plan">Płatny plan</th><td data-en="$8 to $15 a month">30-60 zł miesięcznie</td><td class="is-us" data-en="$4 a month, billed yearly">Około 13 zł miesięcznie, płatne rocznie</td></tr>
+            <tr><th scope="row" data-en="Live text preview">Podgląd tekstu na żywo</th><td data-en="Often only in a pricier plan">Często dopiero w droższym planie</td><td class="is-us" data-en="In Free">W planie Free</td></tr>
+            <tr><th scope="row" data-en="Works offline">Działa offline</th><td data-en="Rarely">Rzadko</td><td class="is-us" data-en="Yes, by default">Tak, domyślnie</td></tr>
+            <tr><th scope="row" data-en="Account">Konto</th><td data-en="Usually required">Zwykle wymagane</td><td class="is-us" data-en="Not needed in Free">Niepotrzebne w Free</td></tr>
+            <tr><th scope="row" data-en="Polish">Język polski</th><td data-en="One of 100+ languages">Jeden z ponad 100 języków</td><td class="is-us" data-en="Interface, dictionary and AI modes built for it">Interfejs, słownik i tryby AI po polsku</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fine center" data-en="Based on the public pricing pages of popular Mac dictation apps, September 2026.">Na podstawie publicznych cenników popularnych aplikacji do dyktowania na Maca, wrzesień 2026.</p>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="section pricing" id="cennik" data-billing="year" aria-labelledby="pricing-title">
+    <div class="wrap">
+      <div class="head center">
+        <h2 id="pricing-title" data-en="Free actually means free.">Za darmo znaczy za darmo.</h2>
+        <p data-en="Dictation on your Mac costs us nothing, so it costs you nothing. You only pay for the cloud and AI, in one plan, with no tiers to compare.">Dyktowanie na Twoim Macu nic nas nie kosztuje, więc nie kosztuje też Ciebie. Płacisz tylko za chmurę i AI, w jednym planie, bez pakietów do porównywania.</p>
+      </div>
+      <div class="billing" role="group" aria-label="Okres rozliczenia" data-en-aria="Billing period">
+        <button type="button" data-period="year" aria-pressed="true"><span data-en="Yearly">Rocznie</span><span class="save" data-en="-33%">-45%</span></button>
+        <button type="button" data-period="month" aria-pressed="false"><span data-en="Monthly">Miesięcznie</span></button>
+      </div>
+      <div class="plans">
+        <article class="plan plan-free">
+          <h3>Free</h3>
+          <p class="plan-sub" data-en="Everything you need to dictate.">Wszystko, czego potrzebujesz do dyktowania.</p>
+          <p class="price"><b data-en="$0">0 zł</b><span data-en="forever">na zawsze</span></p>
+          <p class="plan-note" data-en="No account, no card.">Bez konta i bez karty.</p>
+          <ul class="checks">
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Dictation with no word limit">Dyktowanie bez limitu słów</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Works offline, on your Mac">Działa offline, na Twoim Macu</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Live text preview">Podgląd tekstu na żywo</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Dictionary and replacement rules">Słownik i reguły zamiany</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="History with recordings, dashboard">Historia z nagraniami i pulpit</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Audio and video file transcription">Transkrypcja plików audio i wideo</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Cloud and AI with your own API key">Chmura i AI z własnym kluczem API</span></li>
+          </ul>
+          <a class="btn btn-ink" href="#pobierz" data-en="Download free">Pobierz za darmo</a>
+        </article>
+        <article class="plan plan-pro tide" data-grainient="dark" data-seed="200">
+          <div class="plan-head">
+            <h3>Pro</h3>
+            <span class="tag tag-glass" data-en="All in">Wszystko w jednym</span>
+          </div>
+          <p class="plan-sub" data-en="Cloud and AI. All in one plan.">Chmura i AI. Wszystko w jednym planie.</p>
+          <p class="price is-year"><b data-en="$48">159 zł</b><span data-en="/ year">/ rok</span></p>
+          <p class="price is-month"><b data-en="$6">24 zł</b><span data-en="/ month">/ mies.</span></p>
+          <p class="plan-note is-year" data-en="That's $4 a month.">To około 13 zł miesięcznie.</p>
+          <p class="plan-note is-month" data-en="Cancel anytime.">Rezygnujesz w każdej chwili.</p>
+          <ul class="checks on-dark">
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Everything in Free">Wszystko z planu Free</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Cloud transcription, when every word counts">Transkrypcja w chmurze, gdy liczy się każde słowo</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="AI modes: cleanup, email, to-do list, English">Tryby AI: czyszczenie, e-mail, lista zadań, po angielsku</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Your own AI modes">Własne tryby AI</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Every future feature">Wszystkie przyszłe funkcje</span></li>
+          </ul>
+          <a class="btn btn-salt" href="#pobierz"><span data-en="Choose Pro">Wybierz Pro</span><span class="soon" data-en="Soon">Wkrótce</span></a>
+        </article>
+      </div>
+      <p class="fine center" data-en="Launch prices. Dictation on your Mac stays free, whatever happens.">Ceny na start. Dyktowanie na Twoim Macu zostaje darmowe, cokolwiek się stanie.</p>
+      <p class="fine center"><a class="link" href="kawa/" data-en="Prefer a one-off? Buy the maker a coffee for 20 zł.">Wolisz jednorazowo? Postaw twórcy kawę za 20 zł.</a></p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section faq" id="faq" aria-labelledby="faq-title">
+    <div class="wrap faq-grid">
+      <div class="head">
+        <h2 id="faq-title" data-en="Questions and answers">Pytania i odpowiedzi</h2>
+        <p data-en="The short answers to what people ask before they install.">Krótkie odpowiedzi na to, o co ludzie pytają przed instalacją.</p>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary data-en="How is it different from the dictation built into macOS?">Czym Captylo różni się od dyktowania wbudowanego w macOS?</summary>
+          <p data-en="macOS dictation types what it hears, word by word. Captylo lives under one key in every app, learns your names and jargon, keeps a history with recordings and shows your stats. In Pro it also polishes the text with AI and turns it into an email, a to-do list or English.">Dyktowanie macOS zapisuje to, co słyszy, słowo po słowie. Captylo działa pod jednym klawiszem w każdej aplikacji, uczy się Twoich nazw i żargonu, trzyma historię z nagraniami i pokazuje statystyki. W Pro dodatkowo poprawia tekst przez AI i zamienia go w e-mail, listę zadań albo tekst po angielsku.</p>
+        </details>
+        <details>
+          <summary data-en="Does it understand Polish well?">Czy Captylo dobrze rozumie polski?</summary>
+          <p data-en="Yes. Polish is our first language: the interface, the dictionary and the AI modes all work in Polish. The on-device model also understands English and 23 other European languages.">Tak. Polski to dla nas język numer jeden: interfejs, słownik i tryby AI działają po polsku. Model na Twoim Macu rozumie też angielski i 23 inne języki europejskie.</p>
+        </details>
+        <details>
+          <summary data-en="Does it work in every app?">Czy działa w każdej aplikacji?</summary>
+          <p data-en="Yes, anywhere you can type: Word, Gmail, Thunderbird, Slack, Notion, your browser, Visual Studio Code, the terminal and Claude Code. The text is pasted at the cursor and your clipboard is restored right after. The app asks for the Microphone and Accessibility permissions on first launch.">Tak, wszędzie, gdzie da się pisać: w Wordzie, Gmailu, Thunderbirdzie, Slacku, Notion, przeglądarce, Visual Studio Code, terminalu i Claude Code. Tekst jest wklejany przy kursorze, a schowek wraca do poprzedniej zawartości zaraz po wklejeniu. Przy pierwszym uruchomieniu aplikacja poprosi o dostęp do mikrofonu i dostępności.</p>
+        </details>
+        <details>
+          <summary data-en="Will Captylo learn from my corrections?">Czy Captylo uczy się na moich poprawkach?</summary>
+          <p data-en="Yes. When you fix a word in text Captylo pasted, or spell a name out loud, it remembers the right version and uses it next time. Everything it learns stays on your Mac, you can undo any of it, and the whole feature has a switch in Settings.">Tak. Gdy poprawisz słowo w tekście, który wkleił Captylo, albo przeliterujesz nazwę na głos, zapamięta poprawną wersję i użyje jej następnym razem. Wszystko, czego się nauczy, zostaje na Twoim Macu, każdą naukę cofniesz, a całą funkcję wyłączysz przełącznikiem w Ustawieniach.</p>
+        </details>
+        <details>
+          <summary data-en="Do I need the internet?">Czy potrzebuję internetu?</summary>
+          <p data-en="Only once, to download the speech model. After that dictation works fully offline. The internet is needed only for cloud transcription and AI modes, in Pro or with your own API key.">Tylko raz, do pobrania modelu mowy. Potem dyktowanie działa w pełni offline. Internet jest potrzebny wyłącznie do transkrypcji w chmurze i trybów AI, w Pro albo z własnym kluczem API.</p>
+        </details>
+        <details>
+          <summary data-en="Where do my recordings go?">Gdzie trafiają moje nagrania?</summary>
+          <p data-en="They stay on your Mac, next to your history. Nothing is uploaded unless you turn on a cloud feature yourself. You can delete any recording from the history at any time.">Zostają na Twoim Macu, razem z historią. Nic nie jest wysyłane, dopóki sam nie włączysz funkcji w chmurze. Każde nagranie możesz w dowolnej chwili usunąć z historii.</p>
+        </details>
+        <details>
+          <summary data-en="Which Macs does it run on?">Na jakich Macach działa?</summary>
+          <p data-en="macOS 14.4 or newer on a Mac with Apple silicon (M1 and later). Intel Macs are not supported, because the on-device model needs the Apple chip to be fast.">Na macOS 14.4 lub nowszym, na Macu z chipem Apple (M1 i nowsze). Maki z procesorem Intel nie są wspierane, bo model na urządzeniu potrzebuje chipa Apple, żeby działać szybko.</p>
+        </details>
+        <details>
+          <summary data-en="What do I get in Pro, and how much is it?">Co dostaję w Pro i ile to kosztuje?</summary>
+          <p data-en="Pro adds cloud transcription, all AI modes, your own modes and every future feature. It costs $48 a year (about $4 a month) or $6 month to month. There is only one paid plan, so there is nothing to compare.">Pro dodaje transkrypcję w chmurze, wszystkie tryby AI, własne tryby i każdą przyszłą funkcję. Kosztuje 159 zł rocznie (około 13 zł miesięcznie) albo 24 zł przy płatności co miesiąc. To jedyny płatny plan, więc nie ma czego porównywać.</p>
+        </details>
+        <details>
+          <summary data-en="Can I use my own API key?">Czy mogę użyć własnego klucza API?</summary>
+          <p data-en="Yes, in the free plan too. Paste your own key for cloud transcription or AI in Settings and those features work without a subscription; you pay the provider directly. Pro is for people who want it all to work right away, with no keys to set up.">Tak, także w planie Free. Wklejasz w Ustawieniach własny klucz do chmury albo AI i te funkcje działają bez abonamentu, a za użycie płacisz bezpośrednio dostawcy. Pro jest dla tych, którzy chcą, żeby wszystko działało od razu, bez zakładania kluczy.</p>
+        </details>
+        <details>
+          <summary data-en="Is Captylo open source?">Czy Captylo jest open source?</summary>
+          <p data-en="Yes. All of the code is on GitHub under the GPLv3 licence: you can check what the app does with your voice, build it yourself and change whatever you like.">Tak. Cały kod jest na GitHubie na licencji GPLv3: możesz sprawdzić, co appka robi z Twoim głosem, zbudować ją samodzielnie i zmienić, co tylko chcesz.</p>
+          <p><a class="link" href="https://github.com/dawidkawalec/captylo" rel="noopener" target="_blank" data-en="See the code on GitHub">Zobacz kod na GitHubie</a></p>
+        </details>
+        <details>
+          <summary data-en="Will the free plan ever run out?">Czy darmowy plan kiedyś się skończy?</summary>
+          <p data-en="No. Dictation on your Mac stays free with no word limit. You pay only for the cloud and AI, because those cost us money every time you use them.">Nie. Dyktowanie na Twoim Macu zostaje darmowe i bez limitu słów. Płacisz tylko za chmurę i AI, bo one kosztują nas przy każdym użyciu.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section class="tide download" id="pobierz" data-grainient="dark" data-seed="240" aria-labelledby="download-title">
+    <div class="download-inner">
+      <img class="download-icon" src="assets/brand/icon.svg" alt="" width="1024" height="1024">
+      <h2 id="download-title" data-en="Your next email can be spoken.">Następnego maila możesz powiedzieć.</h2>
+      <p data-en="The first public version of Captylo for Mac is almost ready. Free, with no account and no word limit.">Pierwsza publiczna wersja Captylo na Maca jest prawie gotowa. Za darmo, bez konta i bez limitu słów.</p>
+      <div class="cta-row center">
+        <span class="btn btn-salt is-disabled" aria-disabled="true"><svg class="ico" aria-hidden="true"><use href="#i-apple"/></svg><span data-en="Download for Mac">Pobierz na Maca</span><span class="soon" data-en="Soon">Wkrótce</span></span>
+      </div>
+      <small data-en="Requires macOS 14.4 or newer and a Mac with Apple silicon.">Wymaga macOS 14.4 lub nowszego i Maca z chipem Apple.</small>
+      <p class="download-source"><a class="link" href="https://github.com/dawidkawalec/captylo" rel="noopener" target="_blank" data-en="Can't wait? Build it from the open source code on GitHub.">Nie chcesz czekać? Zbuduj Captylo z otwartego kodu na GitHubie.</a></p>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <p class="footer-tagline" data-en="Dictation for Mac. On-device, no word limit.">Dyktowanie na Macu. Lokalnie i bez limitu słów.</p>
+        <ul class="footer-links">
+          <li><a href="#jak-to-dziala" data-en="How it works">Jak to działa</a></li>
+          <li><a href="#ai" data-en="AI modes">Tryby AI</a></li>
+          <li><a href="#prywatnosc" data-en="Privacy">Prywatność</a></li>
+          <li><a href="#cennik" data-en="Pricing">Cennik</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#tworca" data-en="The maker">Twórca</a></li>
+          <li><a href="kawa/" data-en="Buy a coffee">Postaw kawę</a></li>
+          <li><a href="https://github.com/dawidkawalec/captylo" rel="noopener" target="_blank" data-en="Source code">Kod źródłowy</a></li>
+        </ul>
+        <p class="footer-copy" data-en="© 2026 Captylo · captylo.com. Built on a Mac, for the Mac.">© 2026 Captylo · captylo.com. Zbudowane na Macu, dla Maca.</p>
+      </div>
+      <img class="footer-mark" src="assets/brand/wordmark-white.svg" alt="" width="648" height="173">
+    </footer>
+  </section>
+</main>
+
+<!-- full-screen story viewer for the opinions -->
+<div class="story-viewer" id="story-viewer" role="dialog" aria-modal="true" aria-labelledby="sv-name" hidden>
+  <div class="sv-frame">
+    <div class="sv-media" id="sv-media"></div>
+    <div class="sv-bars" id="sv-bars" aria-hidden="true"></div>
+    <div class="sv-head">
+      <span class="st-ring"><span class="st-av" id="sv-av"></span></span>
+      <span class="sv-who"><b id="sv-name"></b><span id="sv-role"></span></span>
+      <button type="button" class="sv-btn" id="sv-sound" aria-pressed="false" aria-label="Dźwięk" data-en-aria="Sound" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="sv-wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="sv-mute" d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <button type="button" class="sv-btn" id="sv-close" aria-label="Zamknij" data-en-aria="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    </div>
+    <p class="sv-quote" id="sv-quote"></p>
+    <button type="button" class="sv-tap sv-prev" id="sv-prev" aria-label="Poprzednia opinia" data-en-aria="Previous story"></button>
+    <button type="button" class="sv-tap sv-next" id="sv-next" aria-label="Następna opinia" data-en-aria="Next story"></button>
+  </div>
+</div>
+
+</body>
+</html>

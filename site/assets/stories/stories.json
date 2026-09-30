@@ -1,0 +1,51 @@
+{
+  "title": { "pl": "Mówisz zamiast pisać. Gdziekolwiek jesteś.", "en": "Talk instead of type. Wherever you are." },
+  "lead": { "pl": "Tak wygląda dyktowanie w zwykłym dniu. Stuknij kartę, żeby obejrzeć ją na pełnym ekranie.", "en": "This is what dictation looks like on a normal day. Tap a card to see it full screen." },
+  "items": [
+    {
+      "type": "image",
+      "src": "assets/stories/scene-cafe.jpg",
+      "avatar": "assets/icon-64.png",
+      "name": "captylo",
+      "role": { "pl": "Maile między spotkaniami", "en": "Emails between meetings" },
+      "label": { "pl": "Ilustracja", "en": "Illustration" },
+      "quote": { "pl": "Odpowiedź do klienta podyktowana przy kawie, w trybie E-mail.", "en": "A reply to a client dictated over coffee, in the Email mode." }
+    },
+    {
+      "type": "image",
+      "src": "assets/stories/scene-dev.jpg",
+      "avatar": "assets/icon-64.png",
+      "name": "captylo",
+      "role": { "pl": "Prompt dla agenta", "en": "A prompt for the agent" },
+      "label": { "pl": "Ilustracja", "en": "Illustration" },
+      "quote": { "pl": "Długi prompt dla Claude Code w terminalu, bez jednego stuknięcia w klawiaturę.", "en": "A long prompt for Claude Code in the terminal, without touching the keyboard." }
+    },
+    {
+      "type": "image",
+      "src": "assets/stories/scene-notes.jpg",
+      "avatar": "assets/icon-64.png",
+      "name": "captylo",
+      "role": { "pl": "Notatki po spotkaniu", "en": "Notes after a meeting" },
+      "label": { "pl": "Ilustracja", "en": "Illustration" },
+      "quote": { "pl": "Myślenie na głos, a tryb Lista zadań robi z tego czytelne punkty.", "en": "Thinking out loud, and the To-do list mode turns it into clear points." }
+    },
+    {
+      "type": "image",
+      "src": "assets/stories/scene-train.jpg",
+      "avatar": "assets/icon-64.png",
+      "name": "captylo",
+      "role": { "pl": "W pociągu, offline", "en": "On the train, offline" },
+      "label": { "pl": "Ilustracja", "en": "Illustration" },
+      "quote": { "pl": "Mowa zamienia się w tekst na Macu, więc słaby zasięg nie przeszkadza.", "en": "Speech turns into text on the Mac, so a weak signal does not matter." }
+    },
+    {
+      "type": "image",
+      "src": "assets/stories/scene-sofa.jpg",
+      "avatar": "assets/icon-64.png",
+      "name": "captylo",
+      "role": { "pl": "Długi mail wieczorem", "en": "A long email in the evening" },
+      "label": { "pl": "Ilustracja", "en": "Illustration" },
+      "quote": { "pl": "Kilka minut mówienia zamiast kwadransa pisania.", "en": "A few minutes of talking instead of a quarter of an hour of typing." }
+    }
+  ]
+}

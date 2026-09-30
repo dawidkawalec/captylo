@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Foreground layer: the rec dot, Rec Red #FF3B30, in the mouth of the C.
+       Radius +15% over the mapped master (Liquid Glass edge light makes a small disc read smaller). -->
+  <circle cx="792.85" cy="512.00" r="31.44" fill="#FF3B30"/>
+</svg>

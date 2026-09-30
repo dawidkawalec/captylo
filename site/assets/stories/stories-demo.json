@@ -1,0 +1,39 @@
+[
+  {
+    "type": "video",
+    "src": "assets/stories/demo/demo-video.mp4",
+    "poster": "assets/stories/demo/demo-video.jpg",
+    "name": { "pl": "Przykładowa opinia", "en": "Sample story" },
+    "role": { "pl": "wideo 9:16, z dźwiękiem", "en": "9:16 video with sound" },
+    "quote": { "pl": "Tu pojawi się jedno lub dwa zdania z opinii, widoczne na karcie.", "en": "One or two sentences from the story appear here, on the card." }
+  },
+  {
+    "type": "image",
+    "src": "assets/stories/demo/demo-1.jpg",
+    "name": { "pl": "Przykładowa opinia", "en": "Sample story" },
+    "role": { "pl": "zdjęcie 9:16", "en": "9:16 photo" },
+    "quote": { "pl": "Cytat jest krótki, reszta mówi sama story.", "en": "The quote stays short, the story does the talking." }
+  },
+  {
+    "type": "image",
+    "src": "assets/stories/demo/demo-2.jpg",
+    "name": { "pl": "Przykładowa opinia", "en": "Sample story" },
+    "role": { "pl": "zdjęcie 9:16", "en": "9:16 photo" },
+    "quote": { "pl": "Imię, rola i link do profilu są opcjonalne.", "en": "Name, role and a profile link are optional." }
+  },
+  {
+    "type": "image",
+    "src": "assets/stories/demo/demo-3.jpg",
+    "name": { "pl": "Przykładowa opinia", "en": "Sample story" },
+    "role": { "pl": "zdjęcie 9:16", "en": "9:16 photo" },
+    "quote": { "pl": "Kliknięcie otwiera pełny ekran z paskami postępu jak na Instagramie.", "en": "A tap opens full screen with progress bars like on Instagram." }
+  },
+  {
+    "type": "video",
+    "src": "assets/stories/demo/demo-video.mp4",
+    "poster": "assets/stories/demo/demo-video.jpg",
+    "name": { "pl": "Przykładowa opinia", "en": "Sample story" },
+    "role": { "pl": "wideo 9:16", "en": "9:16 video" },
+    "quote": { "pl": "Wideo gra na karcie bez dźwięku, a na pełnym ekranie z dźwiękiem.", "en": "Video plays muted on the card and with sound in full screen." }
+  }
+]

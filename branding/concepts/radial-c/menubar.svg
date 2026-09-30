@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <title>Captylo - menu bar glyph (Radial C)</title>
+  <!--
+    Template image: pure black on transparent; macOS tints it for light/dark menu bars.
+    18pt canvas (@1x = 18px, @2x = 36px, 1 unit = 0.5pt).
+    At menu bar size the radial waveform bars were tested and rejected: 11 separate bars read as
+    the macOS activity spinner ("loading"), 22 merged bars read as a jagged, noisy edge.
+    So the glyph is the Radial C's reduction (same as icon-16.svg): a C arc, 4 units (2pt) stroke
+    on a 12-unit radius centred at (18,18), so the spine, top and bottom edges land on even units
+    (4 / 4 / 32) and stay crisp at @1x; plus the rec-dot position at the top terminal (-18 deg on the
+    same circle, 2.6-unit radius, 3-unit gap to the arc end). Glyph box 28 x 28 units = 14pt.
+    Recording state: draw a #FF3B30 dot over the template dot (centre 29.41, 14.29) instead of
+    shipping a coloured non-template image.
+  -->
+  <path d="M24.88 8.17A12 12 0 1 0 27.19 25.71" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="29.41" cy="14.29" r="2.6" fill="#000000"/>
+</svg>

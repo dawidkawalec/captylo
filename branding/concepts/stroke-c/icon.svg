@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Captylo - app icon</title>
+  <!--
+    Captylo master app icon, concept "Stroke C" (1024 canvas, used for 64 px and up).
+    Grid: macOS 1024 canvas, body 824x824 at (100,100), continuous-corner squircle
+    (radius 185.4, 60% smoothing), 100% opaque to its edge (Tahoe squircle-safe).
+    Plate, glass material, rim light, shadow and rec dot are inherited from VocaType 2.
+    Mark: one thick frosted-glass C, centre (536,512), outer r 296, inner r 156
+    (stroke 140), terminals at -43/+43 deg with round caps.
+    Waveform: 5 pills (27 wide, 43 pitch, lengths 66/114/158/104/60) centred on the
+    C's inner edge along its top arm (baseline = the inner edge, +6 outward).
+    fill-rule evenodd makes them an XOR: inside the stroke they are carved out, inside
+    the counter they continue as frosted glass. The voice crosses into the letter.
+    Rec dot #FF3B30, r 38, centred in the lower terminal cap.
+    Use icon-32.svg for 32 px and icon-16.svg for 16 px (hand-hinted masters).
+    Filters use color-interpolation-filters="sRGB"; the plate gradient never passes
+    through a filter (librsvg bands dark gradients in 8-bit linearRGB).
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+
+    <!-- Plate: Dusk Navy -> Indigo -> Violet -> Orchid -> Rose -> Peach -->
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <!-- Horizon glow rising from the bottom edge -->
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Soft lilac halo behind the mark (lights the counter) -->
+    <radialGradient id="halo" cx="536" cy="512" r="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Inner edge light of the plate (top and horizon) -->
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+
+    <!-- Frosted glass material of the C -->
+    <linearGradient id="glass" x1="0" y1="216" x2="0" y2="808" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="0.45" stop-color="#FDFCFF" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.88"/>
+    </linearGradient>
+    <!-- Tube depth: lilac shade along the inner edge, light along the outer edge;
+         the glass that hangs into the counter gets a faint lift -->
+    <radialGradient id="glassDepth" cx="536" cy="512" r="296" gradientUnits="userSpaceOnUse">
+      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="0.51" stop-color="#9C8FE0" stop-opacity="0.24"/>
+      <stop offset="0.53" stop-color="#9C8FE0" stop-opacity="0.30"/>
+      <stop offset="0.73" stop-color="#C9BFF2" stop-opacity="0"/>
+      <stop offset="0.91" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.2"/>
+    </radialGradient>
+    <!-- Liquid-glass specular rim: brightest top-left and bottom-right -->
+    <linearGradient id="glassRim" x1="0" y1="216" x2="207.2" y2="808" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="0.25" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="388" cy="328.48" r="236.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+
+    <filter id="markShadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="16"/>
+      <feOffset dy="16" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.36"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="19"/>
+    </filter>
+
+    <!-- The mark: C outline + 5 waveform pills, evenodd = XOR across the inner edge -->
+    <path id="mark" fill-rule="evenodd" clip-rule="evenodd" d="M752.48 310.13A296 296 0 1 0 752.48 713.87A70 70 0 0 0 650.09 618.39A156 156 0 1 1 650.09 405.61A70 70 0 0 0 752.48 310.13ZM420.5 368.47A13.5 13.5 0 0 1 447.5 368.47L447.5 407.47A13.5 13.5 0 0 1 420.5 407.47ZM463.5 318.09A13.5 13.5 0 0 1 490.5 318.09L490.5 405.09A13.5 13.5 0 0 1 463.5 405.09ZM506.5 285.32A13.5 13.5 0 0 1 533.5 285.32L533.5 416.32A13.5 13.5 0 0 1 506.5 416.32ZM549.5 313.85A13.5 13.5 0 0 1 576.5 313.85L576.5 390.85A13.5 13.5 0 0 1 549.5 390.85ZM592.5 350.09A13.5 13.5 0 0 1 619.5 350.09L619.5 383.09A13.5 13.5 0 0 1 592.5 383.09Z"/>
+    <clipPath id="markClip"><use href="#mark"/></clipPath>
+  </defs>
+
+  <!-- Plate (shadow drawn separately so the gradient never passes through a filter) -->
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  </g>
+
+  <!-- Stroke C -->
+  <use href="#mark" filter="url(#markShadow)"/>
+  <use href="#mark" fill="#FFFFFF" opacity="0.18" filter="url(#bloom)"/>
+  <use href="#mark" fill="url(#glass)"/>
+  <use href="#mark" fill="url(#glassDepth)"/>
+  <use href="#mark" fill="url(#sheen)"/>
+  <g clip-path="url(#markClip)"><use href="#mark" fill="none" stroke="url(#glassRim)" stroke-width="6"/></g>
+
+  <!-- Rec dot -->
+  <circle cx="701.29" cy="666.13" r="58.9" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+  <circle cx="701.29" cy="666.13" r="38" fill="url(#dotFill)"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <title>Captylo - menu bar glyph (idle)</title>
+  <!--
+    Template image: pure black on transparent; macOS tints it for light and dark menu bars.
+    18 pt canvas (@1x = 18 px, @2x = 36 px, 1 unit = 0.5 pt).
+    Speech C ring 3 units wide (1.5 pt), outer radius 12 units, centre (19,16); 3 pills 2 units
+    wide (1 px @1x) on even coordinates, so @2x every straight edge is on a whole pixel.
+    The glyph (ring + tail) is optically centred on the 36-unit canvas.
+    Idle: the mouth of the C stays empty; menubar-recording.svg adds the dot there.
+  -->
+  <g fill="#000000">
+    <path d="M27.92 7.97A12.00 12.00 0 0 0 9.81 23.71C10.84 24.94 11.07 27.86 10.77 28.92Q10.63 29.40 11.07 29.16C12.22 28.55 13.76 27.26 16.92 27.82A12.00 12.00 0 0 0 27.92 24.03A1.50 1.50 0 0 0 27.81 21.91A1.50 1.50 0 0 0 25.69 22.02A9.00 9.00 0 1 1 25.69 9.98A1.50 1.50 0 0 0 27.81 10.09A1.50 1.50 0 0 0 27.92 7.97Z"/>
+    <rect x="14" y="13" width="2" height="6" rx="1"/>
+    <rect x="18" y="10" width="2" height="12" rx="1"/>
+    <rect x="22" y="13" width="2" height="6" rx="1"/>
+  </g>
+</svg>

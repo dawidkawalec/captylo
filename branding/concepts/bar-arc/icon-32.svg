@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Captylo - app icon, 32 px master (Bar Arc)</title>
+  <!--
+    Hand-hinted master for 32x32 renders only (icon_32x32, icon_16x16@2x).
+    Same plate as icon.svg. The Bar Arc C is rebuilt on the 32 px grid (1 px = 32 units):
+    5 columns, 2 px wide with 1 px gaps, every edge on a whole pixel, flat white, no shadows.
+    The master's short outer spine bar is dropped here: at 32 px a double spine outweighs
+    the arms and the C turns into "||=". One spine plus four arm columns keeps it round.
+      x  8-10  spine          y  9-23
+      x 11-13  arm pair       y  8-12 / 20-24   (4 px)
+      x 14-16  arm pair       y  7-10 / 22-25   (3 px, crest of the ring)
+      x 17-19  arm pair       y  7-10 / 22-25   (3 px)
+      x 20-22  arm pair       y  9-11 / 21-23   (2 px, the fade: dots)
+      x 23-25  rec dot 2x2    y 15-17           (the last sample, in the mouth of the C)
+    Mark spans x 8-25, centred on x 16.5 like the master (optical shift to the right).
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="560" cy="500" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+  </defs>
+
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="64"/>
+  </g>
+
+  <g fill="#FFFFFF">
+    <rect x="256" y="288" width="64" height="448" rx="32"/>
+    <rect x="352" y="256" width="64" height="128" rx="32"/>
+    <rect x="352" y="640" width="64" height="128" rx="32"/>
+    <rect x="448" y="224" width="64" height="96" rx="32"/>
+    <rect x="448" y="704" width="64" height="96" rx="32"/>
+    <rect x="544" y="224" width="64" height="96" rx="32"/>
+    <rect x="544" y="704" width="64" height="96" rx="32"/>
+    <rect x="640" y="288" width="64" height="64" rx="32"/>
+    <rect x="640" y="672" width="64" height="64" rx="32"/>
+  </g>
+  <circle cx="768" cy="512" r="57.6" fill="#FF3B30" opacity="0.45" filter="url(#dotGlow)"/>
+  <rect x="736" y="480" width="64" height="64" rx="28.8" fill="#FF3B30"/>
+</svg>

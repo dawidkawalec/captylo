@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Captylo - app icon (Bar Arc)</title>
+  <!--
+    Captylo master app icon, concept A "Bar Arc". Use for 64 px and up;
+    icon-32.svg and icon-16.svg are the hand-hinted small masters.
+    Grid: macOS 1024 canvas, opaque 824x824 continuous-corner squircle at (100,100)
+    (radius 185.4, 60% smoothing), template drop shadow drawn as a separate element.
+    Mark: a ring (outer radius 276, centre 528,512) sampled by 8 columns of frosted-glass
+    pills (46 wide, 64 pitch), the same pill as the widget waveform.
+      - The two left columns cross the whole ring: they are the C's spine (loudest samples).
+      - The next six columns cut the ring twice (top and bottom arm). Their tops ride the
+        outer circle; their lengths decay 156, 134, 114, 98, 84, 70, so the arms thin out
+        like a waveform fading to silence and the counter opens to the right.
+      - The 9th sample is the red rec dot (#FF3B30, 52 across) in the mouth of the C:
+        the last, silent sample of the fade and the cursor where the text will appear.
+    The mark is shifted 16 px right of the canvas centre for optical balance (a C carries
+    its ink on the left). Filters use color-interpolation-filters="sRGB" and the plate
+    gradient never passes through a filter (librsvg bands dark gradients in linearRGB).
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+
+    <!-- Dusk plate: Dusk Navy -> Indigo -> Plate Violet -> Orchid -> Rose -> Peach -->
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Lilac halo that fills the C's counter -->
+    <radialGradient id="halo" cx="560" cy="500" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+
+    <!-- Frosted glass pill material (objectBoundingBox: maps onto every pill) -->
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="0.45" stop-color="#FDFCFF" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.86"/>
+    </linearGradient>
+    <linearGradient id="glassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#C9BFF2" stop-opacity="0"/>
+      <stop offset="1" stop-color="#A597E0" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="glassRim" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="0.25" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="barShadow" x="-60%" y="-30%" width="220%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/>
+      <feOffset dy="13" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.34"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-80%" y="-40%" width="260%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+
+    <!-- The mark: 8 columns at x = 528 + 64k (k = -4..3), pills 46 wide -->
+    <g id="bars">
+      <rect x="249" y="409" width="46" height="206" rx="23"/>
+      <rect x="313" y="314" width="46" height="396" rx="23"/>
+      <rect x="377" y="267" width="46" height="156" rx="23"/>
+      <rect x="377" y="601" width="46" height="156" rx="23"/>
+      <rect x="441" y="244" width="46" height="134" rx="23"/>
+      <rect x="441" y="646" width="46" height="134" rx="23"/>
+      <rect x="505" y="236" width="46" height="114" rx="23"/>
+      <rect x="505" y="674" width="46" height="114" rx="23"/>
+      <rect x="569" y="244" width="46" height="98" rx="23"/>
+      <rect x="569" y="682" width="46" height="98" rx="23"/>
+      <rect x="633" y="267" width="46" height="84" rx="23"/>
+      <rect x="633" y="673" width="46" height="84" rx="23"/>
+      <rect x="697" y="314" width="46" height="70" rx="23"/>
+      <rect x="697" y="640" width="46" height="70" rx="23"/>
+    </g>
+    <clipPath id="barsClip"><use href="#bars"/></clipPath>
+  </defs>
+
+  <!-- Plate -->
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  </g>
+
+  <!-- Bar Arc C -->
+  <use href="#bars" filter="url(#barShadow)"/>
+  <use href="#bars" fill="#FFFFFF" opacity="0.18" filter="url(#bloom)"/>
+  <use href="#bars" fill="url(#glass)"/>
+  <use href="#bars" fill="url(#glassShade)"/>
+  <g clip-path="url(#barsClip)"><use href="#bars" fill="none" stroke="url(#glassRim)" stroke-width="5"/></g>
+
+  <!-- Rec dot: 9th sample, in the mouth of the C -->
+  <circle cx="784" cy="512" r="44" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+  <circle cx="784" cy="512" r="26" fill="url(#dotFill)"/>
+</svg>

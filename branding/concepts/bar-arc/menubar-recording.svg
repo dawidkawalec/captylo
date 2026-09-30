@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <title>Captylo - menu bar glyph (recording, Bar Arc)</title>
+  <!--
+    Template image, recording state: menubar.svg plus the rec dot in the mouth of the C
+    (x 30-34, y 16-20). Ship it as a template; to show red, draw a #FF3B30 dot over the
+    template at x 15-17 pt, y 8-10 pt (18 pt canvas) instead of a coloured image.
+  -->
+  <g fill="#000000">
+    <rect x="6" y="8" width="4" height="20" rx="2"/>
+    <rect x="12" y="4" width="4" height="8" rx="2"/>
+    <rect x="12" y="24" width="4" height="8" rx="2"/>
+    <rect x="18" y="4" width="4" height="6" rx="2"/>
+    <rect x="18" y="26" width="4" height="6" rx="2"/>
+    <rect x="24" y="8" width="4" height="4" rx="2"/>
+    <rect x="24" y="24" width="4" height="4" rx="2"/>
+    <circle cx="32" cy="18" r="2"/>
+  </g>
+</svg>

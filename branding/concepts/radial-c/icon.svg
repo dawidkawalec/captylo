@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Captylo - app icon (Radial C)</title>
+  <!--
+    Captylo master app icon, concept B "Radial C". Use for 64px and up;
+    use icon-32.svg for 32px and icon-16.svg for 16px renders.
+    Grid: macOS 1024 canvas, body 824x824 at (100,100), continuous-corner squircle (r 185.4,
+    60% smoothing), 100% opaque to its edge (Tahoe-conforming), template drop shadow.
+    Plate: the VocaType 2 dusk plate, unchanged.
+
+    Mark: a letter C built from 22 frosted-glass waveform bars arranged radially around
+    (566, 504). The ring runs 288 deg, from -36 deg (top terminal) counter-clockwise to +36 deg
+    (bottom terminal), on a pitch of 288/23 = 12.52 deg, so the spine falls BETWEEN two bars
+    (no single horizontal "clock hand" bar at 9 o'clock).
+    - Bars: 32 wide, fully rounded, anchored at 40% of their length on a 214 base radius, so the
+      inner counter stays close to a clean circle (the letter) and the waveform grows outward (sound).
+    - Lengths follow a letter C's stress: longest on the lower-left spine (146 / 142, a slight
+      humanist oblique), thinner on the top and bottom arms, tapering to 32-unit "silent sample"
+      dots at the bottom terminal, like the widget waveform (. . | | | . .). Long/short
+      alternation is irregular on purpose so it reads as a voice, not a gear or a spinner.
+    - Rec dot (#FF3B30, r 23 + red glow) is the record head at the top terminal, at -36 deg on the
+      ring; the bar next to it is left out, so there is a clear 25 deg gap before it: the newest
+      sample, where the text starts. Recording convention: time runs clockwise, newest at the head.
+    Glass: one vertical userSpace gradient across the whole mark (white top, Frost bottom), applied
+    through a mask so every bar is lit from the same sky; symmetric edge shade per bar; specular
+    rim brightest top-left and bottom-right; dusk drop shadow and a soft white bloom.
+    Filters use color-interpolation-filters="sRGB" and the plate gradient never passes through a
+    filter (librsvg's 8-bit linearRGB filtering bands dark gradients).
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+
+    <!-- Plate: Dusk Navy -> Indigo -> Plate Violet -> Orchid -> Rose -> Peach -->
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <!-- Horizon glow rising from the bottom edge -->
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Lilac halo filling the counter of the C -->
+    <radialGradient id="halo" cx="540" cy="500" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Inner edge light of the plate -->
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+
+    <!-- Frosted glass: one light for the whole ring (userSpace, applied through barsMask) -->
+    <linearGradient id="glass" x1="0" y1="230" x2="0" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="0.5" stop-color="#FDFCFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.86"/>
+    </linearGradient>
+    <!-- Symmetric edge shade across each bar (objectBoundingBox rotates with the bar) -->
+    <linearGradient id="glassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#A597E0" stop-opacity="0.28"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#A597E0" stop-opacity="0.28"/>
+    </linearGradient>
+    <!-- Liquid-glass specular rim: brightest top-left and bottom-right -->
+    <linearGradient id="rimLight" x1="260" y1="230" x2="770" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="barShadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="13"/>
+      <feOffset dy="12" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.34"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+
+    <!-- The Radial C: 22 bars, top terminal -> spine -> bottom terminal (rec dot drawn separately) -->
+    <g id="bars">
+      <rect x="550" y="263.6" width="32" height="44" rx="16" transform="rotate(28.957 566 504)"/>
+      <rect x="550" y="257.6" width="32" height="54" rx="16" transform="rotate(16.435 566 504)"/>
+      <rect x="550" y="240.8" width="32" height="82" rx="16" transform="rotate(3.913 566 504)"/>
+      <rect x="550" y="255.2" width="32" height="58" rx="16" transform="rotate(-8.609 566 504)"/>
+      <rect x="550" y="227.6" width="32" height="104" rx="16" transform="rotate(-21.13 566 504)"/>
+      <rect x="550" y="248" width="32" height="70" rx="16" transform="rotate(-33.652 566 504)"/>
+      <rect x="550" y="214.4" width="32" height="126" rx="16" transform="rotate(-46.174 566 504)"/>
+      <rect x="550" y="239.6" width="32" height="84" rx="16" transform="rotate(-58.696 566 504)"/>
+      <rect x="550" y="231.2" width="32" height="98" rx="16" transform="rotate(-71.217 566 504)"/>
+      <rect x="550" y="204.8" width="32" height="142" rx="16" transform="rotate(-83.739 566 504)"/>
+      <rect x="550" y="226.4" width="32" height="106" rx="16" transform="rotate(-96.261 566 504)"/>
+      <rect x="550" y="202.4" width="32" height="146" rx="16" transform="rotate(-108.783 566 504)"/>
+      <rect x="550" y="238.4" width="32" height="86" rx="16" transform="rotate(-121.304 566 504)"/>
+      <rect x="550" y="215.6" width="32" height="124" rx="16" transform="rotate(-133.826 566 504)"/>
+      <rect x="550" y="246.8" width="32" height="72" rx="16" transform="rotate(-146.348 566 504)"/>
+      <rect x="550" y="226.4" width="32" height="106" rx="16" transform="rotate(-158.87 566 504)"/>
+      <rect x="550" y="254" width="32" height="60" rx="16" transform="rotate(-171.391 566 504)"/>
+      <rect x="550" y="239.6" width="32" height="84" rx="16" transform="rotate(-183.913 566 504)"/>
+      <rect x="550" y="260" width="32" height="50" rx="16" transform="rotate(-196.435 566 504)"/>
+      <rect x="550" y="252.8" width="32" height="62" rx="16" transform="rotate(-208.957 566 504)"/>
+      <rect x="550" y="266" width="32" height="40" rx="16" transform="rotate(-221.478 566 504)"/>
+      <rect x="550" y="270.8" width="32" height="32" rx="16" transform="rotate(-234 566 504)"/>
+    </g>
+    <!-- librsvg ignores a clipPath that points at a <use> of a transformed group, so use a mask -->
+    <mask id="barsMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <use href="#bars" fill="#FFFFFF"/>
+    </mask>
+  </defs>
+
+  <!-- Plate (shadow drawn separately so the gradient never passes through a filter) -->
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  </g>
+
+  <!-- Radial C -->
+  <use href="#bars" filter="url(#barShadow)"/>
+  <use href="#bars" fill="#FFFFFF" opacity="0.18" filter="url(#bloom)"/>
+  <rect x="100" y="100" width="824" height="824" fill="url(#glass)" mask="url(#barsMask)"/>
+  <use href="#bars" fill="url(#glassShade)"/>
+  <g mask="url(#barsMask)"><use href="#bars" fill="none" stroke="url(#rimLight)" stroke-width="5"/></g>
+
+  <!-- Rec dot: the record head at the top terminal -->
+  <circle cx="741.72" cy="376.33" r="40" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+  <circle cx="741.72" cy="376.33" r="23" fill="url(#dotFill)"/>
+</svg>

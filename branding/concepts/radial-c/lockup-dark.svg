@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-label="Captylo">
+  <title>Captylo - horizontal lockup on Night (Radial C)</title>
+  <!--
+    App icon (icon.svg at 0.3125 scale: 320px canvas, 257.5px body) + "Captylo" wordmark on Night #14162E.
+    Wordmark: Inter Display SemiBold (Inter variable, opsz 32, wght 600, SIL OFL 1.1), Frost #EFEBFF,
+    HarfBuzz shaping incl. Inter's own GPOS kerning (t-y +53, y-l +14 units), tracking -1.2% (-24.6 of
+    2048 units per glyph), converted to outlines, so it renders identically without the font installed.
+    Live text fallback: font-family "Inter Display", "Inter", "SF Pro Display", -apple-system,
+    "Helvetica Neue", Arial; font-weight 600; letter-spacing -0.012em.
+    Cap height 115.9px = 45% of the icon body; caps centred on the body; gap body -> C = 56px.
+    Clear space: 25% of the body height on every side of the icon + wordmark group.
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="540" cy="500" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="230" x2="0" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="0.5" stop-color="#FDFCFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.86"/>
+    </linearGradient>
+    <linearGradient id="glassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#A597E0" stop-opacity="0.28"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#A597E0" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="rimLight" x1="260" y1="230" x2="770" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="barShadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="13"/>
+      <feOffset dy="12" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.34"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+    <g id="bars">
+      <rect x="550" y="263.6" width="32" height="44" rx="16" transform="rotate(28.957 566 504)"/>
+      <rect x="550" y="257.6" width="32" height="54" rx="16" transform="rotate(16.435 566 504)"/>
+      <rect x="550" y="240.8" width="32" height="82" rx="16" transform="rotate(3.913 566 504)"/>
+      <rect x="550" y="255.2" width="32" height="58" rx="16" transform="rotate(-8.609 566 504)"/>
+      <rect x="550" y="227.6" width="32" height="104" rx="16" transform="rotate(-21.13 566 504)"/>
+      <rect x="550" y="248" width="32" height="70" rx="16" transform="rotate(-33.652 566 504)"/>
+      <rect x="550" y="214.4" width="32" height="126" rx="16" transform="rotate(-46.174 566 504)"/>
+      <rect x="550" y="239.6" width="32" height="84" rx="16" transform="rotate(-58.696 566 504)"/>
+      <rect x="550" y="231.2" width="32" height="98" rx="16" transform="rotate(-71.217 566 504)"/>
+      <rect x="550" y="204.8" width="32" height="142" rx="16" transform="rotate(-83.739 566 504)"/>
+      <rect x="550" y="226.4" width="32" height="106" rx="16" transform="rotate(-96.261 566 504)"/>
+      <rect x="550" y="202.4" width="32" height="146" rx="16" transform="rotate(-108.783 566 504)"/>
+      <rect x="550" y="238.4" width="32" height="86" rx="16" transform="rotate(-121.304 566 504)"/>
+      <rect x="550" y="215.6" width="32" height="124" rx="16" transform="rotate(-133.826 566 504)"/>
+      <rect x="550" y="246.8" width="32" height="72" rx="16" transform="rotate(-146.348 566 504)"/>
+      <rect x="550" y="226.4" width="32" height="106" rx="16" transform="rotate(-158.87 566 504)"/>
+      <rect x="550" y="254" width="32" height="60" rx="16" transform="rotate(-171.391 566 504)"/>
+      <rect x="550" y="239.6" width="32" height="84" rx="16" transform="rotate(-183.913 566 504)"/>
+      <rect x="550" y="260" width="32" height="50" rx="16" transform="rotate(-196.435 566 504)"/>
+      <rect x="550" y="252.8" width="32" height="62" rx="16" transform="rotate(-208.957 566 504)"/>
+      <rect x="550" y="266" width="32" height="40" rx="16" transform="rotate(-221.478 566 504)"/>
+      <rect x="550" y="270.8" width="32" height="32" rx="16" transform="rotate(-234 566 504)"/>
+    </g>
+    <mask id="barsMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <use href="#bars" fill="#FFFFFF"/>
+    </mask>
+  </defs>
+
+  <rect width="1200" height="400" fill="#14162E"/>
+
+  <!-- App icon -->
+  <g transform="translate(138.09 40) scale(0.3125)">
+    <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+    <use href="#squircle" fill="url(#sky)"/>
+    <g clip-path="url(#bodyClip)">
+      <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+      <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+      <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+    </g>
+    <use href="#bars" filter="url(#barShadow)"/>
+    <use href="#bars" fill="#FFFFFF" opacity="0.18" filter="url(#bloom)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#glass)" mask="url(#barsMask)"/>
+    <use href="#bars" fill="url(#glassShade)"/>
+    <g mask="url(#barsMask)"><use href="#bars" fill="none" stroke="url(#rimLight)" stroke-width="5"/></g>
+    <circle cx="741.72" cy="376.33" r="40" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+    <circle cx="741.72" cy="376.33" r="23" fill="url(#dotFill)"/>
+  </g>
+
+  <!-- Wordmark "Captylo" (outlined glyphs in font units, baseline at y 257.94) -->
+  <g fill="#EFEBFF" transform="translate(477.24 257.94) scale(0.077768 -0.077768)">
+    <path d="M774 -24Q569 -24 410 71Q252 166 162 339Q72 512 72 744Q72 978 162 1151Q251 1324 410 1419Q569 1514 774 1514Q900 1514 1009 1476Q1118 1439 1202 1369Q1287 1298 1342 1200Q1397 1102 1416 979H1147Q1132 1050 1099 1106Q1066 1161 1018 1199Q970 1238 909 1257Q848 1277 776 1277Q640 1277 542 1211Q444 1144 391 1025Q338 905 338 744Q338 584 391 465Q443 346 541 279Q640 213 776 213Q848 213 908 233Q969 252 1017 290Q1065 328 1099 383Q1132 438 1148 509H1416Q1397 387 1342 289Q1287 191 1202 121Q1117 51 1009 13Q900 -24 774 -24Z"/>
+    <path transform="translate(1459.4 0)" d="M434 -17Q329 -17 247 18Q164 53 117 124Q69 195 69 300Q69 390 103 449Q137 507 195 542Q253 577 328 595Q403 614 484 622Q582 633 640 642Q697 650 722 667Q747 683 747 719V727Q747 773 724 807Q701 842 657 862Q614 881 554 881Q493 881 446 862Q400 842 373 807Q346 773 342 728H99Q106 833 162 911Q219 990 320 1034Q421 1077 559 1077Q662 1077 743 1053Q825 1028 881 981Q938 934 967 868Q997 802 997 720V0H749V149H745Q720 102 680 65Q640 27 580 5Q520 -17 434 -17ZM496 170Q579 170 635 200Q691 230 719 280Q748 330 748 391V505Q736 498 713 491Q690 484 659 478Q627 471 591 465Q554 459 515 453Q461 446 416 428Q370 411 343 380Q315 350 315 302Q315 261 338 231Q360 201 401 186Q441 170 496 170Z"/>
+    <path transform="translate(2542.8 0)" d="M112 -418V1056H360V909H363Q396 965 445 1002Q494 1040 554 1059Q615 1077 683 1077Q820 1077 922 1008Q1025 939 1082 815Q1139 691 1139 529Q1139 365 1082 241Q1026 117 923 48Q820 -21 682 -21Q613 -21 554 -1Q495 19 447 59Q400 99 367 159H364V-418ZM623 190Q701 190 760 229Q818 268 851 344Q884 420 884 529Q884 638 851 714Q818 789 760 828Q701 868 623 868Q540 868 479 826Q418 784 384 708Q350 632 350 529Q350 426 384 350Q418 273 479 231Q540 190 623 190Z"/>
+    <path transform="translate(3720.3 0)" d="M669 1056V853H17V1056ZM201 1344H454V303Q454 247 477 225Q500 203 561 203Q586 203 618 203Q650 203 669 203V0Q643 0 601 0Q558 0 517 0Q355 0 278 65Q201 131 201 266Z"/>
+    <path transform="translate(4464.7 0)" d="M131 -418V-213H256Q290 -213 313 -201Q337 -189 354 -163Q372 -137 386 -96L425 6L18 1056H285L479 506Q509 418 537 331Q564 243 590 156H520Q545 243 573 331Q601 419 631 506L824 1056H1088L616 -174Q584 -256 539 -310Q494 -365 433 -391Q373 -418 296 -418Q256 -418 214 -418Q172 -418 131 -418Z"/>
+    <path transform="translate(5560.1 0)" d="M364 1490V0H112V1490Z"/>
+    <path transform="translate(6011.5 0)" d="M584 -24Q429 -24 311 45Q194 115 128 239Q63 363 63 527Q63 691 128 816Q194 940 311 1010Q429 1080 584 1080Q740 1080 857 1010Q974 940 1039 816Q1105 691 1105 527Q1105 363 1039 239Q974 115 857 45Q740 -24 584 -24ZM584 187Q665 187 724 228Q784 269 816 346Q849 422 849 527Q849 633 816 709Q784 786 724 827Q665 869 584 869Q503 869 443 828Q383 786 351 710Q318 633 318 527Q318 421 351 345Q383 269 443 228Q503 187 584 187Z"/>
+  </g>
+</svg>

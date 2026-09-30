@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 927 320" width="927" height="320" role="img" aria-label="Captylo">
+  <title>Captylo - horizontal lockup, for light backgrounds</title>
+  <!--
+    App icon (icon.svg at 0.3125 scale: 320 px canvas, 257.5 px body) + "Captylo" wordmark.
+    Wordmark: Inter Display SemiBold (Inter variable, opsz 32, wght 600, SIL OFL 1.1),
+    tracking -1.2%, HarfBuzz shaping and kerning, converted to outlines with fontTools, so it
+    renders identically on any machine without the font installed. For live text use
+    font-family: "Inter Display", "Inter", "SF Pro Display", -apple-system, sans-serif; font-weight: 600.
+    Cap height 116.4 px = 45% of the icon body; caps centred on the body (y 160);
+    gap body -> C = 56 px; right padding = the icon's own margin (31.25 px).
+    Transparent background. Text colour: Dusk Navy #23285A (13.8:1 on white).
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <!-- Dusk plate: Dusk Navy -> Indigo -> Plate Violet -> Orchid -> Rose -> Peach -->
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <!-- Horizon glow rising from the bottom edge -->
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Lilac halo that fills the C's counter -->
+    <radialGradient id="halo" cx="542" cy="512" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Inner edge light of the plate (top and horizon) -->
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <!-- Frosted glass pill material (objectBoundingBox: maps onto every pill) -->
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="0.45" stop-color="#FDFCFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.88"/>
+    </linearGradient>
+    <linearGradient id="glassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#C9BFF2" stop-opacity="0"/>
+      <stop offset="1" stop-color="#A597E0" stop-opacity="0.3"/>
+    </linearGradient>
+    <!-- Liquid-glass specular rim: brightest at the top-left and bottom-right -->
+    <linearGradient id="glassRim" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="0.25" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+    <filter id="barShadow" x="-60%" y="-30%" width="220%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/>
+      <feOffset dy="13" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.34"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-80%" y="-40%" width="260%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <g id="bars">
+      <rect x="270" y="358.8" width="40" height="306.3" rx="20"/>
+      <rect x="326" y="296.8" width="40" height="143.6" rx="20"/>
+      <rect x="326" y="583.6" width="40" height="143.6" rx="20"/>
+      <rect x="382" y="261.2" width="40" height="103.5" rx="20"/>
+      <rect x="382" y="659.3" width="40" height="103.5" rx="20"/>
+      <rect x="438" y="241.5" width="40" height="91.6" rx="20"/>
+      <rect x="438" y="690.9" width="40" height="91.6" rx="20"/>
+      <rect x="494" y="234.1" width="40" height="88.1" rx="20"/>
+      <rect x="494" y="701.8" width="40" height="88.1" rx="20"/>
+      <rect x="550" y="238.2" width="40" height="90.0" rx="20"/>
+      <rect x="550" y="695.8" width="40" height="90.0" rx="20"/>
+      <rect x="606" y="254.2" width="40" height="106.8" rx="20"/>
+      <rect x="606" y="663.0" width="40" height="106.8" rx="20"/>
+      <rect x="662" y="284.7" width="40" height="142.9" rx="20"/>
+      <rect x="662" y="596.5" width="40" height="142.9" rx="20"/>
+    </g>
+    <clipPath id="barsClip"><use href="#bars"/></clipPath>
+  </defs>
+  <g transform="scale(0.3125)">
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  </g>
+  <use href="#bars" filter="url(#barShadow)"/>
+  <use href="#bars" fill="#FFFFFF" opacity="0.18" filter="url(#bloom)"/>
+  <use href="#bars" fill="url(#glass)"/>
+  <use href="#bars" fill="url(#glassShade)"/>
+  <g clip-path="url(#barsClip)"><use href="#bars" fill="none" stroke="url(#glassRim)" stroke-width="5"/></g>
+
+  <!-- Rec dot: the next sample on the pitch, cradled in the mouth of the C -->
+  <circle cx="738" cy="512" r="40" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+  <circle cx="738" cy="512" r="22" fill="url(#dotFill)"/>
+  </g>
+  <path fill="#23285A" d="M399.59 220.08Q383.58 220.08 371.2 212.66Q358.81 205.23 351.78 191.72Q344.75 178.2 344.75 160.08Q344.75 141.8 351.74 128.28Q358.73 114.77 371.16 107.34Q383.58 99.92 399.59 99.92Q409.44 99.92 417.95 102.85Q426.47 105.78 433.07 111.29Q439.67 116.8 443.97 124.45Q448.27 132.11 449.75 141.72H428.73Q427.56 136.17 424.98 131.84Q422.41 127.5 418.66 124.49Q414.91 121.48 410.14 119.96Q405.38 118.44 399.75 118.44Q389.12 118.44 381.47 123.63Q373.81 128.83 369.67 138.16Q365.53 147.5 365.53 160.08Q365.53 172.58 369.63 181.88Q373.73 191.17 381.43 196.37Q389.12 201.56 399.75 201.56Q405.38 201.56 410.1 200.04Q414.83 198.52 418.58 195.55Q422.33 192.58 424.95 188.28Q427.56 183.98 428.81 178.44H449.75Q448.27 187.97 443.97 195.62Q439.67 203.28 433.03 208.75Q426.39 214.22 417.91 217.15Q409.44 220.08 399.59 220.08Z M487.05 219.53Q478.85 219.53 472.4 216.8Q465.95 214.06 462.24 208.52Q458.53 202.97 458.53 194.77Q458.53 187.73 461.19 183.16Q463.85 178.59 468.38 175.86Q472.91 173.12 478.77 171.68Q484.63 170.23 490.95 169.61Q498.61 168.75 503.1 168.09Q507.6 167.42 509.55 166.13Q511.5 164.84 511.5 162.03V161.41Q511.5 157.81 509.7 155.12Q507.91 152.42 504.51 150.9Q501.11 149.38 496.42 149.38Q491.66 149.38 488.03 150.9Q484.39 152.42 482.28 155.12Q480.17 157.81 479.86 161.33H460.88Q461.42 153.12 465.84 146.99Q470.25 140.86 478.14 137.46Q486.03 134.06 496.81 134.06Q504.86 134.06 511.23 135.98Q517.6 137.89 522.01 141.56Q526.42 145.23 528.73 150.39Q531.03 155.55 531.03 161.95V218.2H511.66V206.56H511.35Q509.39 210.23 506.27 213.16Q503.14 216.09 498.45 217.81Q493.77 219.53 487.05 219.53ZM491.89 204.92Q498.38 204.92 502.75 202.58Q507.13 200.23 509.35 196.33Q511.58 192.42 511.58 187.66V178.75Q510.64 179.3 508.85 179.84Q507.05 180.39 504.59 180.9Q502.13 181.41 499.28 181.88Q496.42 182.34 493.38 182.81Q489.16 183.36 485.6 184.73Q482.05 186.09 479.9 188.48Q477.75 190.86 477.75 194.61Q477.75 197.81 479.51 200.16Q481.27 202.5 484.43 203.71Q487.6 204.92 491.89 204.92Z M546.53 250.86V135.7H565.91V147.19H566.14Q568.72 142.81 572.55 139.88Q576.38 136.95 581.11 135.51Q585.83 134.06 591.14 134.06Q601.85 134.06 609.86 139.45Q617.86 144.84 622.32 154.53Q626.77 164.22 626.77 176.88Q626.77 189.69 622.36 199.38Q617.94 209.06 609.89 214.45Q601.85 219.84 591.07 219.84Q585.68 219.84 581.07 218.28Q576.46 216.72 572.75 213.59Q569.03 210.47 566.46 205.78H566.22V250.86ZM586.46 203.36Q592.55 203.36 597.12 200.31Q601.69 197.27 604.27 191.33Q606.85 185.39 606.85 176.88Q606.85 168.36 604.27 162.46Q601.69 156.56 597.12 153.48Q592.55 150.39 586.46 150.39Q579.97 150.39 575.21 153.67Q570.44 156.95 567.78 162.89Q565.13 168.83 565.13 176.88Q565.13 184.92 567.78 190.9Q570.44 196.88 575.21 200.12Q579.97 203.36 586.46 203.36Z M682.04 135.7V151.56H631.1V135.7ZM645.47 113.2H665.24V194.53Q665.24 198.91 667.04 200.62Q668.83 202.34 673.6 202.34Q675.55 202.34 678.05 202.34Q680.55 202.34 682.04 202.34V218.2Q680.01 218.2 676.69 218.2Q673.37 218.2 670.16 218.2Q657.51 218.2 651.49 213.09Q645.47 207.97 645.47 197.42Z M698.16 250.86V234.84H707.93Q710.59 234.84 712.42 233.91Q714.26 232.97 715.62 230.94Q716.99 228.91 718.09 225.7L721.13 217.73L689.34 135.7H710.19L725.35 178.67Q727.69 185.55 729.84 192.38Q731.99 199.22 734.02 206.02H728.55Q730.51 199.22 732.69 192.34Q734.88 185.47 737.23 178.67L752.3 135.7H772.93L736.05 231.8Q733.55 238.2 730.04 242.46Q726.52 246.72 721.8 248.79Q717.07 250.86 711.05 250.86Q707.93 250.86 704.65 250.86Q701.37 250.86 698.16 250.86Z M801.95 101.8V218.2H782.26V101.8Z M854.4 220.08Q842.29 220.08 833.11 214.65Q823.93 209.22 818.82 199.53Q813.7 189.84 813.7 177.03Q813.7 164.22 818.82 154.49Q823.93 144.77 833.11 139.3Q842.29 133.83 854.4 133.83Q866.59 133.83 875.73 139.3Q884.87 144.77 889.99 154.49Q895.11 164.22 895.11 177.03Q895.11 189.84 889.99 199.53Q884.87 209.22 875.73 214.65Q866.59 220.08 854.4 220.08ZM854.4 203.59Q860.73 203.59 865.38 200.39Q870.03 197.19 872.57 191.21Q875.11 185.23 875.11 177.03Q875.11 168.75 872.57 162.77Q870.03 156.8 865.38 153.55Q860.73 150.31 854.4 150.31Q848.07 150.31 843.39 153.55Q838.7 156.8 836.16 162.77Q833.62 168.75 833.62 177.03Q833.62 185.31 836.16 191.25Q838.7 197.19 843.39 200.39Q848.07 203.59 854.4 203.59Z"/>
+</svg>

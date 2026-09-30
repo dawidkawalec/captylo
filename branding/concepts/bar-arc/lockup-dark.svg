@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1004 400" width="1004" height="400" role="img" aria-label="Captylo">
+  <title>Captylo - horizontal lockup, dark (Bar Arc)</title>
+  <!--
+    App icon (icon.svg at 0.3125 scale: 320 px canvas, 257.5 px body) + "Captylo" wordmark,
+    on a Night #14162E backdrop (delete the first <rect> for a transparent version).
+    Wordmark: Inter Display SemiBold (Inter variable, opsz 32, wght 600, SIL OFL 1.1),
+    tracking -1.2%, HarfBuzz shaping, converted to outlines with fontTools, so it renders
+    identically without the font installed. For live text use
+    font-family: "Inter Display", "Inter", "SF Pro Display", -apple-system, sans-serif; font-weight: 600.
+    Cap height 115.9 px = 45% of the icon body; caps centred on the body (y 200);
+    gap body -> C = 56 px; outer padding = the icon's own margin (71.25 px to the body).
+    Text colour: Frost #EFEBFF.
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="560" cy="500" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="0.45" stop-color="#FDFCFF" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.86"/>
+    </linearGradient>
+    <linearGradient id="glassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#C9BFF2" stop-opacity="0"/>
+      <stop offset="1" stop-color="#A597E0" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="glassRim" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="0.25" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="barShadow" x="-60%" y="-30%" width="220%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/>
+      <feOffset dy="13" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.34"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-80%" y="-40%" width="260%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <g id="bars">
+      <rect x="249" y="409" width="46" height="206" rx="23"/>
+      <rect x="313" y="314" width="46" height="396" rx="23"/>
+      <rect x="377" y="267" width="46" height="156" rx="23"/>
+      <rect x="377" y="601" width="46" height="156" rx="23"/>
+      <rect x="441" y="244" width="46" height="134" rx="23"/>
+      <rect x="441" y="646" width="46" height="134" rx="23"/>
+      <rect x="505" y="236" width="46" height="114" rx="23"/>
+      <rect x="505" y="674" width="46" height="114" rx="23"/>
+      <rect x="569" y="244" width="46" height="98" rx="23"/>
+      <rect x="569" y="682" width="46" height="98" rx="23"/>
+      <rect x="633" y="267" width="46" height="84" rx="23"/>
+      <rect x="633" y="673" width="46" height="84" rx="23"/>
+      <rect x="697" y="314" width="46" height="70" rx="23"/>
+      <rect x="697" y="640" width="46" height="70" rx="23"/>
+    </g>
+    <clipPath id="barsClip"><use href="#bars"/></clipPath>
+  </defs>
+
+  <rect width="1004" height="400" fill="#14162E"/>
+
+  <!-- App icon -->
+  <g transform="translate(40 40) scale(0.3125)">
+    <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+    <use href="#squircle" fill="url(#sky)"/>
+    <g clip-path="url(#bodyClip)">
+      <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+      <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+      <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+    </g>
+    <use href="#bars" filter="url(#barShadow)"/>
+    <use href="#bars" fill="#FFFFFF" opacity="0.18" filter="url(#bloom)"/>
+    <use href="#bars" fill="url(#glass)"/>
+    <use href="#bars" fill="url(#glassShade)"/>
+    <g clip-path="url(#barsClip)"><use href="#bars" fill="none" stroke="url(#glassRim)" stroke-width="5"/></g>
+    <circle cx="784" cy="512" r="44" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+    <circle cx="784" cy="512" r="26" fill="url(#dotFill)"/>
+  </g>
+
+  <!-- Wordmark "Captylo", outlined -->
+  <path fill="#EFEBFF" d="M439.3 259.8Q423.4 259.8 411.1 252.4Q398.7 245 391.7 231.6Q384.8 218.1 384.8 200.1Q384.8 181.9 391.7 168.4Q398.7 155 411 147.6Q423.4 140.2 439.3 140.2Q449.1 140.2 457.6 143.1Q466.1 146 472.7 151.5Q479.2 157 483.5 164.6Q487.8 172.2 489.3 181.8H468.4Q467.2 176.3 464.6 172Q462.1 167.6 458.3 164.7Q454.6 161.7 449.8 160.1Q445.1 158.6 439.5 158.6Q428.9 158.6 421.3 163.8Q413.7 169 409.6 178.3Q405.4 187.6 405.4 200.1Q405.4 212.5 409.5 221.8Q413.6 231 421.3 236.2Q428.9 241.4 439.5 241.4Q445.1 241.4 449.8 239.9Q454.5 238.3 458.2 235.4Q462 232.4 464.6 228.2Q467.2 223.9 468.4 218.4H489.3Q487.8 227.8 483.5 235.5Q479.2 243.1 472.6 248.5Q466 254 457.6 256.9Q449.1 259.8 439.3 259.8ZM526.4 259.3Q518.2 259.3 511.8 256.5Q505.4 253.8 501.7 248.3Q498 242.8 498 234.6Q498 227.6 500.7 223.1Q503.3 218.5 507.8 215.8Q512.3 213.1 518.2 211.6Q524 210.2 530.3 209.6Q537.9 208.7 542.4 208Q546.9 207.4 548.8 206.1Q550.7 204.8 550.7 202V201.4Q550.7 197.8 549 195.1Q547.2 192.5 543.8 190.9Q540.4 189.4 535.7 189.4Q531 189.4 527.4 190.9Q523.8 192.5 521.7 195.1Q519.6 197.8 519.2 201.3H500.3Q500.9 193.2 505.3 187.1Q509.7 180.9 517.5 177.6Q525.4 174.2 536.1 174.2Q544.1 174.2 550.5 176.1Q556.8 178 561.2 181.6Q565.6 185.3 567.9 190.4Q570.2 195.6 570.2 201.9V257.9H550.9V246.3H550.6Q548.6 250 545.5 252.9Q542.4 255.8 537.8 257.5Q533.1 259.3 526.4 259.3ZM531.2 244.7Q537.7 244.7 542 242.4Q546.4 240.1 548.6 236.2Q550.8 232.3 550.8 227.5V218.7Q549.9 219.2 548.1 219.8Q546.3 220.3 543.9 220.8Q541.4 221.3 538.6 221.8Q535.7 222.2 532.7 222.7Q528.5 223.3 525 224.6Q521.4 226 519.3 228.3Q517.1 230.7 517.1 234.5Q517.1 237.6 518.9 240Q520.6 242.3 523.8 243.5Q526.9 244.7 531.2 244.7ZM585.6 290.4V175.8H604.9V187.2H605.1Q607.7 182.9 611.5 180Q615.3 177.1 620 175.6Q624.7 174.2 630 174.2Q640.7 174.2 648.6 179.5Q656.6 184.9 661 194.6Q665.5 204.2 665.5 216.8Q665.5 229.6 661.1 239.2Q656.7 248.8 648.7 254.2Q640.7 259.6 629.9 259.6Q624.6 259.6 620 258Q615.4 256.5 611.7 253.3Q608 250.2 605.4 245.6H605.2V290.4ZM625.4 243.2Q631.4 243.2 636 240.1Q640.5 237.1 643.1 231.2Q645.7 225.3 645.7 216.8Q645.7 208.3 643.1 202.4Q640.5 196.6 636 193.5Q631.4 190.4 625.4 190.4Q618.9 190.4 614.2 193.7Q609.4 197 606.8 202.9Q604.1 208.8 604.1 216.8Q604.1 224.8 606.8 230.8Q609.4 236.7 614.2 239.9Q618.9 243.2 625.4 243.2ZM720.5 175.8V191.6H669.8V175.8ZM684.1 153.4H703.8V234.4Q703.8 238.7 705.6 240.4Q707.4 242.2 712.1 242.2Q714 242.2 716.5 242.2Q719 242.2 720.5 242.2V257.9Q718.5 257.9 715.2 257.9Q711.9 257.9 708.7 257.9Q696.1 257.9 690.1 252.8Q684.1 247.7 684.1 237.3ZM736.6 290.4V274.5H746.3Q748.9 274.5 750.7 273.6Q752.6 272.6 753.9 270.6Q755.3 268.6 756.4 265.4L759.4 257.5L727.8 175.8H748.5L763.6 218.6Q765.9 225.4 768.1 232.2Q770.2 239 772.2 245.8H766.8Q768.7 239 770.9 232.2Q773.1 225.4 775.4 218.6L790.4 175.8H811L774.3 271.5Q771.8 277.8 768.3 282.1Q764.8 286.3 760.1 288.4Q755.4 290.4 749.4 290.4Q746.3 290.4 743 290.4Q739.7 290.4 736.6 290.4ZM839.9 142.1V257.9H820.3V142.1ZM892.1 259.8Q880 259.8 870.9 254.4Q861.7 249 856.7 239.4Q851.6 229.7 851.6 217Q851.6 204.2 856.7 194.5Q861.7 184.8 870.9 179.4Q880 173.9 892.1 173.9Q904.2 173.9 913.3 179.4Q922.4 184.8 927.5 194.5Q932.6 204.2 932.6 217Q932.6 229.7 927.5 239.4Q922.4 249 913.3 254.4Q904.2 259.8 892.1 259.8ZM892.1 243.4Q898.4 243.4 903 240.2Q907.6 237 910.2 231.1Q912.7 225.1 912.7 217Q912.7 208.7 910.2 202.8Q907.6 196.8 903 193.6Q898.4 190.4 892.1 190.4Q885.8 190.4 881.1 193.6Q876.4 196.8 873.9 202.8Q871.4 208.7 871.4 217Q871.4 225.2 873.9 231.1Q876.4 237 881.1 240.2Q885.8 243.4 892.1 243.4Z"/>
+</svg>

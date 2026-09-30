@@ -1,0 +1,82 @@
+{
+  "name": "Captylo",
+  "version": "2.0.0",
+  "description": "Dusk palette of the Captylo brand (formerly VocaType 2): a sunset sky going from deep night navy through violet to a warm peach horizon, with the widget's red recording dot as the only hot accent.",
+  "changes": [
+    "2.0.0: brand renamed VocaType 2 -> Captylo, mark changed from Waveform V to Bar Arc C.",
+    "No colour values changed: all 16 colours, the four gradients and the semantic tokens are identical to VocaType 2 1.0.0, so the app UI, widget and website need no colour updates.",
+    "Role texts updated for the new mark (pills instead of bars, the dot sits in the mouth of the C). Halo gradient centre moved to the C's counter in the icon (geometry only, same colour)."
+  ],
+  "colors": [
+    { "id": "night",        "name": "Night",        "hex": "#14162E", "rgb": [20, 22, 46],    "role": "Darkest surface: dark-mode backgrounds, dark lockup backdrop, top of the Tahoe dark icon plate." },
+    { "id": "dusk-navy",    "name": "Dusk Navy",    "hex": "#23285A", "rgb": [35, 40, 90],    "role": "Top of the icon plate; wordmark colour on light backgrounds (13.8:1 on white)." },
+    { "id": "dusk-blue",    "name": "Dusk Blue",    "hex": "#2F3566", "rgb": [47, 53, 102],   "role": "Secondary dark surface, bottom of the Tahoe dark icon plate, dark UI cards." },
+    { "id": "indigo",       "name": "Indigo",       "hex": "#3A3993", "rgb": [58, 57, 147],   "role": "Plate gradient 30% stop; top of the mark ink gradient." },
+    { "id": "plate-violet", "name": "Plate Violet", "hex": "#6560CC", "rgb": [101, 96, 204],  "role": "Plate gradient 56% stop (slightly deeper than Violet so the white pills keep contrast)." },
+    { "id": "violet",       "name": "Violet",       "hex": "#6F6BD8", "rgb": [111, 107, 216], "role": "Primary brand accent: UI accents, focus rings, links, selected states, mark ink mid stop (4.4:1 on white, use for large text or UI only)." },
+    { "id": "halo-lilac",   "name": "Halo Lilac",   "hex": "#8D86F0", "rgb": [141, 134, 240], "role": "Soft halo glow filling the C's counter in the icon; hover and glow tints." },
+    { "id": "orchid",       "name": "Orchid",       "hex": "#A277CC", "rgb": [162, 119, 204], "role": "Plate gradient 76% stop; transitional lilac." },
+    { "id": "mauve",        "name": "Mauve",        "hex": "#C97DC0", "rgb": [201, 125, 192], "role": "Bottom of the mark ink gradient (mark.svg)." },
+    { "id": "rose",         "name": "Rose",         "hex": "#E0849F", "rgb": [224, 132, 159], "role": "Plate gradient 91% stop; the pink band of the sunset." },
+    { "id": "blush",        "name": "Blush",        "hex": "#EE8FB5", "rgb": [238, 143, 181], "role": "Wallpaper pink for marketing gradients and illustrations (not in the icon plate)." },
+    { "id": "peach",        "name": "Peach",        "hex": "#F59A64", "rgb": [245, 154, 100], "role": "Bottom edge of the plate; the warm horizon." },
+    { "id": "horizon-glow", "name": "Horizon Glow", "hex": "#FFB46A", "rgb": [255, 180, 106], "role": "Radial sunset glow rising from the bottom edge of the plate." },
+    { "id": "rec-red",      "name": "Rec Red",      "hex": "#FF3B30", "rgb": [255, 59, 48],   "role": "The recording dot in the mouth of the C (same as the widget and Apple systemRed). Only for live-recording signals, never decorative." },
+    { "id": "glass-white",  "name": "Glass White",  "hex": "#FFFFFF", "rgb": [255, 255, 255], "role": "Waveform pills, glyphs and wordmark on dark or photographic backgrounds." },
+    { "id": "frost",        "name": "Frost",        "hex": "#EFEBFF", "rgb": [239, 235, 255], "role": "Lower tint of the frosted-glass pills; light UI tints and frosted panels." }
+  ],
+  "gradients": {
+    "dusk-plate": {
+      "type": "linear",
+      "direction": "top to bottom",
+      "stops": [
+        { "offset": 0.0,  "color": "#23285A" },
+        { "offset": 0.3,  "color": "#3A3993" },
+        { "offset": 0.56, "color": "#6560CC" },
+        { "offset": 0.76, "color": "#A277CC" },
+        { "offset": 0.91, "color": "#E0849F" },
+        { "offset": 1.0,  "color": "#F59A64" }
+      ]
+    },
+    "horizon-glow": {
+      "type": "radial",
+      "center": "bottom centre, just below the edge",
+      "stops": [
+        { "offset": 0.0, "color": "#FFB46A", "opacity": 0.9 },
+        { "offset": 0.5, "color": "#F7909A", "opacity": 0.28 },
+        { "offset": 1.0, "color": "#F7909A", "opacity": 0.0 }
+      ]
+    },
+    "mark-ink": {
+      "type": "linear",
+      "direction": "top to bottom",
+      "stops": [
+        { "offset": 0.0,  "color": "#3A3993" },
+        { "offset": 0.55, "color": "#6F6BD8" },
+        { "offset": 1.0,  "color": "#C97DC0" }
+      ]
+    },
+    "night-plate": {
+      "type": "linear",
+      "direction": "top to bottom",
+      "note": "Tahoe dark appearance of AppIcon.icon",
+      "stops": [
+        { "offset": 0.0, "color": "#14162E" },
+        { "offset": 1.0, "color": "#2F3566" }
+      ]
+    }
+  },
+  "semantic": {
+    "accent": "#6F6BD8",
+    "recording": "#FF3B30",
+    "textOnLight": "#23285A",
+    "textOnDark": "#FFFFFF",
+    "surfaceDark": "#14162E",
+    "surfaceDarkElevated": "#2F3566",
+    "glassTint": "#EFEBFF"
+  },
+  "typography": {
+    "wordmark": "Inter Display SemiBold (Inter variable opsz 32, wght 600, SIL OFL 1.1), tracking -1.2%, outlined in the lockup SVGs",
+    "ui": "\"SF Pro Display\", -apple-system, \"Helvetica Neue\", Arial (system font in the app)"
+  }
+}

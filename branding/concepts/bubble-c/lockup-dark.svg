@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1044 440" width="1044" height="440" role="img" aria-label="Captylo">
+  <title>Captylo - horizontal lockup, dark</title>
+  <!--
+    App icon (icon.svg at 0.3125 scale: 320 px canvas, 257.5 px body) + "Captylo" wordmark.
+    Wordmark: Inter Display SemiBold (Inter variable, opsz 32, wght 600, SIL OFL 1.1), tracking -1.2%,
+    HarfBuzz kerning, converted to outlines (renders identically without fonts installed).
+    Fallback for live text: font-family "Inter Display", "Inter", "SF Pro Display", -apple-system, sans-serif;
+    font-weight 600; letter-spacing -0.012em.
+    Cap height 115.9 px = 45% of the icon body; caps centred on the body; body -> C gap 56 px.
+    Text: Frost #EFEBFF on Night #14162E (the background rect can be removed for a transparent lockup).
+  -->
+  <defs>
+    <path id="squircle" d="M627.36 100c103.83 0 155.75 0 195.41 20.21a185.4 185.4 0 0 1 81.02 81.02c20.21 39.66 20.21 91.58 20.21 195.41L924 627.36c0 103.83 0 155.75 -20.21 195.41a185.4 185.4 0 0 1 -81.02 81.02c-39.66 20.21 -91.58 20.21 -195.41 20.21L396.64 924c-103.83 0 -155.75 0 -195.41 -20.21a185.4 185.4 0 0 1 -81.02 -81.02c-20.21 -39.66 -20.21 -91.58 -20.21 -195.41L100 396.64c0 -103.83 0 -155.75 20.21 -195.41a185.4 185.4 0 0 1 81.02 -81.02c39.66 -20.21 91.58 -20.21 195.41 -20.21Z"/>
+    <clipPath id="bodyClip"><use href="#squircle"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23285A"/>
+      <stop offset="0.3" stop-color="#3A3993"/>
+      <stop offset="0.56" stop-color="#6560CC"/>
+      <stop offset="0.76" stop-color="#A277CC"/>
+      <stop offset="0.91" stop-color="#E0849F"/>
+      <stop offset="1" stop-color="#F59A64"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="1010" r="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB46A" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#F7909A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F7909A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="512" cy="480" r="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D86F0" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8D86F0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
+      <stop offset="0.16" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="0.84" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFE6CC" stop-opacity="0.32"/>
+    </linearGradient>
+    <filter id="bodyShadow" x="-10%" y="-10%" width="120%" height="130%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="0.45" stop-color="#FDFCFF" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#EFEBFF" stop-opacity="0.86"/>
+    </linearGradient>
+    <linearGradient id="glassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#C9BFF2" stop-opacity="0"/>
+      <stop offset="1" stop-color="#A597E0" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="glassRim" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="0.25" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="dotFill" cx="0.42" cy="0.36" r="0.66">
+      <stop offset="0" stop-color="#FF6A5C"/>
+      <stop offset="0.7" stop-color="#FF3B30"/>
+      <stop offset="1" stop-color="#EE2F25"/>
+    </radialGradient>
+    <filter id="markShadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15"/>
+      <feOffset dy="14" result="o"/>
+      <feFlood flood-color="#1B1646" flood-opacity="0.34"/>
+      <feComposite in2="o" operator="in"/>
+    </filter>
+    <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <path id="cee" d="M733.39 314.23A289.00 289.00 0 0 0 287.40 681.87C313.84 714.51 327.25 773.29 319.53 800.21Q315.40 814.63 328.64 807.58C358.66 791.62 380.29 768.81 456.86 783.69A289.00 289.00 0 0 0 733.39 685.77A41.00 41.00 0 0 0 728.33 628.00A41.00 41.00 0 0 0 670.57 633.06A207.00 207.00 0 1 1 670.57 366.94A41.00 41.00 0 0 0 728.33 372.00A41.00 41.00 0 0 0 733.39 314.23Z"/>
+    <g id="bars">
+      <rect x="354.00" y="454.00" width="44.00" height="92.00" rx="22.00"/>
+      <rect x="422.00" y="410.00" width="44.00" height="180.00" rx="22.00"/>
+      <rect x="490.00" y="364.00" width="44.00" height="272.00" rx="22.00"/>
+      <rect x="558.00" y="410.00" width="44.00" height="180.00" rx="22.00"/>
+      <rect x="626.00" y="454.00" width="44.00" height="92.00" rx="22.00"/>
+    </g>
+    <clipPath id="ceeClip"><use href="#cee"/></clipPath>
+    <clipPath id="barsClip"><use href="#bars"/></clipPath>
+  </defs>
+  <rect width="1044" height="440" fill="#14162E"/>
+  <g transform="translate(60 60) scale(0.3125)">
+  <use href="#squircle" transform="translate(0 10)" fill="#000000" opacity="0.3" filter="url(#bodyShadow)"/>
+  <use href="#squircle" fill="url(#sky)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#halo)"/>
+    <use href="#squircle" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  </g>
+
+  <!-- Speech C: bubble ring + tail, then the waveform inside it -->
+  <use href="#cee" filter="url(#markShadow)"/>
+  <use href="#bars" filter="url(#markShadow)"/>
+  <use href="#cee" fill="#FFFFFF" opacity="0.16" filter="url(#bloom)"/>
+  <use href="#cee" fill="url(#glass)"/>
+  <use href="#cee" fill="url(#glassShade)"/>
+  <g clip-path="url(#ceeClip)"><use href="#cee" fill="none" stroke="url(#glassRim)" stroke-width="5"/></g>
+  <use href="#bars" fill="url(#glass)"/>
+  <use href="#bars" fill="url(#glassShade)"/>
+  <g clip-path="url(#barsClip)"><use href="#bars" fill="none" stroke="url(#glassRim)" stroke-width="5"/></g>
+
+  <!-- Rec dot in the mouth of the C, on the ring's centre line -->
+  <circle cx="760.00" cy="500.00" r="57.35" fill="#FF3B30" opacity="0.6" filter="url(#dotGlow)"/>
+  <circle cx="760.00" cy="500.00" r="37.00" fill="url(#dotFill)"/>
+  </g>
+  <path fill="#EFEBFF" d="M459.36 279.82Q443.41 279.82 431.08 272.43Q418.75 265.04 411.75 251.58Q404.75 238.12 404.75 220.08Q404.75 201.88 411.71 188.42Q418.67 174.96 431.04 167.57Q443.41 160.18 459.36 160.18Q469.16 160.18 477.63 163.1Q486.11 166.02 492.69 171.5Q499.26 176.98 503.54 184.61Q507.82 192.23 509.29 201.8H488.37Q487.2 196.28 484.64 191.96Q482.07 187.64 478.33 184.65Q474.6 181.65 469.86 180.14Q465.11 178.62 459.51 178.62Q448.93 178.62 441.31 183.79Q433.69 188.96 429.56 198.26Q425.44 207.55 425.44 220.08Q425.44 232.52 429.52 241.78Q433.61 251.04 441.27 256.21Q448.93 261.38 459.51 261.38Q465.11 261.38 469.82 259.86Q474.52 258.35 478.26 255.39Q481.99 252.44 484.6 248.16Q487.2 243.88 488.45 238.36H509.29Q507.82 247.85 503.54 255.47Q499.26 263.09 492.65 268.54Q486.04 273.98 477.6 276.9Q469.16 279.82 459.36 279.82ZM546.43 279.27Q538.26 279.27 531.85 276.55Q525.43 273.83 521.73 268.3Q518.04 262.78 518.04 254.61Q518.04 247.61 520.68 243.06Q523.33 238.51 527.84 235.79Q532.35 233.07 538.18 231.63Q544.02 230.19 550.32 229.57Q557.94 228.71 562.41 228.05Q566.89 227.39 568.83 226.11Q570.78 224.82 570.78 222.02V221.4Q570.78 217.82 568.99 215.14Q567.2 212.45 563.81 210.94Q560.43 209.42 555.76 209.42Q551.02 209.42 547.4 210.94Q543.79 212.45 541.68 215.14Q539.58 217.82 539.27 221.32H520.37Q520.92 213.15 525.31 207.05Q529.71 200.94 537.56 197.56Q545.42 194.18 556.15 194.18Q564.16 194.18 570.5 196.08Q576.84 197.99 581.24 201.64Q585.63 205.3 587.93 210.43Q590.22 215.57 590.22 221.94V277.95H570.93V266.36H570.62Q568.68 270.02 565.57 272.93Q562.45 275.85 557.79 277.56Q553.12 279.27 546.43 279.27ZM551.25 264.73Q557.71 264.73 562.06 262.39Q566.42 260.06 568.64 256.17Q570.85 252.28 570.85 247.54V238.67Q569.92 239.21 568.13 239.76Q566.34 240.3 563.89 240.81Q561.44 241.31 558.6 241.78Q555.76 242.25 552.73 242.71Q548.53 243.26 544.99 244.62Q541.45 245.98 539.31 248.35Q537.17 250.73 537.17 254.46Q537.17 257.65 538.92 259.98Q540.67 262.32 543.82 263.52Q546.97 264.73 551.25 264.73ZM605.66 310.46V195.81H624.95V207.24H625.18Q627.75 202.89 631.56 199.97Q635.37 197.05 640.08 195.61Q644.78 194.18 650.07 194.18Q660.73 194.18 668.7 199.54Q676.68 204.91 681.11 214.56Q685.54 224.2 685.54 236.8Q685.54 249.56 681.15 259.2Q676.75 268.85 668.74 274.22Q660.73 279.58 650 279.58Q644.63 279.58 640.04 278.03Q635.45 276.47 631.75 273.36Q628.06 270.25 625.49 265.58H625.26V310.46ZM645.41 263.17Q651.47 263.17 656.02 260.14Q660.57 257.1 663.14 251.19Q665.71 245.28 665.71 236.8Q665.71 228.32 663.14 222.45Q660.57 216.58 656.02 213.5Q651.47 210.43 645.41 210.43Q638.95 210.43 634.2 213.7Q629.46 216.97 626.82 222.88Q624.17 228.79 624.17 236.8Q624.17 244.81 626.82 250.76Q629.46 256.71 634.2 259.94Q638.95 263.17 645.41 263.17ZM740.57 195.81V211.6H689.85V195.81ZM704.17 173.41H723.85V254.38Q723.85 258.74 725.64 260.45Q727.42 262.16 732.17 262.16Q734.11 262.16 736.6 262.16Q739.09 262.16 740.57 262.16V277.95Q738.55 277.95 735.24 277.95Q731.94 277.95 728.75 277.95Q716.15 277.95 710.16 272.86Q704.17 267.76 704.17 257.26ZM756.63 310.46V294.52H766.35Q768.99 294.52 770.82 293.58Q772.65 292.65 774.01 290.63Q775.37 288.61 776.46 285.42L779.5 277.48L747.84 195.81H768.61L783.7 238.59Q786.03 245.44 788.17 252.24Q790.31 259.05 792.33 265.82H786.89Q788.83 259.05 791.01 252.2Q793.19 245.36 795.52 238.59L810.53 195.81H831.07L794.35 291.48Q791.86 297.86 788.36 302.1Q784.86 306.34 780.16 308.4Q775.45 310.46 769.46 310.46Q766.35 310.46 763.08 310.46Q759.82 310.46 756.63 310.46ZM859.96 162.05V277.95H840.36V162.05ZM912.19 279.82Q900.13 279.82 890.99 274.41Q881.85 269 876.75 259.36Q871.66 249.71 871.66 236.96Q871.66 224.2 876.75 214.52Q881.85 204.83 890.99 199.39Q900.13 193.94 912.19 193.94Q924.32 193.94 933.42 199.39Q942.52 204.83 947.62 214.52Q952.71 224.2 952.71 236.96Q952.71 249.71 947.62 259.36Q942.52 269 933.42 274.41Q924.32 279.82 912.19 279.82ZM912.19 263.4Q918.49 263.4 923.11 260.21Q927.74 257.03 930.27 251.08Q932.8 245.12 932.8 236.96Q932.8 228.71 930.27 222.76Q927.74 216.81 923.11 213.58Q918.49 210.35 912.19 210.35Q905.88 210.35 901.22 213.58Q896.55 216.81 894.02 222.76Q891.49 228.71 891.49 236.96Q891.49 245.2 894.02 251.11Q896.55 257.03 901.22 260.21Q905.88 263.4 912.19 263.4Z"/>
+</svg>
