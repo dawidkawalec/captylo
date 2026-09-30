@@ -5932,6 +5932,21 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "AI returned an empty answer." } }
       }
+    },
+    "Moje notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "My notes" } }
+      }
+    },
+    "Notatki AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI notes" } }
+      }
+    },
+    "Transkrypt": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Transcript" } }
+      }
     }
   },
   "version": "1.0"
