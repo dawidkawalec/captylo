@@ -37,15 +37,13 @@ struct MeetingAudioSourceTests {
         func add(_ samples: [Float]) { batches.withLock { $0.append(samples) } }
     }
 
-    /// Feeds `seconds` of audio in IOProc-sized buffers through the same copy the real-time
-    /// block makes, then finishes the stream.
-    private func run(
-        format: AVAudioFormat, seconds: Double, framesPerCallback: Int = 512,
-        fill: (Int, Int) -> Float
-    ) throws -> (batches: [[Float]], level: Float) {
-        let collected = Collected()
-        let level = OSAllocatedUnfairLock<Float>(initialState: 0)
-        let stream = try #require(SystemAudioTap.Stream(format: format, level: level) { collected.add($0) })
+    /// Pushes `seconds` of `format` audio into `stream` in IOProc-sized buffers, through the
+    /// same copy the real-time block makes. Returns the highest level seen along the way.
+    @discardableResult
+    private func feed(
+        _ stream: SystemAudioTap.Stream, format: AVAudioFormat, seconds: Double, framesPerCallback: Int = 512,
+        level: OSAllocatedUnfairLock<Float>? = nil, fill: (Int, Int) -> Float
+    ) throws -> Float {
         let total = Int(seconds * format.sampleRate)
         var offset = 0
         var peakLevel: Float = 0
@@ -58,12 +56,30 @@ struct MeetingAudioSourceTests {
                 for frame in 0..<frames { channels[channel][frame] = fill(channel, offset + frame) }
             }
             stream.receive(SystemAudioTap.Stream.copy(buffer.audioBufferList))
-            peakLevel = max(peakLevel, level.withLock { $0 })
+            if let level {
+                peakLevel = max(peakLevel, level.withLock { $0 })
+            }
             offset += frames
         }
+        return peakLevel
+    }
+
+    /// Feeds `seconds` of audio in IOProc-sized buffers, then finishes the stream.
+    private func run(
+        format: AVAudioFormat, seconds: Double, framesPerCallback: Int = 512,
+        fill: (Int, Int) -> Float
+    ) throws -> (batches: [[Float]], level: Float) {
+        let collected = Collected()
+        let level = OSAllocatedUnfairLock<Float>(initialState: 0)
+        let stream = try #require(SystemAudioTap.Stream(format: format, level: level) { collected.add($0) })
+        let peakLevel = try feed(stream, format: format, seconds: seconds, framesPerCallback: framesPerCallback, level: level, fill: fill)
         stream.finish()
         #expect(level.withLock { $0 } == 0)
         return (collected.all, peakLevel)
+    }
+
+    private func delivered(_ collected: Collected) -> Int {
+        collected.all.reduce(0) { $0 + $1.count }
     }
 
     @Test func tapAudioArrivesAs16kMonoInBatchesOfATenthOfASecond() throws {
@@ -116,6 +132,74 @@ struct MeetingAudioSourceTests {
         stream.receive(SystemAudioTap.Stream.copy(buffer.audioBufferList))
         stream.finish()
         #expect(collected.all.map(\.count) == [800])
+    }
+
+    // MARK: Tap format changes mid-meeting
+
+    @Test(arguments: zip([48_000.0, 16_000.0], [24_000.0, 48_000.0]))
+    func aTapFormatChangeKeepsSixteenThousandSamplesPerSecond(before: Double, after: Double) throws {
+        // The output device changes rate while a meeting records (AirPods entering call mode
+        // drop the tap to 16 or 24 kHz, and back). The new rate converted with the old ratio
+        // would come out too fast or too slow: each second must still give about 16 000 samples.
+        let first = try #require(AVAudioFormat(standardFormatWithSampleRate: before, channels: 1))
+        let second = try #require(AVAudioFormat(standardFormatWithSampleRate: after, channels: 1))
+        let collected = Collected()
+        let stream = try #require(SystemAudioTap.Stream(format: first, level: OSAllocatedUnfairLock(initialState: 0)) {
+            collected.add($0)
+        })
+        try feed(stream, format: first, seconds: 1) { _, index in
+            0.5 * Float(sin(2 * Double.pi * 440 * Double(index) / before))
+        }
+        #expect(stream.adopt(second))
+        let firstPhase = delivered(collected)
+        try feed(stream, format: second, seconds: 1) { _, index in
+            0.5 * Float(sin(2 * Double.pi * 440 * Double(index) / after))
+        }
+        stream.finish()
+        let secondPhase = delivered(collected) - firstPhase
+        #expect(firstPhase > 15_000 && firstPhase <= 16_100)
+        #expect(secondPhase > 15_000 && secondPhase <= 16_100)
+    }
+
+    @Test func theSameFormatAgainKeepsTheBatchAndARealChangeFlushesIt() throws {
+        let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1))
+        let other = try #require(AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1))
+        let collected = Collected()
+        let stream = try #require(SystemAudioTap.Stream(format: format, level: OSAllocatedUnfairLock(initialState: 0)) {
+            collected.add($0)
+        })
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 800))
+        buffer.frameLength = 800
+        stream.receive(SystemAudioTap.Stream.copy(buffer.audioBufferList))
+        // A listener that fires without a real change (the aggregate's rate, a repeat) changes nothing.
+        #expect(stream.adopt(format))
+        #expect(collected.all.isEmpty)
+        // A real change delivers what was converted at the old rate first.
+        #expect(stream.adopt(other))
+        #expect(collected.all.map(\.count) == [800])
+        stream.finish()
+        #expect(!stream.adopt(format))
+        #expect(collected.all.map(\.count) == [800])
+    }
+
+    @Test func anUnsupportedTapFormatDropsAudioUntilAUsableOneReturns() throws {
+        let pcm = try #require(AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1))
+        // No bytes per frame: nothing the stream can rebuild or convert.
+        let compressed = try #require(AVAudioFormat(settings: [
+            AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 48_000, AVNumberOfChannelsKey: 1,
+        ]))
+        let collected = Collected()
+        let stream = try #require(SystemAudioTap.Stream(format: pcm, level: OSAllocatedUnfairLock(initialState: 0)) {
+            collected.add($0)
+        })
+        #expect(!stream.adopt(compressed))
+        try feed(stream, format: pcm, seconds: 0.5) { _, _ in 0.25 }
+        #expect(collected.all.isEmpty)
+        #expect(stream.adopt(pcm))
+        try feed(stream, format: pcm, seconds: 0.5) { _, _ in 0.25 }
+        stream.finish()
+        let samples = delivered(collected)
+        #expect(samples > 7_500 && samples <= 8_100)
     }
 
     // MARK: Core Audio process list
