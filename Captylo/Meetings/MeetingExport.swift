@@ -27,6 +27,23 @@ enum MeetingExport {
         return parts.joined(separator: "\n\n") + "\n"
     }
 
+    /// Default name in the save panel: the title without the characters paths trip on ("/", ":",
+    /// "\", line breaks) or leading dots (a hidden file), at most `maxNameLength` characters,
+    /// "Spotkanie" when nothing is left.
+    static func fileName(title: String, fileExtension: String) -> String {
+        let replaced = String(title.map { $0 == "/" || $0 == ":" || $0 == "\\" || $0.isNewline ? "-" : $0 })
+        var base = replaced.trimmingCharacters(in: CharacterSet.whitespaces.union(CharacterSet(charactersIn: ".")))
+        if base.count > maxNameLength {
+            base = String(base.prefix(maxNameLength)).trimmingCharacters(in: .whitespaces)
+        }
+        if base.isEmpty {
+            base = String(localized: "Spotkanie")
+        }
+        return "\(base).\(fileExtension)"
+    }
+
+    static let maxNameLength = 80
+
     /// Moves every heading one level down ("## Zadania" -> "### Zadania") so the AI notes nest
     /// under the export's own "##" heading. Fenced code and level-six headings stay as they are.
     static func demoted(_ markdown: String) -> String {

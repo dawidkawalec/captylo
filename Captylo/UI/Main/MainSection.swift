@@ -3,6 +3,7 @@ import Foundation
 /// Sidebar sections of the main window, in display order.
 enum MainSection: String, CaseIterable, Identifiable, Sendable {
     case pulpit
+    case spotkania
     case historia
     case plik
     case slownik
@@ -14,6 +15,7 @@ enum MainSection: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .pulpit: return String(localized: "Pulpit")
+        case .spotkania: return String(localized: "Spotkania")
         case .historia: return String(localized: "Historia")
         case .plik: return String(localized: "Transkrypcja pliku")
         case .slownik: return String(localized: "Słownik")
@@ -25,6 +27,7 @@ enum MainSection: String, CaseIterable, Identifiable, Sendable {
     var symbol: String {
         switch self {
         case .pulpit: return "chart.bar.xaxis"
+        case .spotkania: return "person.2.wave.2"
         case .historia: return "clock.arrow.circlepath"
         case .plik: return "doc.badge.plus"
         case .slownik: return "character.book.closed"

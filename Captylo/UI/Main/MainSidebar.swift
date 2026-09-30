@@ -2,10 +2,10 @@ import SwiftUI
 
 /// Sidebar of the main window (docs/design/dusk-glass.md, "Main window"), attached to the left
 /// edge from top to bottom (Brand Direction 01, the owner's pick #38): an Abyss-tinted frosted
-/// column with a hairline on its right, the "captylo" wordmark on top, the six sections as white
+/// column with a hairline on its right, the "captylo" wordmark on top, the seven sections as white
 /// icon + label rows with a brighter glass pill under the selection that slides between them,
 /// the Free plan support card, version and captylo.com at the bottom.
-/// Keyboard: Cmd+1...6 jump to a section; with the sidebar focused, the arrow keys move.
+/// Keyboard: Cmd+1...7 jump to a section; with the sidebar focused, the arrow keys move.
 @MainActor
 struct MainSidebar: View {
     @Binding var selection: MainSection

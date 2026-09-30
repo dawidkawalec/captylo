@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Main window: attached glass sidebar (Pulpit, Historia, Transkrypcja pliku, Słownik, Modele,
-/// Ustawienia) plus the selected screen, all over the window background (`.duskWindow()`). The router
+/// Main window: attached glass sidebar (Pulpit, Spotkania, Historia, Transkrypcja pliku, Słownik,
+/// Modele, Ustawienia) plus the selected screen, all over the window background (`.duskWindow()`). The router
 /// lives for the window's lifetime in `MainShellView`, which receives the `AppState` as a plain
 /// value so it can seed `@State`; the file queue belongs to `AppState` (Finder opens reach it
 /// before the window exists).
@@ -62,6 +62,7 @@ struct MainShellView: View {
     private func screen(for section: MainSection) -> some View {
         switch section {
         case .pulpit: DashboardView()
+        case .spotkania: MeetingsView()
         case .historia: HistoryView()
         case .plik: TranscribeFileView()
         case .slownik: DictionaryView()

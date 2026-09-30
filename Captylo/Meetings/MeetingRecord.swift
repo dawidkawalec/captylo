@@ -27,11 +27,16 @@ struct MeetingRecord: Sendable, Equatable, Identifiable {
 
     /// Display label for a segment: user name, "Mówca N", or the track default.
     func label(for segment: MeetingSegmentRecord) -> String {
-        if let speaker = segment.speaker {
+        label(track: segment.track, speaker: segment.speaker)
+    }
+
+    /// Display label for a track and diarization label (a merged transcript line).
+    func label(track: MeetingTrack, speaker: String?) -> String {
+        if let speaker {
             if let name = speakerNames[speaker], !name.isEmpty { return name }
             return String(localized: "Mówca \(speaker)")
         }
-        return segment.track.defaultLabel
+        return track.defaultLabel
     }
 
     /// Like `label(for:)`, but always Polish ("Ja", "Rozmówcy", "Mówca N"): the AI notes prompt

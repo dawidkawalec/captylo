@@ -19,7 +19,7 @@ enum DebugCommand: Sendable, Equatable {
     case check
     /// `--reset-onboarding`
     case resetOnboarding
-    /// `--open-section <pulpit|historia|plik|slownik|modele|ustawienia>` (hidden, for screenshots):
+    /// `--open-section <pulpit|spotkania|historia|plik|slownik|modele|ustawienia>` (hidden, for screenshots):
     /// a normal GUI launch that skips the onboarding and opens the main window on that section.
     case openSection(MainSection)
     /// `--design-preview <target>` (hidden, for design screenshots, see `DesignPreviewTarget`):

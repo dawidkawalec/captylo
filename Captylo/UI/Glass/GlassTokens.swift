@@ -196,6 +196,10 @@ enum GlassColor {
     static let warning = Color(hex: 0xF2C48D)
     /// Brand light on the gradient: activity highlights, the latest trend bar.
     static let highlight = VTColor.glacier
+    /// Speaker chips of a meeting transcript: "Ja" in Tide, the other side in Glacier tints, one
+    /// per `MeetingTranscriptLines.tintSlot` (as many as `MeetingTranscriptLines.tintCount`).
+    static let speakerMe = VTColor.tide
+    static let speakerTints: [Color] = [VTColor.glacier, VTColor.fog, Color(hex: 0x6FC7BE), VTColor.salt]
 
     /// Solid Abyss surfaces when Reduce Transparency is on (no gradient bleeding through).
     static let solidPanel = Color(hex: 0x1C3A40)

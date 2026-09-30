@@ -5947,6 +5947,136 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Transcript" } }
       }
+    },
+    "Spotkania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meetings" } }
+      }
+    },
+    "Spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting" } }
+      }
+    },
+    "Szukaj w spotkaniach": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search meetings" } }
+      }
+    },
+    "Nagraj spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Record meeting" } }
+      }
+    },
+    "Tu pojawią się Twoje spotkania.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your meetings will appear here." } }
+      }
+    },
+    "Nagraj pierwsze, a Captylo zapisze, kto co powiedział.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Record your first one and Captylo will note who said what." } }
+      }
+    },
+    "Nagrywam": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recording" } }
+      }
+    },
+    "Przetwarzam": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Processing" } }
+      }
+    },
+    "Przerwane": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Interrupted" } }
+      }
+    },
+    "Nagrywanie przerwało się w trakcie. Wypowiedzi zapisane do tej chwili zostały.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The recording stopped partway. Everything said up to that point was kept." } }
+      }
+    },
+    "Wybierz spotkanie z listy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pick a meeting from the list." } }
+      }
+    },
+    "Notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Notes" } }
+      }
+    },
+    "Eksportuj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Export" } }
+      }
+    },
+    "Kopiuj jako Markdown": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy as Markdown" } }
+      }
+    },
+    "Zapisz jako Markdown...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Save as Markdown..." } }
+      }
+    },
+    "Zapisz jako JSON...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Save as JSON..." } }
+      }
+    },
+    "Usuń spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete meeting" } }
+      }
+    },
+    "Usunąć spotkanie?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete this meeting?" } }
+      }
+    },
+    "Transkrypt, notatki i nagranie znikną z tego Maca.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The transcript, notes and recording will be removed from this Mac." } }
+      }
+    },
+    "Skopiowano do schowka.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copied to the clipboard." } }
+      }
+    },
+    "Brak notatek do tego spotkania.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No notes for this meeting." } }
+      }
+    },
+    "Notatki AI pojawią się po zakończeniu spotkania.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI notes appear once the meeting ends." } }
+      }
+    },
+    "To spotkanie nie ma notatek AI.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This meeting has no AI notes." } }
+      }
+    },
+    "Słucham. Transkrypt pojawi się po pierwszej wypowiedzi.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Listening. The transcript appears after the first thing someone says." } }
+      }
+    },
+    "To spotkanie nie ma transkryptu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This meeting has no transcript." } }
+      }
+    },
+    "przerwa w nagraniu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "gap in the recording" } }
+      }
     }
   },
   "version": "1.0"

@@ -42,18 +42,30 @@ enum DesignPreviewData {
             systemMuteDefaults: defaults,
             pinnedModelStatus: .ready,
             pinnedAccessibilityTrust: true,
+            pinnedPro: true,
             isDesignPreview: true
         )
         return AppState(settings: settings, overrides: overrides)
     }
 
-    /// Inserts the sample history (the dashboard and Historia read it through `Database`).
+    /// Inserts the sample history and meetings (the dashboard, Historia and Spotkania read them
+    /// through `Database`).
     static func populate(_ database: Database, now: Date = Date()) async {
         for record in sampleRecords(now: now) {
             do {
                 try await database.save(record)
             } catch {
                 Log.data.error("Design preview: sample save failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        for (meeting, segments) in sampleMeetings(now: now) {
+            do {
+                try await database.createMeeting(meeting)
+                for segment in segments {
+                    try await database.appendSegment(segment)
+                }
+            } catch {
+                Log.data.error("Design preview: sample meeting save failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -254,6 +266,109 @@ enum DesignPreviewData {
             ))
         }
         return records
+    }
+
+    // MARK: Meetings
+
+    /// Three invented meetings, newest first: "Budżet marketingu Q4" (Zoom, named and numbered
+    /// speakers, notes, AI notes with every section), "Standup zespołu" (Teams, no AI notes) and
+    /// "Rozmowa z klientem: wdrożenie" (Meet, cut short by a quit: no stored length, a gap).
+    static func sampleMeetings(now: Date, calendar: Calendar = .current) -> [(meeting: MeetingRecord, segments: [MeetingSegmentRecord])] {
+        // Two hours ago on a five-minute mark, like a meeting from the calendar.
+        let budgetStart = Date(timeIntervalSince1970: ((now.timeIntervalSince1970 - 2 * 3600) / 300).rounded(.down) * 300)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+        let standupStart = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: yesterday) ?? yesterday
+        let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: now) ?? now
+        let clientStart = calendar.date(bySettingHour: 11, minute: 0, second: 0, of: twoDaysAgo) ?? twoDaysAgo
+        return [
+            sampleBudgetMeeting(createdAt: budgetStart),
+            sampleStandup(createdAt: standupStart),
+            sampleClientCall(createdAt: clientStart),
+        ]
+    }
+
+    private typealias SampleLine = (start: Double, end: Double, track: MeetingTrack, speaker: String?, text: String)
+
+    private static func segments(_ meetingID: UUID, _ lines: [SampleLine]) -> [MeetingSegmentRecord] {
+        lines.map {
+            MeetingSegmentRecord(meetingID: meetingID, track: $0.track, start: $0.start, end: $0.end, text: $0.text, speaker: $0.speaker)
+        }
+    }
+
+    private static func sampleBudgetMeeting(createdAt: Date) -> (meeting: MeetingRecord, segments: [MeetingSegmentRecord]) {
+        var meeting = MeetingRecord(createdAt: createdAt, title: "Budżet marketingu Q4", status: .completed, duration: 2832, appName: "Zoom")
+        meeting.noteLines = [
+            MeetingNoteLine(text: "wrzesień: 32 tys., ponad połowa na wyszukiwarkę", at: 20),
+            MeetingNoteLine(text: "test LinkedIn, 2 grupy, max 5 tys.", at: 118),
+            MeetingNoteLine(text: "kreacje: 3 warianty do środy", at: 626),
+        ]
+        meeting.notes = meeting.noteLines.map(\.text).joined(separator: "\n")
+        meeting.speakerNames = ["1": "Anna"]
+        meeting.summaryTemplateID = BuiltInMeetingTemplates.general.id
+        meeting.summaryModel = "openai/gpt-4.1-mini"
+        meeting.summary = """
+        ## Podsumowanie
+        - We wrześniu wydaliśmy 32 tys. zł, ponad połowę na reklamy w wyszukiwarce [0:12]
+        - LinkedIn daje najwięcej zapytań, ale **koszt leada** jest wysoki [0:25]
+
+        ## Decyzje
+        - Dwutygodniowy test LinkedIn na dwóch grupach odbiorców, do 5 tys. zł [1:45]
+        - Wyniki testu porównamy 15 października [1:58]
+
+        ## Zadania
+        - Mówca 2: trzy warianty grafik do testu, do środy [10:20]
+        - Ja: zapytać agencję o termin wideo, jutro [22:13]
+        - Mówca 2: podesłać podsumowanie liczb po spotkaniu [45:00]
+
+        ## Otwarte pytania
+        - Czy agencja zdąży z wideo przed Black Friday? [22:00]
+
+        ## Następne kroki
+        - Spotkanie z wynikami testu 15 października [1:58]
+        """
+        let lines: [SampleLine] = [
+            (4, 11, .me, nil, "Dzień dobry, zaczynamy od budżetu na czwarty kwartał. Anna, pokażesz liczby?"),
+            (12.5, 24, .them, "1", "Jasne. We wrześniu wydaliśmy trzydzieści dwa tysiące, z czego ponad połowa poszła na reklamy w wyszukiwarce."),
+            (25, 31, .them, "1", "Kampania na LinkedIn dała najwięcej zapytań, ale koszt jednego leada wyszedł wysoki."),
+            (95, 104, .me, nil, "Czyli w październiku przesuwamy część budżetu z wyszukiwarki na LinkedIn?"),
+            (105.5, 117, .them, "2", "Proponuję najpierw test na dwóch grupach odbiorców, dwa tygodnie, maksymalnie pięć tysięcy."),
+            (118, 124, .them, "1", "Zgoda, a wyniki porównamy na spotkaniu piętnastego października."),
+            (610, 619, .me, nil, "Dobrze. Kto przygotuje nowe kreacje do testu?"),
+            (620.5, 630, .them, "2", "Ja przygotuję trzy warianty grafik do środy."),
+            (1320, 1331, .them, "1", "Jeszcze jedno: nie wiemy, czy agencja zdąży z wideo przed Black Friday."),
+            (1333, 1340, .me, nil, "Zapytam ich jutro i dam znać na kanale zespołu."),
+            (2700, 2710, .them, "2", "To wszystko z mojej strony. Podeślę podsumowanie liczb po spotkaniu."),
+            (2712, 2716, .me, nil, "Dzięki, do usłyszenia."),
+        ]
+        return (meeting, segments(meeting.id, lines))
+    }
+
+    private static func sampleStandup(createdAt: Date) -> (meeting: MeetingRecord, segments: [MeetingSegmentRecord]) {
+        let meeting = MeetingRecord(createdAt: createdAt, title: "Standup zespołu", status: .completed, duration: 724, appName: "Teams")
+        let lines: [SampleLine] = [
+            (3, 9, .me, nil, "Cześć wszystkim, szybka runda. Ja dziś kończę eksport spotkań."),
+            (10, 19, .them, nil, "U mnie poprawki w formularzu płatności, jutro wypuszczamy je na staging."),
+            (21, 27, .them, nil, "Ja testuję nową wersję aplikacji na starszym systemie, na razie bez błędów."),
+            (240, 248, .me, nil, "Czy ktoś potrzebuje pomocy z przeglądem kodu?"),
+            (250, 256, .them, nil, "Tak, zerknij proszę na zmiany w synchronizacji."),
+            (700, 705, .me, nil, "Dzięki, to tyle na dziś."),
+        ]
+        return (meeting, segments(meeting.id, lines))
+    }
+
+    private static func sampleClientCall(createdAt: Date) -> (meeting: MeetingRecord, segments: [MeetingSegmentRecord]) {
+        // A quit mid-meeting leaves no length (`duration` 0) and the segments saved so far.
+        var meeting = MeetingRecord(createdAt: createdAt, title: "Rozmowa z klientem: wdrożenie", status: .interrupted, appName: "Meet")
+        meeting.interruptions = [1212]
+        let lines: [SampleLine] = [
+            (5, 14, .me, nil, "Dzień dobry, dziękuję za czas. Chciałbym omówić plan wdrożenia na listopad."),
+            (15.5, 27, .them, nil, "Dzień dobry. Najważniejsze jest dla nas szkolenie zespołu przed startem."),
+            (600, 610, .me, nil, "Proponuję dwa krótkie szkolenia online i jedno spotkanie na miejscu."),
+            (611, 622, .them, nil, "Brzmi dobrze. Potrzebujemy też dostępu testowego dla pięciu osób."),
+            (1840, 1850, .me, nil, "Wracam, połączenie na chwilę się zerwało. Na czym skończyliśmy?"),
+            (1851, 1860, .them, nil, "Na dostępach testowych. Prześlę listę osób do piątku."),
+        ]
+        return (meeting, segments(meeting.id, lines))
     }
 }
 

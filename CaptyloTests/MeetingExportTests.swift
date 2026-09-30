@@ -116,4 +116,14 @@ struct MeetingExportTests {
         #expect(second.map(\.at) == [5, 5, 9])
         #expect(second.prefix(2).map(\.id) == first.map(\.id))
     }
+
+    @Test func fileNamesAreSafeForTheSavePanel() {
+        #expect(MeetingExport.fileName(title: "Spotkanie w Zoom, 30 września 14:00", fileExtension: "md")
+            == "Spotkanie w Zoom, 30 września 14-00.md")
+        #expect(MeetingExport.fileName(title: "Plan/budżet\nQ4", fileExtension: "json") == "Plan-budżet-Q4.json")
+        #expect(MeetingExport.fileName(title: "..ukryty ", fileExtension: "md") == "ukryty.md")
+        #expect(MeetingExport.fileName(title: "  ", fileExtension: "md") == "\(String(localized: "Spotkanie")).md")
+        let long = MeetingExport.fileName(title: String(repeating: "a", count: 200), fileExtension: "md")
+        #expect(long == String(repeating: "a", count: MeetingExport.maxNameLength) + ".md")
+    }
 }

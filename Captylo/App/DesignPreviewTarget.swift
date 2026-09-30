@@ -15,6 +15,8 @@ enum DesignPreviewTarget: String, CaseIterable, Sendable {
     case onboardingShortcut = "onboarding-shortcut"
     case onboardingTryIt = "onboarding-tryit"
     case mainPulpit = "main-pulpit"
+    /// Spotkania with three sample meetings, the newest (AI notes, named speakers) selected.
+    case mainSpotkania = "main-spotkania"
     case mainHistoria = "main-historia"
     case mainPlik = "main-plik"
     case mainSlownik = "main-slownik"
@@ -47,6 +49,7 @@ enum DesignPreviewTarget: String, CaseIterable, Sendable {
         case .onboardingShortcut: return .onboarding(.shortcut)
         case .onboardingTryIt: return .onboarding(.tryIt)
         case .mainPulpit: return .main(.pulpit)
+        case .mainSpotkania: return .main(.spotkania)
         case .mainHistoria: return .main(.historia)
         case .mainPlik: return .main(.plik)
         case .mainSlownik: return .main(.slownik)

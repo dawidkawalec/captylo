@@ -22,8 +22,9 @@ struct UIMainRouterTests {
     }
 
     @Test func sidebarOrderMatchesTheBrief() {
-        #expect(MainSection.allCases == [.pulpit, .historia, .plik, .slownik, .modele, .ustawienia])
-        #expect(MainSection.allCases.map(\.title) == ["Pulpit", "Historia", "Transkrypcja pliku", "Słownik", "Modele", "Ustawienia"])
+        #expect(MainSection.allCases == [.pulpit, .spotkania, .historia, .plik, .slownik, .modele, .ustawienia])
+        #expect(MainSection.allCases.map(\.title) == ["Pulpit", "Spotkania", "Historia", "Transkrypcja pliku", "Słownik", "Modele", "Ustawienia"])
+        #expect(MainSection.spotkania.symbol == "person.2.wave.2")
         for section in MainSection.allCases {
             #expect(!section.symbol.isEmpty)
             #expect(!section.title.contains("—"), "no long dashes in UI strings")

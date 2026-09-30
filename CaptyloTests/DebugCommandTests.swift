@@ -61,6 +61,7 @@ struct DebugCommandTests {
         #expect(DebugCommand.parse(["app", "--open-section", "slownik"]) == .openSection(.slownik))
         #expect(DebugCommand.parse(["app", "--open-section", "Słownik"]) == .openSection(.slownik))
         #expect(DebugCommand.parse(["app", "--open-section", "USTAWIENIA"]) == .openSection(.ustawienia))
+        #expect(DebugCommand.parse(["app", "--open-section", "spotkania"]) == .openSection(.spotkania))
         #expect(DebugCommand.parse(["app", "--open-section", "kuchnia"]) == nil)
         #expect(DebugCommand.parse(["app", "--open-section"]) == nil)
     }
