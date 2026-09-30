@@ -1,6 +1,24 @@
 {
   "sourceLanguage": "pl",
   "strings": {
+    "NSAudioCaptureUsageDescription": {
+      "comment": "Privacy - Audio Capture Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo records the meeting audio (the other people's voices) to turn it into a transcript and notes."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo nagrywa dźwięk spotkania (głosy rozmówców), aby zrobić z niego transkrypt i notatki."
+          }
+        }
+      }
+    },
     "NSMicrophoneUsageDescription": {
       "comment": "Privacy - Microphone Usage Description",
       "extractionState": "manual",

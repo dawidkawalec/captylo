@@ -5857,6 +5857,21 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Always" } }
       }
+    },
+    "Nie udało się uruchomić mikrofonu: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not start the microphone: %@" } }
+      }
+    },
+    "Nie udało się nagrać dźwięku systemu (kod %lld).": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not record the system audio (code %lld)." } }
+      }
+    },
+    "Nieobsługiwany format dźwięku.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unsupported audio format." } }
+      }
     }
   },
   "version": "1.0"

@@ -73,6 +73,7 @@ targets:
         LSUIElement: false
         NSHumanReadableCopyright: "Copyright 2026 Dawid Kawalec"
         NSMicrophoneUsageDescription: Captylo nagrywa Twój głos, aby zamienić go na tekst.
+        NSAudioCaptureUsageDescription: Captylo nagrywa dźwięk spotkania (głosy rozmówców), aby zrobić z niego transkrypt i notatki.
         NSSupportsAutomaticTermination: false
         NSSupportsSuddenTermination: false
         ITSAppUsesNonExemptEncryption: false
