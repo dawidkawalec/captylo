@@ -130,7 +130,14 @@ actor ParakeetEngine: LocalTranscribing {
     }
 
     private func run(_ samples: [Float], language: String?, on manager: AsrManager, label: StaticString) async throws -> String {
-        guard samples.count >= Self.minimumSamples else { return "" }
+        try await runResult(samples, language: language, on: manager, label: label)?
+            .text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    /// One padded pass with a fresh decoder state. `nil` when the slice is too short for the model.
+    /// Token times in the result are relative to the start of `samples` (the padding sits at the end).
+    private func runResult(_ samples: [Float], language: String?, on manager: AsrManager, label: StaticString) async throws -> ASRResult? {
+        guard samples.count >= Self.minimumSamples else { return nil }
         var padded = samples
         padded.append(contentsOf: repeatElement(0, count: Self.paddingSamples))
 
@@ -142,9 +149,8 @@ actor ParakeetEngine: LocalTranscribing {
         // Fresh decoder state per pass (gotcha 18); the language hint is the v3 script filter (gotcha 21).
         var decoderState = TdtDecoderState.make(decoderLayers: await manager.decoderLayerCount)
         let result = try await manager.transcribe(padded, decoderState: &decoderState, language: Self.languageHint(language))
-        let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
         Log.transcription.debug("\(label, privacy: .public): \(samples.count) samples in \(Self.milliseconds(since: start, clock: clock)) ms")
-        return text
+        return result
     }
 
     // MARK: - Helpers
@@ -161,5 +167,24 @@ actor ParakeetEngine: LocalTranscribing {
 
     private static func milliseconds(since start: ContinuousClock.Instant, clock: ContinuousClock) -> Int {
         Int(start.duration(to: clock.now) / .milliseconds(1))
+    }
+}
+
+// Lives in this file because it reads the actor's private `manager` and `runResult`.
+extension ParakeetEngine: MeetingSpeechTranscribing {
+    /// Meeting pass over one utterance (at most 14 s, so with the padding it fits one encoder window: no seams).
+    /// Word times are relative to the start of `samples`.
+    func transcribeTimed(_ samples: [Float], language: String?) async throws -> TimedTranscript {
+        if manager == nil {
+            try await load()
+        }
+        guard let manager else { throw DictationError.modelNotReady }
+        guard let result = try await runResult(samples, language: language, on: manager, label: "parakeet.meeting") else {
+            return TimedTranscript(text: "", words: [])
+        }
+        let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let duration = Double(samples.count) / Double(ASRConstants.sampleRate)
+        let words = WordTimings.words(from: result.tokenTimings ?? [], offset: 0)
+        return TimedTranscript(text: text, words: WordTimings.clamped(words, toDuration: duration))
     }
 }
