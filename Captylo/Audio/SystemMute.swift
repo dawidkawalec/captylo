@@ -28,6 +28,16 @@ final class SystemMute: SystemMuting {
     /// Device we muted, nil when the mute is not ours (user muted first, or no mute yet).
     private var mutedDevice: AudioDeviceID?
 
+    /// True while a meeting records: muting would silence the call (notetaker spec 3.1), so a
+    /// scheduled mute never fires. Turning it on also cancels a pending mute and undoes one
+    /// already in effect (a take that started before the meeting).
+    var isSuppressed = false {
+        didSet {
+            guard isSuppressed, !oldValue else { return }
+            restore()
+        }
+    }
+
     init(settings: AppSettings, defaults: UserDefaults = .standard) {
         self.settings = settings
         self.defaults = defaults
@@ -103,7 +113,7 @@ final class SystemMute: SystemMuting {
     var isMutedByUs: Bool { mutedDevice != nil }
 
     private func muteNow() {
-        guard settings.muteWhileRecording, mutedDevice == nil else { return }
+        guard settings.muteWhileRecording, !isSuppressed, mutedDevice == nil else { return }
         guard let device = Self.defaultOutputDevice(), let element = Self.muteElement(on: device) else {
             Log.audio.info("Default output has no settable mute; skipping system mute")
             return

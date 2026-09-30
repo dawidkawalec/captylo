@@ -18,6 +18,8 @@ struct AppStateOverrides {
     var pinnedModelStatus: ParakeetModelStore.Status?
     /// Accessibility grant reported regardless of `AXIsProcessTrusted()`.
     var pinnedAccessibilityTrust: Bool?
+    /// Pro status shown regardless of the dev switch (design preview, tests).
+    var pinnedPro: Bool?
     /// True for `--design-preview`: code that would touch the system (the hotkey tap) stays off.
     var isDesignPreview = false
 

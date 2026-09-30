@@ -1,5 +1,6 @@
 import FluidAudio
 import Foundation
+import os
 @testable import Captylo
 
 /// VAD that says "speech starts" at chunk `startAt` and "ends" at chunk `endAt` (per detector
@@ -70,4 +71,56 @@ actor CountingMeetingTranscriber: MeetingSpeechTranscribing {
 actor SegmentSink {
     private(set) var saved: [MeetingSegmentRecord] = []
     func save(_ segment: MeetingSegmentRecord) { saved.append(segment) }
+}
+
+/// A meeting source the test drives by hand: `push` delivers samples synchronously on the
+/// caller's thread, like a source queue would.
+final class FakeAudioSource: MeetingAudioSource, @unchecked Sendable {
+    private struct Counts {
+        var starts = 0
+        var stops = 0
+    }
+
+    private let sink = OSAllocatedUnfairLock<(@Sendable ([Float]) -> Void)?>(initialState: nil)
+    private let counts = OSAllocatedUnfairLock(initialState: Counts())
+    var failOnStart = false
+    var startCount: Int { counts.withLock { $0.starts } }
+    var stopCount: Int { counts.withLock { $0.stops } }
+    var level: Float { 0 }
+
+    func start(onSamples: @escaping @Sendable ([Float]) -> Void) throws {
+        if failOnStart { throw MeetingAudioError.format }
+        counts.withLock { $0.starts += 1 }
+        sink.withLock { $0 = onSamples }
+    }
+
+    func stop() {
+        counts.withLock { $0.stops += 1 }
+        sink.withLock { $0 = nil }
+    }
+
+    func push(_ samples: [Float]) { sink.withLock { $0 }?(samples) }
+}
+
+@MainActor
+final class MuteSpy {
+    var calls: [Bool] = []
+}
+
+/// Counts VAD loads; fails the first `failures` of them.
+actor CountingDetectorLoader {
+    private(set) var loads = 0
+    private let failures: Int
+
+    init(failures: Int = 0) {
+        self.failures = failures
+    }
+
+    func load() async throws -> any SpeechDetecting {
+        loads += 1
+        // Long enough for a second caller to arrive while this load runs.
+        try await Task.sleep(for: .milliseconds(20))
+        guard loads > failures else { throw ScriptedFailure() }
+        return ScriptedSpeechDetector(startAt: 0, endAt: nil)
+    }
 }

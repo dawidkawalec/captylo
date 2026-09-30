@@ -8,8 +8,12 @@ import Foundation
 enum EchoFilter {
     /// Fewest distinct words a mic segment needs before it can count as echo.
     static let minimumDistinctWords = 3
+    /// Seconds a system segment may lie before or after a mic segment and still count.
+    static let window: Double = 1.5
+    /// Share of the mic words that must appear on the system track.
+    static let threshold: Double = 0.6
 
-    static func isEcho(_ mic: MeetingSegmentRecord, against system: [MeetingSegmentRecord], window: Double = 1.5, threshold: Double = 0.6) -> Bool {
+    static func isEcho(_ mic: MeetingSegmentRecord, against system: [MeetingSegmentRecord], window: Double = EchoFilter.window, threshold: Double = EchoFilter.threshold) -> Bool {
         guard mic.track == .me else { return false }
         let micWords = tokens(mic.text)
         guard Set(micWords).count >= minimumDistinctWords else { return false }

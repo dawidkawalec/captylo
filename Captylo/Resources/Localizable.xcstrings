@@ -5872,6 +5872,16 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Unsupported audio format." } }
       }
+    },
+    "Spotkanie w %@, %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting in %1$@, %2$@" } }
+      }
+    },
+    "Spotkanie, %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting, %@" } }
+      }
     }
   },
   "version": "1.0"

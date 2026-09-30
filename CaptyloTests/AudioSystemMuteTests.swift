@@ -2,7 +2,9 @@ import Foundation
 import Testing
 @testable import Captylo
 
-/// Only the crash marker is covered: muting a real output device is hardware.
+/// The crash marker and the meeting suppression are covered: muting a real output device is
+/// hardware (a suppression test would only reach it if the suppression were broken, and then
+/// restores it).
 @MainActor
 struct AudioSystemMuteTests {
     private static func makeMute() throws -> (SystemMute, UserDefaults, String) {
@@ -41,6 +43,31 @@ struct AudioSystemMuteTests {
         #expect(SystemMute.uidToRecover(from: stale, now: now) == nil)
         #expect(SystemMute.uidToRecover(from: future, now: now) == nil)
         #expect(SystemMute.uidToRecover(from: nil, now: now) == nil)
+    }
+
+    @Test func aSuppressedMuteNeverFires() async throws {
+        let (mute, defaults, suite) = try Self.makeMute()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defer { mute.restore() }
+        AppSettings(defaults: defaults).muteWhileRecording = true
+        mute.isSuppressed = true
+        mute.muteIfEnabled(after: .milliseconds(5))
+        try await Task.sleep(for: .milliseconds(60))
+        #expect(!mute.isMutedByUs)
+        #expect(mute.marker == nil)
+    }
+
+    /// A take scheduled its mute, then a meeting started before the delay ran out.
+    @Test func suppressionCancelsAMuteAlreadyScheduled() async throws {
+        let (mute, defaults, suite) = try Self.makeMute()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defer { mute.restore() }
+        AppSettings(defaults: defaults).muteWhileRecording = true
+        mute.muteIfEnabled(after: .milliseconds(40))
+        mute.isSuppressed = true
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!mute.isMutedByUs)
+        #expect(mute.marker == nil)
     }
 
     @Test func recoveryConsumesTheMarker() throws {

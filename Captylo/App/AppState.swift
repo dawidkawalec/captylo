@@ -58,6 +58,11 @@ final class AppState {
     @ObservationIgnored let modelContainer: ModelContainer
     @ObservationIgnored let database: Database
 
+    // Meetings
+    @ObservationIgnored let proAccess: ProAccess
+    /// Itself `@Observable`: views read its phase, live transcript and issues directly.
+    @ObservationIgnored let meetingRecorder: MeetingRecorder
+
     // Output and UI
     @ObservationIgnored let textOutput: TextOutput
     @ObservationIgnored let recorderModel: RecorderModel
@@ -165,6 +170,26 @@ final class AppState {
         storeIsFallback = isFallback
         let database = Database(modelContainer: container)
         self.database = database
+
+        // Meetings: nothing records until the user starts a meeting (the design preview and the
+        // test host never do). The VAD loads once, on the first meeting, and serves both tracks.
+        proAccess = ProAccess(settings: settings, pinned: overrides.pinnedPro)
+        let meetingVAD = SpeechDetectorCache { try await FluidSpeechDetector.load() }
+        let mute = systemMute
+        meetingRecorder = MeetingRecorder(environment: MeetingEnvironment(
+            makeMic: { MeetingMicCapture() },
+            makeSystem: { SystemAudioTap() },
+            makeTranscriber: { id, language, save in
+                MeetingTranscriber(meetingID: id, language: language, engine: engine,
+                                   detectorFactory: { _ in try await meetingVAD.detector() }, save: save)
+            },
+            database: database,
+            trackURL: { id, track in AppPaths.meetingTrackURL(id, track: track) },
+            expectingSystemAudio: { CoreAudioProcesses.anyOtherProcessPlaying() },
+            language: { settings.transcriptionLanguage },
+            setMuteSuppressed: { mute.isSuppressed = $0 },
+            postProcessors: []
+        ))
 
         // Output and UI
         textOutput = TextOutput()
@@ -325,6 +350,10 @@ final class AppState {
             Log.data.error("Could not create the data directories: \(error.localizedDescription, privacy: .public)")
         }
 
+        // A crash or quit mid-meeting left its row "recording": it becomes "Przerwane" with the
+        // segments it saved. A meeting started right after launch waits for this.
+        meetingRecorder.recoverInterruptedMeetings()
+
         // API keys: read once on the Keychain queue so the hot path hits the cache.
         keyStore.preload([KeyStore.Account.openRouter, KeyStore.Account.elevenLabs])
         // Keys of the pre-rename build: copied off the main thread, retried until answered.
@@ -394,8 +423,10 @@ final class AppState {
     }
 
     /// Quit path (`applicationWillTerminate`): synchronous only. Unmutes the output we muted
-    /// (nothing else would), drops a live take and restores the user's clipboard early.
+    /// (nothing else would), drops a live take and restores the user's clipboard early. A meeting
+    /// that still records gets its track files finalized; the next launch marks it interrupted.
     func stopServices() {
+        meetingRecorder.abortForTermination()
         systemMute.restore()
         dictationController.abortForTermination()
         textOutput.flushPendingRestore()
