@@ -28,6 +28,11 @@ final class MeetingRecorder {
         case unavailable(String)
         /// Exact zeros while other apps play: "Brak dostępu do dźwięku systemu".
         case noAccess
+        /// The other side was heard, then only zeros for a minute while other apps play, and a
+        /// tap rebuild brought nothing back (`SystemTrackWatch`): the other side is quiet or the
+        /// tap hears nothing. The live bar warns that it cannot hear them; real audio, or nothing
+        /// playing anymore, clears it.
+        case silent
     }
 
     private(set) var phase: Phase = .idle
@@ -215,8 +220,8 @@ final class MeetingRecorder {
         }
     }
 
-    /// The "Rozmówcy" sink for the next session of the system source: the feed, then the
-    /// watchdog, whose verdicts hop to the main actor. Silent buffers only ask Core Audio
+    /// The "Rozmówcy" sink for the next session of the system source: the feed, then
+    /// `SystemTrackWatch`, whose reports hop to the main actor. Silent buffers only ask Core Audio
     /// whether another app plays.
     private func makeSystemSink(feed: MeetingTrackFeed) -> @Sendable ([Float]) -> Void {
         systemSession += 1
@@ -227,44 +232,64 @@ final class MeetingRecorder {
             feed.deliver(samples, session: session)
             let silent = !samples.contains { $0 != 0 }
             let expectingAudio = silent && expecting()
-            let (verdict, firstAudio) = watch.withLock {
-                $0.observe(samples, silent: silent, expectingAudio: expectingAudio)
+            let now = Date()
+            let report = watch.withLock {
+                $0.observe(samples, session: session, silent: silent, expectingAudio: expectingAudio, at: now)
             }
-            guard verdict != .ok || firstAudio else { return }
+            guard report.needsAction else { return }
             Task { @MainActor in
-                self?.handle(verdict, firstAudio: firstAudio)
+                self?.handle(report)
             }
         }
     }
 
-    private func handle(_ verdict: SilenceWatchdog.Verdict, firstAudio: Bool) {
-        guard case .recording(let meetingID, _) = phase else { return }
+    private func handle(_ report: SystemTrackWatch.Report) {
+        guard case .recording(let meetingID, let startedAt) = phase else { return }
         // Exact zeros from a call nobody spoke in yet look like a denied grant: real audio ends it.
-        if firstAudio, systemAudioIssue == .noAccess {
+        if report.firstAudio, systemAudioIssue == .noAccess {
             systemAudioIssue = nil
         }
-        switch verdict {
-        case .ok:
-            break
-        case .noAccess:
+        if report.noAccess {
             Log.audio.warning("System audio is silent while other apps play: no access to system audio?")
             if systemAudioIssue == nil {
                 systemAudioIssue = .noAccess
             }
-        case .stalled:
+        }
+        if let gap = report.gap {
+            keepGap(at: gap, startedAt: startedAt)
+        }
+        switch report.warning {
+        case true?:
+            Log.audio.warning("System audio still silent after a tap rebuild while other apps play")
+            if systemAudioIssue == nil {
+                systemAudioIssue = .silent
+            }
+        case false?:
+            if systemAudioIssue == .silent {
+                systemAudioIssue = nil
+            }
+        case nil:
+            break
+        }
+        if report.rebuild {
             rebuildSystem(meetingID: meetingID)
         }
     }
 
-    /// The HAL zero-buffer bug: the tap heard audio, then only zeros while apps still play.
-    /// The tap is rebuilt on `control` (in order with a later stop) as a new feed session, so the
-    /// time it takes is padded; the gap stays on the meeting as "przerwa w nagraniu", at the
-    /// moment the zeros began. Once per silent run (`SystemTrackWatch`).
+    /// A "przerwa w nagraniu" at `date`, stored on the meeting when it stops.
+    private func keepGap(at date: Date, startedAt: Date) {
+        let offset = max(0, date.timeIntervalSince(startedAt))
+        interruptions.append(offset)
+        Log.audio.notice("System audio gap kept at \(offset, format: .fixed(precision: 1)) s")
+    }
+
+    /// Only zeros while other apps play, for as long as `SystemTrackWatch` allows: the other side
+    /// may be quiet, or the tap hit the HAL zero-buffer bug. The tap is rebuilt on `control` (in
+    /// order with a later stop) as a new feed session, so the time it takes is padded. Whether the
+    /// silent run becomes a "przerwa w nagraniu" is decided later, by what the rebuilt tap hears.
     private func rebuildSystem(meetingID: UUID) {
         guard let system, let feed = feeds[.them] else { return }
-        let stallAfter = systemWatch.withLock { $0.dog.stallAfter }
-        interruptions.append(max(0, elapsed() - stallAfter))
-        Log.audio.warning("System audio stalled, rebuilding the tap")
+        Log.audio.warning("System audio is only zeros while other apps play, rebuilding the tap")
         let sink = makeSystemSink(feed: feed)
         control.async { [weak self] in
             do {
@@ -281,8 +306,12 @@ final class MeetingRecorder {
     }
 
     private func systemRebuildFailed(_ message: String, meetingID: UUID) {
-        guard case .recording(let current, _) = phase, current == meetingID else { return }
+        guard case .recording(let current, let startedAt) = phase, current == meetingID else { return }
         systemAudioIssue = .unavailable(message)
+        // No tap anymore: the other side is missing from where the zeros began.
+        if let gap = systemWatch.withLock({ $0.rebuildFailed() }) {
+            keepGap(at: gap, startedAt: startedAt)
+        }
     }
 
     private func apply(_ update: MeetingLiveUpdate) {
@@ -297,7 +326,7 @@ final class MeetingRecorder {
     // MARK: Stop
 
     func stop() async {
-        guard case .recording(let id, _) = phase else { return }
+        guard case .recording(let id, let startedAt) = phase else { return }
         let duration = elapsed()
         phase = .finishing(meetingID: id)
         let mic = self.mic
@@ -307,6 +336,10 @@ final class MeetingRecorder {
         try? await run {
             mic?.stop()
             system?.stop()
+        }
+        // Still warning that the other side cannot be heard: they may be missing from there on.
+        if let gap = systemWatch.withLock({ $0.finish() }) {
+            keepGap(at: gap, startedAt: startedAt)
         }
         for feed in feeds.values { feed.close() }
         feeds = [:]
@@ -420,33 +453,5 @@ final class MeetingRecorder {
         } catch {
             Log.data.error("Meeting could not be updated: \(error.localizedDescription, privacy: .public)")
         }
-    }
-}
-
-/// The "Rozmówcy" watchdog and what the recorder does with its verdicts, behind one lock: the
-/// sink runs on the tap's queue.
-private struct SystemTrackWatch: Sendable {
-    var dog = SilenceWatchdog()
-    /// Set by the `.stalled` verdict that asks for a rebuild, cleared by the next real audio.
-    /// A call app keeps its output running and plays exact zeros while the other side is quiet,
-    /// so a long quiet stretch would otherwise rebuild the tap, and add a "przerwa w nagraniu",
-    /// every `stallAfter` seconds. A rebuild that brought no audio back is not repeated until
-    /// the other side is heard again.
-    private var rebuiltThisRun = false
-
-    /// The verdict to act on, and whether `samples` are the first real audio of the meeting.
-    mutating func observe(_ samples: [Float], silent: Bool, expectingAudio: Bool) -> (verdict: SilenceWatchdog.Verdict, firstAudio: Bool) {
-        let heardBefore = dog.heardAudio
-        var verdict = dog.observe(samples, expectingAudio: expectingAudio)
-        if !silent {
-            rebuiltThisRun = false
-        } else if verdict == .stalled {
-            if rebuiltThisRun {
-                verdict = .ok
-            } else {
-                rebuiltThisRun = true
-            }
-        }
-        return (verdict, !heardBefore && dog.heardAudio)
     }
 }

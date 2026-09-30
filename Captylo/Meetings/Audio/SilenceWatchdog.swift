@@ -3,8 +3,9 @@
 /// playing means: no access (never heard anything) or a stalled tap (heard audio before).
 ///
 /// Verdicts are events: `.noAccess` fires once when a silent run crosses `noAccessAfter`,
-/// `.stalled` fires every `stallAfter` seconds of the run (the meeting recorder rebuilds the tap
-/// on the first one only, until real audio comes back). A run ends when real audio arrives or
+/// `.stalled` fires every `stallAfter` seconds of the run; one alone means little, because a call
+/// app plays exact zeros while the other side is quiet (the meeting recorder's `SystemTrackWatch`
+/// counts them and decides when to rebuild the tap). A run ends when real audio arrives or
 /// nothing is playing.
 struct SilenceWatchdog: Sendable {
     enum Verdict: Equatable, Sendable { case ok, noAccess, stalled }

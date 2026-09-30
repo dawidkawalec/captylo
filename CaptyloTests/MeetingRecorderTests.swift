@@ -157,57 +157,125 @@ struct MeetingRecorderTests {
         await recorder.stop()
     }
 
-    /// The HAL zero-buffer bug mid-meeting: the tap is rebuilt and the gap is kept on the meeting.
-    @Test func aStalledSystemTrackIsRebuiltAndMarked() async throws {
+    /// A call app keeps its output running and plays exact zeros while the other side is quiet.
+    /// The user speaking for 10 s is normal conversation: no tap rebuild, no "przerwa w nagraniu".
+    @Test func tenSecondsOfTheUserSpeakingLeaveTheSystemTapAlone() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let mic = FakeAudioSource(), system = FakeAudioSource()
+        let recorder = MeetingRecorder(environment: environment(mic: mic, system: system, spy: MuteSpy(), db: db, expecting: true))
+        await recorder.start()
+        let id = try #require(recorder.currentMeetingID)
+        system.push(speech())
+        for _ in 0..<10 {
+            mic.push(Array(repeating: 0.2, count: 16_000))
+            system.push(silence())
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(system.startCount == 1)
+        #expect(recorder.systemAudioIssue == nil)
+        await recorder.stop()
+        #expect(try #require(try await db.meeting(id: id)).interruptions.isEmpty)
+    }
+
+    /// Half a minute of zeros rebuilds the tap quietly: when the other side speaks only later,
+    /// it was just quiet and the meeting keeps no gap.
+    @Test func aLongQuietStretchRebuildsTheTapWithoutAGap() async throws {
         let db = Database(modelContainer: try Store.makeInMemoryContainer())
         let system = FakeAudioSource()
         let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
         await recorder.start()
         let id = try #require(recorder.currentMeetingID)
         system.push(speech())
-        for _ in 0..<7 { system.push(silence()) }
-        await waitUntil { system.startCount == 2 }
+        for _ in 0..<29 { system.push(silence()) }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(system.startCount == 1)
+        system.push(silence())
+        await waitUntil { system.startCount == 2 && system.isRunning }
+        #expect(system.startCount == 2)
+
+        for _ in 0..<5 { system.push(silence()) }
+        system.push(speech())
+        try await Task.sleep(for: .milliseconds(100))
         #expect(system.startCount == 2)
         #expect(recorder.systemAudioIssue == nil)
         await recorder.stop()
+        #expect(try #require(try await db.meeting(id: id)).interruptions.isEmpty)
+    }
+
+    /// The HAL zero-buffer bug mid-meeting: the rebuilt tap hears the other side at once, so the
+    /// gap is kept on the meeting where the zeros began (the meeting's start here).
+    @Test func aStallFixedByARebuildIsMarked() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let system = FakeAudioSource()
+        let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
+        await recorder.start()
+        let id = try #require(recorder.currentMeetingID)
+        system.push(speech())
+        for _ in 0..<30 { system.push(silence()) }
+        await waitUntil { system.startCount == 2 && system.isRunning }
+        system.push(speech())
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(recorder.systemAudioIssue == nil)
+        await recorder.stop()
         let meeting = try #require(try await db.meeting(id: id))
-        #expect(meeting.interruptions.count == 1)
+        #expect(meeting.interruptions == [0])
         #expect(meeting.status == .completed)
     }
 
-    /// A call app keeps its output running and plays exact zeros while the other side is quiet
-    /// (the user presents for minutes). That is one silent run: the tap is rebuilt once, not every
-    /// `stallAfter` seconds, and the one gap is marked where the silence began. Real audio from
-    /// the other side lets the next silent run rebuild again.
-    @Test func aLongSilenceRebuildsTheSystemTapOnce() async throws {
+    /// Review focus 3: the rebuilt tap still hears only zeros while the call plays. The tap is
+    /// rebuilt again and the live bar warns instead of leaving "Rozmówcy" silently empty; the
+    /// meeting ending in that state keeps the gap.
+    @Test func aRebuildThatBringsNothingBackIsRetriedAndWarns() async throws {
         let db = Database(modelContainer: try Store.makeInMemoryContainer())
         let system = FakeAudioSource()
         let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
         await recorder.start()
         let id = try #require(recorder.currentMeetingID)
         system.push(speech())
-        for _ in 0..<20 { system.push(silence()) }
-        await waitUntil { system.startCount >= 2 && system.isRunning }
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(system.startCount == 2)
-
-        // The rebuilt tap keeps getting the call's zeros: still the same run.
-        for _ in 0..<13 { system.push(silence()) }
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(system.startCount == 2)
-
-        system.push(speech())
-        for _ in 0..<7 { system.push(silence()) }
-        await waitUntil { system.startCount == 3 && system.isRunning }
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(system.startCount == 3)
+        for _ in 0..<30 { system.push(silence()) }
+        await waitUntil { system.startCount == 2 && system.isRunning }
         #expect(recorder.systemAudioIssue == nil)
-
+        for _ in 0..<30 { system.push(silence()) }
+        await waitUntil { system.startCount == 3 && system.isRunning && recorder.systemAudioIssue == .silent }
+        #expect(system.startCount == 3)
+        #expect(recorder.systemAudioIssue == .silent)
         await recorder.stop()
-        let meeting = try #require(try await db.meeting(id: id))
-        #expect(meeting.interruptions.count == 2)
-        // The silence began `stallAfter` (6 s) before the stall was detected, at the meeting's start here.
-        #expect(meeting.interruptions.first == 0)
+        #expect(try #require(try await db.meeting(id: id)).interruptions == [0])
+    }
+
+    @Test func audioAfterARetriedRebuildClearsTheWarning() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let system = FakeAudioSource()
+        let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
+        await recorder.start()
+        let id = try #require(recorder.currentMeetingID)
+        system.push(speech())
+        for _ in 0..<30 { system.push(silence()) }
+        await waitUntil { system.startCount == 2 && system.isRunning }
+        for _ in 0..<30 { system.push(silence()) }
+        await waitUntil { system.startCount == 3 && system.isRunning && recorder.systemAudioIssue == .silent }
+        system.push(speech())
+        await waitUntil { recorder.systemAudioIssue == nil }
+        #expect(recorder.systemAudioIssue == nil)
+        await recorder.stop()
+        #expect(try #require(try await db.meeting(id: id)).interruptions == [0])
+    }
+
+    /// A rebuild that fails leaves no tap: the banner says so and the gap is kept.
+    @Test func aFailedRebuildShowsUnavailableAndKeepsTheGap() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let system = FakeAudioSource()
+        let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
+        await recorder.start()
+        let id = try #require(recorder.currentMeetingID)
+        system.push(speech())
+        for _ in 0..<29 { system.push(silence()) }
+        system.failOnStart = true
+        system.push(silence())
+        await waitUntil { recorder.systemAudioIssue != nil }
+        if case .unavailable = recorder.systemAudioIssue {} else { Issue.record("expected unavailable") }
+        await recorder.stop()
+        #expect(try #require(try await db.meeting(id: id)).interruptions == [0])
     }
 
     @Test func secondStartWhileRecordingIsIgnored() async throws {
