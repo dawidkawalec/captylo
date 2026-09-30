@@ -33,4 +33,17 @@ struct MeetingRecord: Sendable, Equatable, Identifiable {
         }
         return segment.track.defaultLabel
     }
+
+    /// Like `label(for:)`, but always Polish ("Ja", "Rozmówcy", "Mówca N"): the AI notes prompt
+    /// refers to these words, so they never go through the string catalog.
+    func promptLabel(for segment: MeetingSegmentRecord) -> String {
+        if let speaker = segment.speaker {
+            if let name = speakerNames[speaker], !name.isEmpty { return name }
+            return "Mówca " + speaker
+        }
+        switch segment.track {
+        case .me: return "Ja"
+        case .them: return "Rozmówcy"
+        }
+    }
 }

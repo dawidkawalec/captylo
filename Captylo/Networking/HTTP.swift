@@ -32,6 +32,19 @@ enum HTTP {
         return URLSession(configuration: configuration)
     }()
 
+    /// Meeting AI notes: one non-streaming request over a whole transcript (up to about 4000
+    /// tokens of answer), so nothing arrives for a long while; 150 s idle, 180 s in total.
+    static let meetingLLMSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.waitsForConnectivity = false
+        configuration.timeoutIntervalForRequest = 150
+        configuration.timeoutIntervalForResource = 180
+        configuration.httpMaximumConnectionsPerHost = 2
+        return URLSession(configuration: configuration)
+    }()
+
     /// Resource cap for audio uploads. The real per-take deadline (`max(20, 10 + 0.5 * seconds)`)
     /// is enforced in `ElevenLabsSTT`; this only has to stay above it for the longest file
     /// (a 4 h recording needs about 7210 s).

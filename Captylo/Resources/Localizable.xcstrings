@@ -5882,6 +5882,56 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Meeting, %@" } }
       }
+    },
+    "Ogólne": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "General" } }
+      }
+    },
+    "1:1": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "1:1" } }
+      }
+    },
+    "Standup": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Standup" } }
+      }
+    },
+    "Rozmowa z klientem": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Client call" } }
+      }
+    },
+    "Rekrutacja": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Job interview" } }
+      }
+    },
+    "Wykład / webinar": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Lecture / webinar" } }
+      }
+    },
+    "Za mało rozmowy, żeby zrobić notatki.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Not enough conversation to write notes." } }
+      }
+    },
+    "AI nie odpowiedziało na czas. Spróbuj ponownie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI did not answer in time. Try again." } }
+      }
+    },
+    "Błąd AI (kod %lld). Spróbuj ponownie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI error (code %lld). Try again." } }
+      }
+    },
+    "AI zwróciło pustą odpowiedź.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI returned an empty answer." } }
+      }
     }
   },
   "version": "1.0"

@@ -62,6 +62,8 @@ final class AppState {
     @ObservationIgnored let proAccess: ProAccess
     /// Itself `@Observable`: views read its phase, live transcript and issues directly.
     @ObservationIgnored let meetingRecorder: MeetingRecorder
+    /// AI notes after a meeting (Pro); the meeting view calls `regenerate` with another template.
+    @ObservationIgnored let meetingNotes: MeetingNotesProcessor
 
     // Output and UI
     @ObservationIgnored let textOutput: TextOutput
@@ -173,7 +175,8 @@ final class AppState {
 
         // Meetings: nothing records until the user starts a meeting (the design preview and the
         // test host never do). The VAD loads once, on the first meeting, and serves both tracks.
-        // After a meeting stops: speaker labels (Pro, macOS 15+; the diarizer loads on first use).
+        // After a meeting stops: speaker labels (Pro, macOS 15+; the diarizer loads on first use),
+        // then AI notes (Pro) with the user's AI key and model, so the notes see "Mówca N".
         let access = ProAccess(settings: settings, pinned: overrides.pinnedPro)
         proAccess = access
         let meetingVAD = SpeechDetectorCache { try await FluidSpeechDetector.load() }
@@ -183,6 +186,26 @@ final class AppState {
             isAllowed: { await access.allows(.speakerLabels) },
             trackURL: { id, track in AppPaths.meetingTrackURL(id, track: track) }
         )
+        let meetingSummarizer = MeetingSummarizer(
+            client: openRouter,
+            key: {
+                // Off the hot path: a longer wait than dictation, still bounded if an ACL prompt hangs.
+                switch await keyStore.load(KeyStore.Account.openRouter, timeout: .seconds(10)) {
+                case .value(let key): return key
+                case .timedOut:
+                    Log.enhancement.error("Meeting notes: Keychain read did not finish in time")
+                    return nil
+                }
+            },
+            model: { modelSnapshot.withLock { $0 } },
+            reasoning: reasoningPolicy
+        )
+        let meetingNotes = MeetingNotesProcessor(
+            database: database,
+            summarizer: meetingSummarizer,
+            isAllowed: { await access.allows(.meetingAINotes) }
+        )
+        self.meetingNotes = meetingNotes
         let mute = systemMute
         meetingRecorder = MeetingRecorder(environment: MeetingEnvironment(
             makeMic: { MeetingMicCapture() },
@@ -196,7 +219,7 @@ final class AppState {
             expectingSystemAudio: { CoreAudioProcesses.anyOtherProcessPlaying() },
             language: { settings.transcriptionLanguage },
             setMuteSuppressed: { mute.isSuppressed = $0 },
-            postProcessors: [speakerLabels]
+            postProcessors: [speakerLabels, meetingNotes]
         ))
 
         // Output and UI
