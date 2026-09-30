@@ -9,6 +9,11 @@ import os
 /// never run on the engine's thread. A device change mid-meeting (AirPods connect or drop, the
 /// default input changes) stops an `AVAudioEngine`; instead of going silent for the rest of the
 /// meeting the capture rebuilds on the new default input, retrying while no input exists.
+///
+/// Segment times are counted in samples, so the time the mic did not record during a rebuild is
+/// delivered as silence (`TrackTimeline`, host times of the tap buffers): every 2 s while no
+/// input exists, and the rest before the first buffer of the new engine. "Ja" stays in step
+/// with "Rozmówcy" and `me.caf` keeps the meeting's length.
 final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
     static let tapBufferSize: AVAudioFrameCount = 4_096
     static let retryDelay: DispatchTimeInterval = .seconds(2)
@@ -18,6 +23,9 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
         var isActive = false
         var pipeline: AudioConversionPipeline?
         var onSamples: (@Sendable ([Float]) -> Void)?
+        /// The engine build the pipeline belongs to: a late buffer of a torn-down engine is dropped.
+        var build = 0
+        var timeline = TrackTimeline()
     }
 
     private let control = DispatchQueue(label: "com.captylo.app.meeting.mic.control", qos: .userInitiated)
@@ -31,6 +39,8 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
     private var configObserver: (any NSObjectProtocol)?
     /// Bumped by every start and stop, so a pending rebuild retry of an old session gives up.
     private var session = 0
+    /// Bumped by every engine build, never reset, so no two taps ever share a number.
+    private var builds = 0
 
     var level: Float { levelLock.withLock { $0 } }
 
@@ -48,7 +58,11 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
         try control.sync {
             teardownLocked()
             session += 1
-            hot.withLockUnchecked { $0 = Hot(isActive: true, pipeline: nil, onSamples: onSamples) }
+            let now = Self.hostSeconds()
+            hot.withLockUnchecked {
+                $0 = Hot(isActive: true, pipeline: nil, onSamples: onSamples)
+                $0.timeline.begin(at: now)
+            }
             do {
                 try buildLocked()
             } catch {
@@ -87,9 +101,14 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
               let pipeline = AudioConversionPipeline(native: native, target: AudioCapture.targetFormat) else {
             throw MeetingAudioError.format
         }
-        hot.withLockUnchecked { $0.pipeline = pipeline }
-        input.installTap(onBus: 0, bufferSize: Self.tapBufferSize, format: native) { [weak self] buffer, _ in
-            self?.handleTap(buffer)
+        builds += 1
+        let build = builds
+        hot.withLockUnchecked {
+            $0.pipeline = pipeline
+            $0.build = build
+        }
+        input.installTap(onBus: 0, bufferSize: Self.tapBufferSize, format: native) { [weak self] buffer, when in
+            self?.handleTap(buffer, when: when, build: build)
         }
         configObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil
@@ -134,6 +153,9 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
     private func rebuildLocked(session: Int, attempt: Int) {
         guard session == self.session, hot.withLockUnchecked({ $0.isActive }) else { return }
         teardownLocked()
+        // The hole starts at the end of the audio delivered last; the outage fills and the first
+        // buffer of the new engine close it.
+        hot.withLockUnchecked { $0.timeline.interrupt() }
         do {
             try buildLocked()
             if attempt > 1 {
@@ -141,6 +163,7 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
             }
         } catch {
             teardownLocked()
+            fillOutageLocked()
             if attempt == 1 {
                 Log.audio.error("Meeting mic rebuild failed, retrying: \(error.localizedDescription, privacy: .public)")
             }
@@ -150,20 +173,74 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
         }
     }
 
+    /// No input yet: silence up to now, so while the retries run the track keeps pace in 2 s
+    /// steps instead of one large block when an input returns.
+    private func fillOutageLocked() {
+        let now = Self.hostSeconds()
+        let delivery = self.delivery
+        hot.withLockUnchecked { state in
+            guard state.isActive, let sink = state.onSamples else { return }
+            let silence = state.timeline.fill(until: now)
+            guard silence > 0 else { return }
+            delivery.async { Self.deliverSilence(silence, to: sink) }
+        }
+        levelLock.withLock { $0 = 0 }
+    }
+
     // MARK: Tap thread
 
-    private func handleTap(_ buffer: AVAudioPCMBuffer) {
+    private func handleTap(_ buffer: AVAudioPCMBuffer, when: AVAudioTime, build: Int) {
+        let duration = Double(buffer.frameLength) / buffer.format.sampleRate
+        let start = Self.startSeconds(of: when, duration: duration)
         let levelLock = self.levelLock
-        let converted = hot.withLockUnchecked { state -> (samples: [Float], sink: @Sendable ([Float]) -> Void)? in
-            guard state.isActive, let pipeline = state.pipeline, let sink = state.onSamples,
-                  let output = pipeline.convert(buffer), output.frameLength > 0,
-                  let channel = output.floatChannelData?[0] else { return nil }
-            // The pipeline reuses its output buffer: copy before the next tap call.
-            let samples = Array(UnsafeBufferPointer(start: channel, count: Int(output.frameLength)))
-            levelLock.withLock { $0 = AudioLevel.rms(samples) }
-            return (samples, sink)
+        let delivery = self.delivery
+        let closedHole = hot.withLockUnchecked { state -> Int? in
+            guard state.isActive, state.build == build, let pipeline = state.pipeline,
+                  let sink = state.onSamples else { return nil }
+            let closesHole = state.timeline.isInterrupted
+            let silence = state.timeline.silence(before: start, duration: duration)
+            let samples = Self.copy(pipeline.convert(buffer))
+            if !samples.isEmpty {
+                levelLock.withLock { $0 = AudioLevel.rms(samples) }
+            }
+            // Enqueued under the lock, so silence and audio reach `delivery` in timeline order.
+            if silence > 0 || !samples.isEmpty {
+                delivery.async {
+                    Self.deliverSilence(silence, to: sink)
+                    if !samples.isEmpty {
+                        sink(samples)
+                    }
+                }
+            }
+            return closesHole ? state.timeline.filledInHole : nil
         }
-        guard let converted else { return }
-        delivery.async { converted.sink(converted.samples) }
+        if let closedHole {
+            let seconds = Double(closedHole) / Double(SampleBuffer.sampleRate)
+            Log.audio.info("Meeting mic resumed, \(seconds, format: .fixed(precision: 2)) s without input filled with silence")
+        }
+    }
+
+    /// The converted samples. The pipeline reuses its output buffer: copy before the next tap call.
+    private static func copy(_ output: AVAudioPCMBuffer?) -> [Float] {
+        guard let output, output.frameLength > 0, let channel = output.floatChannelData?[0] else { return [] }
+        return Array(UnsafeBufferPointer(start: channel, count: Int(output.frameLength)))
+    }
+
+    private static func deliverSilence(_ count: Int, to sink: @Sendable ([Float]) -> Void) {
+        for size in TrackTimeline.silenceChunks(count) {
+            sink([Float](repeating: 0, count: size))
+        }
+    }
+
+    // MARK: Host time
+
+    private static func hostSeconds() -> Double {
+        AVAudioTime.seconds(forHostTime: mach_absolute_time())
+    }
+
+    /// When the buffer's first sample was recorded: its host time, or an estimate from now
+    /// when the engine gives none.
+    private static func startSeconds(of when: AVAudioTime, duration: Double) -> Double {
+        when.isHostTimeValid ? AVAudioTime.seconds(forHostTime: when.hostTime) : hostSeconds() - duration
     }
 }
