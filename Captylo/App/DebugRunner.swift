@@ -41,7 +41,88 @@ final class DebugRunner: DebugCommandRunner {
             return await axProbe(showText: showText)
         case .watchPaste(let text):
             return await watchPaste(text)
+        case .meetingFromFiles(let me, let them):
+            return await meetingFromFiles(me: me, them: them)
         }
+    }
+
+    // MARK: --meeting-from-files
+
+    /// The meeting transcription path on two files instead of live capture (no mic, no TCC): the
+    /// real Parakeet and VAD, a real `MeetingTranscriber` and an in-memory store. Both tracks start
+    /// at meeting time 0 and are fed 4096-sample chunks alternately, like the live sources.
+    /// Prints the transcript as stored (echo marks written back like at a meeting's stop);
+    /// `transcribed` differs from the stored count only when a segment failed to save.
+    private func meetingFromFiles(me: URL, them: URL) async -> Int32 {
+        let started = ContinuousClock.now
+        do {
+            let meSamples = try await AudioDecoder.decode16kMono(me).samples
+            let themSamples = try await AudioDecoder.decode16kMono(them).samples
+            // Loaded up front: a missing model or VAD fails here, not as an empty transcript.
+            let engine = appState.parakeetEngine
+            try await engine.load()
+            let vad = SpeechDetectorCache { try await FluidSpeechDetector.load() }
+            _ = try await vad.detector()
+
+            let database = Database(modelContainer: try Store.makeInMemoryContainer())
+            let record = MeetingRecord(title: "meeting-from-files")
+            try await database.createMeeting(record)
+            let language = appState.settings.transcriptionLanguage
+            let transcriber = MeetingTranscriber(
+                meetingID: record.id,
+                language: language,
+                engine: engine,
+                detectorFactory: { _ in try await vad.detector() },
+                save: { segment in
+                    do {
+                        try await database.appendSegment(segment)
+                    } catch {
+                        Log.data.error("Meeting segment could not be saved: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
+            )
+            await transcriber.start()
+            let step = 4_096
+            let inputs: [(track: MeetingTrack, samples: [Float])] = [(.me, meSamples), (.them, themSamples)]
+            var index = 0
+            while index < max(meSamples.count, themSamples.count) {
+                for input in inputs where index < input.samples.count {
+                    transcriber.feed(Array(input.samples[index..<min(index + step, input.samples.count)]), track: input.track)
+                }
+                index += step
+            }
+            let result = await transcriber.finish()
+            try await database.updateSegments(result.echoChanges)
+            let stored = try await database.segments(meetingID: record.id)
+
+            let segments = stored.map { segment -> [String: Any] in
+                [
+                    "track": segment.track.rawValue,
+                    "start": Self.seconds(segment.start),
+                    "end": Self.seconds(segment.end),
+                    "text": segment.text,
+                    "echo": segment.isEcho,
+                ]
+            }
+            Self.emit([
+                "ok": true,
+                "segments": segments,
+                "transcribed": result.segments.count,
+                "language": Self.orNull(language),
+                "ms": Int((ContinuousClock.now - started) / .milliseconds(1)),
+            ])
+            return 0
+        } catch {
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            Self.emit(["ok": false, "error": message])
+            return 1
+        }
+    }
+
+    /// Seconds rounded to hundredths for readable JSON. A `Decimal`, because `JSONSerialization`
+    /// prints a rounded `Double` with its binary tail (5.31 as 5.3099999999999996).
+    private static func seconds(_ value: Double) -> Decimal {
+        Decimal(Int((value * 100).rounded())) / 100
     }
 
     // MARK: --watch-paste

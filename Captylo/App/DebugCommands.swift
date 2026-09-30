@@ -38,10 +38,14 @@ enum DebugCommand: Sendable, Equatable {
     /// field like a dictation, watches it for edits and prints what was learned. Use with
     /// `CAPTYLO_DATA_DIR` so the learning lands in a scratch folder.
     case watchPaste(String)
+    /// `--meeting-from-files <me-audio> <them-audio>`: the meeting transcription pipeline on two files
+    /// instead of live capture (no mic, no system audio tap, in-memory store). `me` stands for the
+    /// mic track and `them` for the system track; both start at meeting time 0.
+    case meetingFromFiles(me: URL, them: URL)
 
     static let primaryFlags: [String] = [
         "--transcribe", "--show-widget", "--check", "--reset-onboarding", "--open-section", "--design-preview", "--import-legacy",
-        "--ax-probe", "--watch-paste",
+        "--ax-probe", "--watch-paste", "--meeting-from-files",
     ]
 
     /// Headless commands never start the services; all but `--open-section` go to `DebugRunner`.
@@ -108,11 +112,19 @@ enum DebugCommand: Sendable, Equatable {
                 }
                 index += 1
             }
-            let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-            return .transcribe(url: url, ai: ai, language: language, engine: engine)
+            return .transcribe(url: fileURL(path), ai: ai, language: language, engine: engine)
+        case "--meeting-from-files":
+            let paths = rest.prefix(2)
+            guard paths.count == 2, paths.allSatisfy({ !$0.isEmpty && !$0.hasPrefix("--") }) else { return nil }
+            return .meetingFromFiles(me: fileURL(paths[paths.startIndex]), them: fileURL(paths[paths.startIndex + 1]))
         default:
             return nil
         }
+    }
+
+    /// A file URL for a path typed on the command line (`~` expanded).
+    private static func fileURL(_ path: String) -> URL {
+        URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
     }
 }
 

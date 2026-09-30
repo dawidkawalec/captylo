@@ -96,6 +96,26 @@ struct DebugCommandTests {
         #expect(DebugCommand.importLegacy(dryRun: false).isHeadless)
     }
 
+    @Test func parsesMeetingFromFiles() {
+        #expect(DebugCommand.parse(["Captylo", "--meeting-from-files", "/tmp/me.wav", "/tmp/them.wav"])
+                == .meetingFromFiles(me: URL(filePath: "/tmp/me.wav"), them: URL(filePath: "/tmp/them.wav")))
+        #expect(DebugCommand.parse(["Captylo", "--meeting-from-files", "/tmp/me.wav"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--meeting-from-files"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--meeting-from-files", "/tmp/me.wav", "--check"]) == nil)
+        #expect(DebugCommand.meetingFromFiles(me: URL(filePath: "/tmp/me.wav"), them: URL(filePath: "/tmp/them.wav")).isHeadless)
+    }
+
+    @Test func meetingFromFilesExpandsTilde() {
+        guard case .meetingFromFiles(let me, let them) = DebugCommand.parse(["app", "--meeting-from-files", "~/me.wav", "~/them.m4a"]) else {
+            Issue.record("expected meetingFromFiles")
+            return
+        }
+        #expect(me.lastPathComponent == "me.wav")
+        #expect(them.lastPathComponent == "them.m4a")
+        #expect(!me.path.contains("~"))
+        #expect(!them.path.contains("~"))
+    }
+
     @Test func ignoresUnknownArgumentsAndPlainLaunches() {
         #expect(DebugCommand.parse(["app"]) == nil)
         #expect(DebugCommand.parse([]) == nil)
