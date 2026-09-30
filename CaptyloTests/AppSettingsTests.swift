@@ -105,7 +105,11 @@ struct AppSettingsTests {
         #expect(raw.contains("learning.enabled"))
         #expect(raw.contains("learning.notifications"))
         #expect(raw.contains("learning.excludedApps"))
-        #expect(AppSettings.keys.count == 32)
+        #expect(raw.contains("dev.pro"))
+        #expect(raw.contains("meetings.autoDetect"))
+        #expect(raw.contains("meetings.consentReminder"))
+        #expect(raw.contains("meetings.audioRetention"))
+        #expect(AppSettings.keys.count == 36)
     }
 
     @Test func windowToneDefaultsClampsAndResets() throws {

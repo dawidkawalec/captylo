@@ -5822,6 +5822,41 @@
           }
         }
       }
+    },
+    "Ja": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Me" } }
+      }
+    },
+    "Rozmówcy": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Others" } }
+      }
+    },
+    "Mówca %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Speaker %@" } }
+      }
+    },
+    "Nie zachowuj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Don't keep" } }
+      }
+    },
+    "7 dni": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "7 days" } }
+      }
+    },
+    "30 dni": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "30 days" } }
+      }
+    },
+    "Zawsze": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Always" } }
+      }
     }
   },
   "version": "1.0"

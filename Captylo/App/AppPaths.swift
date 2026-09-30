@@ -37,9 +37,20 @@ enum AppPaths {
         recordings.appending(path: fileName)
     }
 
-    /// Creates the data and recordings directories (call before opening the store).
+    /// `Meetings/<id>/me.caf` and `them.caf`: never under `Recordings/` (the dictation orphan sweep).
+    static var meetings: URL { dataDirectory.appending(path: "Meetings", directoryHint: .isDirectory) }
+
+    static func meetingFolder(_ id: UUID) -> URL {
+        meetings.appending(path: id.uuidString, directoryHint: .isDirectory)
+    }
+
+    static func meetingTrackURL(_ id: UUID, track: MeetingTrack) -> URL {
+        meetingFolder(id).appending(path: track.fileName)
+    }
+
+    /// Creates the data, recordings and meetings directories (call before opening the store).
     static func ensureDirectories() throws {
-        for directory in [dataDirectory, recordings] {
+        for directory in [dataDirectory, recordings, meetings] {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         }
     }

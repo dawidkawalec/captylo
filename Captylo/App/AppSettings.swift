@@ -39,6 +39,10 @@ final class AppSettings {
         case supportCardHiddenUntil = "supportCard.hiddenUntil"
         case openRouterModelsCache = "openRouter.modelsCache"
         case openRouterModelsCachedAt = "openRouter.modelsCachedAt"
+        case devPro = "dev.pro"
+        case meetingsAutoDetect = "meetings.autoDetect"
+        case meetingsConsentReminder = "meetings.consentReminder"
+        case meetingAudioRetention = "meetings.audioRetention"
     }
 
     /// Every persisted key, for tests and diagnostics.
@@ -324,6 +328,35 @@ final class AppSettings {
     var learningExcludedApps: [String] {
         get { track(\.learningExcludedApps); return decode([String].self, .learningExcludedApps) ?? [] }
         set { withMutation(keyPath: \.learningExcludedApps) { encode(newValue, .learningExcludedApps) } }
+    }
+
+    // MARK: Meetings
+
+    /// DEBUG-only "Tryb Pro (dev)" until accounts exist (M4). Read through `ProAccess`.
+    var devPro: Bool {
+        get { track(\.devPro); return bool(.devPro, default: false) }
+        set { withMutation(keyPath: \.devPro) { defaults.set(newValue, forKey: Key.devPro.rawValue) } }
+    }
+
+    /// "Wykrywaj spotkania": ask to record when a meeting app holds the mic.
+    var meetingsAutoDetect: Bool {
+        get { track(\.meetingsAutoDetect); return bool(.meetingsAutoDetect, default: true) }
+        set { withMutation(keyPath: \.meetingsAutoDetect) { defaults.set(newValue, forKey: Key.meetingsAutoDetect.rawValue) } }
+    }
+
+    /// "Przypominaj o poinformowaniu uczestników": the consent card at every meeting start.
+    var meetingsConsentReminder: Bool {
+        get { track(\.meetingsConsentReminder); return bool(.meetingsConsentReminder, default: true) }
+        set { withMutation(keyPath: \.meetingsConsentReminder) { defaults.set(newValue, forKey: Key.meetingsConsentReminder.rawValue) } }
+    }
+
+    /// "Zachowuj nagrania spotkań": how long `me.caf` / `them.caf` stay (transcripts always stay).
+    var meetingAudioRetention: MeetingAudioRetention {
+        get {
+            track(\.meetingAudioRetention)
+            return MeetingAudioRetention(rawValue: string(.meetingAudioRetention, default: MeetingAudioRetention.days7.rawValue)) ?? .days7
+        }
+        set { withMutation(keyPath: \.meetingAudioRetention) { defaults.set(newValue.rawValue, forKey: Key.meetingAudioRetention.rawValue) } }
     }
 
     var menuBarOnly: Bool {
