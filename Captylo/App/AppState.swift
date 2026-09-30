@@ -173,8 +173,16 @@ final class AppState {
 
         // Meetings: nothing records until the user starts a meeting (the design preview and the
         // test host never do). The VAD loads once, on the first meeting, and serves both tracks.
-        proAccess = ProAccess(settings: settings, pinned: overrides.pinnedPro)
+        // After a meeting stops: speaker labels (Pro, macOS 15+; the diarizer loads on first use).
+        let access = ProAccess(settings: settings, pinned: overrides.pinnedPro)
+        proAccess = access
         let meetingVAD = SpeechDetectorCache { try await FluidSpeechDetector.load() }
+        let speakerLabels = SpeakerLabelProcessor(
+            database: database,
+            diarizer: FluidSpeakerDiarizer(),
+            isAllowed: { await access.allows(.speakerLabels) },
+            trackURL: { id, track in AppPaths.meetingTrackURL(id, track: track) }
+        )
         let mute = systemMute
         meetingRecorder = MeetingRecorder(environment: MeetingEnvironment(
             makeMic: { MeetingMicCapture() },
@@ -188,7 +196,7 @@ final class AppState {
             expectingSystemAudio: { CoreAudioProcesses.anyOtherProcessPlaying() },
             language: { settings.transcriptionLanguage },
             setMuteSuppressed: { mute.isSuppressed = $0 },
-            postProcessors: []
+            postProcessors: [speakerLabels]
         ))
 
         // Output and UI

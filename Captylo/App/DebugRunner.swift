@@ -52,7 +52,8 @@ final class DebugRunner: DebugCommandRunner {
     /// real Parakeet and VAD, a real `MeetingTranscriber` and an in-memory store. Both tracks start
     /// at meeting time 0 and are fed 4096-sample chunks alternately, like the live sources.
     /// Prints the transcript as stored (echo marks written back like at a meeting's stop);
-    /// `transcribed` differs from the stored count only when a segment failed to save.
+    /// `transcribed` differs from the stored count only when a segment failed to save. With Pro
+    /// on (`CAPTYLO_DEV_PRO=1`) and macOS 15+ it also labels the speakers of the `them` file.
     private func meetingFromFiles(me: URL, them: URL) async -> Int32 {
         let started = ContinuousClock.now
         do {
@@ -93,6 +94,16 @@ final class DebugRunner: DebugCommandRunner {
             }
             let result = await transcriber.finish()
             try await database.updateSegments(result.echoChanges)
+
+            // Speaker labels like after a real meeting (Pro and macOS 15+), over the `them` file
+            // itself. Called directly, not through `SpeakerLabelProcessor`, so a failure shows here.
+            var turns: [SpeakerTurn]?
+            if SpeakerLabelProcessor.systemSupportsDiarization, appState.proAccess.allows(.speakerLabels) {
+                let found = try await FluidSpeakerDiarizer().diarize(url: them)
+                let transcript = try await database.segments(meetingID: record.id)
+                try await database.updateSegments(SpeakerAssigner.assign(transcript, turns: found))
+                turns = found
+            }
             let stored = try await database.segments(meetingID: record.id)
 
             let segments = stored.map { segment -> [String: Any] in
@@ -102,6 +113,7 @@ final class DebugRunner: DebugCommandRunner {
                     "end": Self.seconds(segment.end),
                     "text": segment.text,
                     "echo": segment.isEcho,
+                    "speaker": Self.orNull(segment.speaker),
                 ]
             }
             Self.emit([
@@ -109,6 +121,8 @@ final class DebugRunner: DebugCommandRunner {
                 "segments": segments,
                 "transcribed": result.segments.count,
                 "language": Self.orNull(language),
+                "speakerTurns": Self.orNull(turns?.count),
+                "voices": Self.orNull(turns.map { Set($0.map(\.speaker)).count }),
                 "ms": Int((ContinuousClock.now - started) / .milliseconds(1)),
             ])
             return 0

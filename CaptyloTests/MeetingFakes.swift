@@ -109,6 +109,24 @@ final class MuteSpy {
     var calls: [Bool] = []
 }
 
+/// Returns fixed speaker turns (or throws) and remembers every file it was asked to diarize.
+actor ScriptedDiarizer: SpeakerDiarizing {
+    private(set) var urls: [URL] = []
+    private let turns: [SpeakerTurn]
+    private let fails: Bool
+
+    init(turns: [SpeakerTurn], fails: Bool = false) {
+        self.turns = turns
+        self.fails = fails
+    }
+
+    func diarize(url: URL) async throws -> [SpeakerTurn] {
+        urls.append(url)
+        if fails { throw ScriptedFailure() }
+        return turns
+    }
+}
+
 /// Counts VAD loads; fails the first `failures` of them.
 actor CountingDetectorLoader {
     private(set) var loads = 0
