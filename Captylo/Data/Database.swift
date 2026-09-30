@@ -8,7 +8,7 @@ import SwiftData
 enum Store {
     static let configurationName = "Captylo"
 
-    static var schema: Schema { Schema([Dictation.self, UsageStat.self]) }
+    static var schema: Schema { Schema([Dictation.self, UsageStat.self, Meeting.self, MeetingSegment.self]) }
 
     static func makeContainer(url: URL = AppPaths.store) -> (container: ModelContainer, isFallback: Bool) {
         do {
