@@ -356,8 +356,8 @@ struct MeetingDetailView: View {
 
     /// Shows the typed title at once and saves it in one step on the database actor (the notes
     /// and the AI notes may be writing the same row), then hands the saved row to the list.
-    /// Everything comes from the editor that was open, so a field closed by switching meetings
-    /// still renames its own meeting.
+    /// Everything comes from the editor that was open, so a field still open when another
+    /// meeting is picked (the editor saves as it goes away) still renames its own meeting.
     private func rename(_ id: UUID, from current: String, to typed: String) {
         guard let title = MeetingRecord.editedTitle(typed, current: current) else { return }
         if meeting?.id == id {
