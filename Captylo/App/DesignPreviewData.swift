@@ -370,6 +370,36 @@ enum DesignPreviewData {
         ]
         return (meeting, segments(meeting.id, lines))
     }
+
+    /// `CAPTYLO_PREVIEW_LIVE`: an invented Meet call recording right now, 12:34 in, with a few
+    /// finished lines, one grey line of the other side still being transcribed and two notes
+    /// typed so far. Newer than every sample meeting, so the preview opens on it.
+    static func sampleLiveMeeting(now: Date) -> (meeting: MeetingRecord, segments: [MeetingSegmentRecord], partials: [MeetingTrack: String], elapsed: TimeInterval) {
+        let elapsed: TimeInterval = 754
+        let createdAt = now.addingTimeInterval(-elapsed)
+        var meeting = MeetingRecord(
+            createdAt: createdAt,
+            title: MeetingRecorder.defaultTitle(appName: "Meet", date: createdAt),
+            status: .recording,
+            appName: "Meet"
+        )
+        meeting.noteLines = [
+            MeetingNoteLine(text: "demo w piątek", at: 20),
+            MeetingNoteLine(text: "dostęp do panelu: 2 osoby, zaproszenia dziś", at: 615),
+        ]
+        meeting.notes = meeting.noteLines.map(\.text).joined(separator: "\n")
+        let lines: [SampleLine] = [
+            (3, 8, .me, nil, "Dzień dobry, słychać mnie dobrze?"),
+            (8.5, 14, .them, nil, "Tak, wszystko gra. Zaczynamy od harmonogramu wdrożenia?"),
+            (15, 24, .me, nil, "Tak. Wersję demo pokażemy w piątek, a wdrożenie zaczniemy od poniedziałku."),
+            (602, 612, .them, nil, "Piątek nam pasuje. Potrzebujemy jeszcze dostępu do panelu dla dwóch osób."),
+            (613, 618, .me, nil, "Jasne, wyślę zaproszenia dziś po południu."),
+            (700, 712, .them, nil, "Zostaje szkolenie, bo część zespołu pierwszy raz pracuje z takim narzędziem."),
+            (714, 722, .me, nil, "Możemy zrobić je online, w dwóch krótkich turach."),
+        ]
+        let partials: [MeetingTrack: String] = [.them: "Dwie tury pasują, najlepiej rano, bo po południu mamy"]
+        return (meeting, segments(meeting.id, lines), partials, elapsed)
+    }
 }
 
 /// Deterministic SplitMix64 so every preview run shows the same history.

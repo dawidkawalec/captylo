@@ -8,7 +8,14 @@ import SwiftUI
 struct AudioPlayerView: View {
     let url: URL
 
-    @State private var player = AudioPlayerModel()
+    @State private var player: AudioPlayerModel
+
+    /// `player` lets the owner start playback at a moment (a meeting's `[mm:ss]` stamps); by
+    /// default the view makes its own.
+    init(url: URL, player: AudioPlayerModel? = nil) {
+        self.url = url
+        _player = State(initialValue: player ?? AudioPlayerModel())
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -150,6 +157,7 @@ final class AudioPlayerModel {
     private(set) var errorText: String?
 
     @ObservationIgnored private var player: AVAudioPlayer?
+    @ObservationIgnored private var loadedURL: URL?
     @ObservationIgnored private var pollTask: Task<Void, Never>?
 
     var progress: Double {
@@ -161,7 +169,9 @@ final class AudioPlayerModel {
         return rate == rate.rounded() ? "\(Int(rate))x" : "\(rate)x"
     }
 
+    /// Opens `url`; a no-op when that file is already loaded (playback keeps its place).
     func load(_ url: URL) {
+        if url == loadedURL, player != nil { return }
         stop()
         do {
             let player = try AVAudioPlayer(contentsOf: url)
@@ -169,6 +179,7 @@ final class AudioPlayerModel {
             player.rate = Self.rates[rateIndex]
             player.prepareToPlay()
             self.player = player
+            loadedURL = url
             duration = player.duration
             currentTime = 0
             isLoaded = true
@@ -197,6 +208,18 @@ final class AudioPlayerModel {
         }
     }
 
+    /// Plays `url` from `seconds` (clamped to the recording), loading it first unless it is the
+    /// file already loaded.
+    func play(_ url: URL, from seconds: TimeInterval) {
+        load(url)
+        guard let player else { return }
+        player.currentTime = min(max(0, seconds), max(0, player.duration - 0.05))
+        currentTime = player.currentTime
+        player.play()
+        isPlaying = true
+        startPolling()
+    }
+
     func seek(toProgress progress: Double) {
         guard let player else { return }
         player.currentTime = progress * player.duration
@@ -213,6 +236,7 @@ final class AudioPlayerModel {
         pollTask = nil
         player?.stop()
         player = nil
+        loadedURL = nil
         isPlaying = false
         isLoaded = false
         currentTime = 0

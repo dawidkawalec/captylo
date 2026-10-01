@@ -40,6 +40,9 @@ final class DesignPreviewRunner {
         }
 
         await DesignPreviewData.populate(appState.database)
+        #if DEBUG
+        await startLiveMeetingIfAsked(target)
+        #endif
         appState.bumpStats()
         hideSceneWindows()
 
@@ -83,6 +86,47 @@ final class DesignPreviewRunner {
             try? await Task.sleep(for: .seconds(3600))
         }
     }
+
+    // MARK: Live meeting
+
+    #if DEBUG
+    /// `CAPTYLO_PREVIEW_LIVE=1` on `main-spotkania`: a meeting recording right now
+    /// (`DesignPreviewData.sampleLiveMeeting`) on the recorder, without audio, with the consent
+    /// card and the headphones hint. `noaccess`, `silent` or `unavailable` show that system audio
+    /// warning instead of the hint.
+    private func startLiveMeetingIfAsked(_ target: DesignPreviewTarget) async {
+        guard target == .mainSpotkania,
+              let mode = ProcessInfo.processInfo.environment["CAPTYLO_PREVIEW_LIVE"],
+              !mode.isEmpty, mode != "0"
+        else { return }
+        let live = DesignPreviewData.sampleLiveMeeting(now: Date())
+        do {
+            try await appState.database.createMeeting(live.meeting)
+            for segment in live.segments {
+                try await appState.database.appendSegment(segment)
+            }
+        } catch {
+            Log.data.error("Design preview: live meeting save failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        let issue: MeetingRecorder.SystemAudioIssue?
+        switch mode {
+        case "noaccess": issue = .noAccess
+        case "silent": issue = .silent
+        case "unavailable": issue = .unavailable(MeetingAudioError.format.localizedDescription)
+        default: issue = nil
+        }
+        appState.meetingRecorder.previewLive(
+            meetingID: live.meeting.id,
+            segments: live.segments,
+            partials: live.partials,
+            elapsed: live.elapsed,
+            levels: [.me: 0.32, .them: 0.68],
+            issue: issue,
+            builtInSpeakers: issue == nil
+        )
+    }
+    #endif
 
     // MARK: Targets
 

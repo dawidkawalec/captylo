@@ -3,10 +3,15 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// One meeting on a glass panel: title and when / how long / which app, "Eksportuj" (copy or
-/// save Markdown, save JSON, delete) and the tabs "Notatki", "Transkrypt", "Notatki AI". Reads
-/// the meeting and its segments from the `Database` actor whenever the selection or
-/// `reloadToken` changes; while this meeting records, the transcript follows
-/// `MeetingRecorder.liveSegments` and the grey partial lines.
+/// save Markdown, save JSON, delete) and the tabs "Notatki" (the editable notes), "Transkrypt",
+/// "Notatki AI". Reads the meeting and its segments from the `Database` actor whenever the
+/// selection or `reloadToken` changes.
+///
+/// While this meeting records, the live bar sits on top (with its warnings and, once per start,
+/// the consent card) and the tabs give way to two columns: the live transcript
+/// (`MeetingRecorder.liveSegments` and the grey partial lines) and the notes editor, stacked when
+/// narrow. Afterwards a `[mm:ss]` stamp plays its track from a second before that moment in the
+/// player under the tabs, and a "Mówca N" chip takes a name.
 @MainActor
 struct MeetingDetailView: View {
     enum Tab: String, CaseIterable, Sendable {
@@ -50,12 +55,24 @@ struct MeetingDetailView: View {
         var contentType: UTType { self == .markdown ? UTType(filenameExtension: "md") ?? .plainText : .json }
     }
 
+    /// A `[mm:ss]` stamp was clicked: this track plays in the player under the tabs.
+    private struct Playback: Equatable {
+        let meetingID: UUID
+        let track: MeetingTrack
+    }
+
+    /// Below this width of the live area the notes go under the live transcript.
+    static let liveStackWidth: CGFloat = 520
+    /// Height of the notes editor under the live transcript (narrow layout).
+    static let stackedNotesHeight: CGFloat = 110
+
     let meetingID: UUID
     /// Bumped by the section after every list reload (search, recorder phase, a finished or
     /// deleted meeting), so the details catch the status, length and AI notes of a stop.
     let reloadToken: Int
     let database: Database
     let recorder: MeetingRecorder
+    let settings: AppSettings
     @Binding var tab: Tab
     let onCopy: (String) -> Void
     let onDelete: (UUID) -> Void
@@ -63,6 +80,33 @@ struct MeetingDetailView: View {
     @State private var meeting: MeetingRecord?
     @State private var segments: [MeetingSegmentRecord] = []
     @State private var notice: Notice?
+    /// Lives as long as the details do: text typed while a meeting stops survives the switch
+    /// from the live columns to the tabs.
+    @State private var notesDraft: MeetingNotesDraft
+    @State private var player = AudioPlayerModel()
+    @State private var playback: Playback?
+    @State private var liveWidth: CGFloat = 0
+
+    init(
+        meetingID: UUID,
+        reloadToken: Int,
+        database: Database,
+        recorder: MeetingRecorder,
+        settings: AppSettings,
+        tab: Binding<Tab>,
+        onCopy: @escaping (String) -> Void,
+        onDelete: @escaping (UUID) -> Void
+    ) {
+        self.meetingID = meetingID
+        self.reloadToken = reloadToken
+        self.database = database
+        self.recorder = recorder
+        self.settings = settings
+        _tab = tab
+        self.onCopy = onCopy
+        self.onDelete = onDelete
+        _notesDraft = State(initialValue: MeetingNotesDraft(database: database))
+    }
 
     /// The recorder works on this meeting (recording or finishing it).
     private var isLive: Bool { recorder.currentMeetingID == meetingID }
@@ -70,28 +114,52 @@ struct MeetingDetailView: View {
     var body: some View {
         GlassPanel(spacing: 14) {
             if let meeting, meeting.id == meetingID {
+                if isLive {
+                    MeetingLiveBar(recorder: recorder) {
+                        Task { await recorder.stop() }
+                    }
+                    if recorder.isRecording, recorder.showsConsentReminder, settings.meetingsConsentReminder {
+                        consentCard
+                            .transition(.opacity)
+                    }
+                }
                 header(meeting)
                 if let notice {
                     ToolStatusLine(text: notice.text, tone: notice.tone)
                         .transition(.opacity)
                 }
-                GlassSegmentedPicker(selection: $tab, title: { $0.title }, systemImage: { $0.symbol })
-                ScrollView {
-                    tabContent(meeting)
-                        .padding(.top, 6)
-                        .padding(.bottom, 18)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                if isLive {
+                    liveColumns(meeting)
+                } else {
+                    GlassSegmentedPicker(selection: $tab, title: { $0.title }, systemImage: { $0.symbol })
+                    if tab == .notes {
+                        MeetingNotesEditor(draft: notesDraft) { noteTime(meeting) }
+                            .padding(.bottom, 4)
+                    } else {
+                        ScrollView {
+                            tabContent(meeting)
+                                .padding(.top, 6)
+                                .padding(.bottom, 18)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
+                        .defaultScrollAnchor(.top)
+                        .mask(Self.edgeFade)
+                        .frame(maxHeight: .infinity)
+                    }
+                    if let playback, playback.meetingID == meetingID {
+                        playbackBar(playback)
+                            .transition(.opacity)
+                    }
                 }
-                .scrollBounceBehavior(.basedOnSize)
-                .defaultScrollAnchor(.top)
-                .mask(Self.edgeFade)
-                .frame(maxHeight: .infinity)
             } else {
                 Color.clear
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .animation(GlassMotion.press, value: notice)
+        .animation(GlassMotion.press, value: playback)
+        .animation(GlassMotion.press, value: recorder.showsConsentReminder)
         .task(id: LoadKey(meetingID: meetingID, reloadToken: reloadToken)) {
             await load()
         }
@@ -104,6 +172,10 @@ struct MeetingDetailView: View {
         }
         .onChange(of: meetingID) { _, _ in
             notice = nil
+            closePlayback()
+        }
+        .onDisappear {
+            notesDraft.flush()
         }
     }
 
@@ -116,8 +188,139 @@ struct MeetingDetailView: View {
             guard !Task.isCancelled else { return }
             meeting = record
             segments = rows
+            if let record {
+                notesDraft.show(record)
+            }
         } catch {
             Log.data.error("Meeting fetch failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// The meeting time a new line of notes gets: the recording clock while it records, the
+    /// meeting's length afterwards (an interrupted one: the end of its last line).
+    private func noteTime(_ meeting: MeetingRecord) -> Double {
+        if recorder.isRecording, isLive {
+            return recorder.elapsed()
+        }
+        let lastLine = (isLive ? recorder.liveSegments : segments).map(\.end).max() ?? 0
+        return max(meeting.duration, lastLine)
+    }
+
+    // MARK: Live
+
+    private var consentCard: some View {
+        MeetingConsentCard(
+            onCopy: { onCopy(MeetingConsent.disclosure) },
+            onNeverShow: {
+                settings.meetingsConsentReminder = false
+                recorder.dismissConsentReminder()
+            },
+            onDismiss: { recorder.dismissConsentReminder() }
+        )
+    }
+
+    /// The live transcript and the notes side by side (stacked below `liveStackWidth`).
+    private func liveColumns(_ meeting: MeetingRecord) -> some View {
+        let stacked = liveWidth > 0 && liveWidth < Self.liveStackWidth
+        let layout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 14))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 16))
+        let notesWidth = min(max(liveWidth * 0.42, 220), 320)
+        return layout {
+            VStack(alignment: .leading, spacing: 8) {
+                columnTitle(Text("Transkrypt na żywo"), systemImage: "text.quote")
+                ScrollView {
+                    MeetingTranscriptView(meeting: meeting, segments: recorder.liveSegments,
+                                          partials: recorder.partials, isLive: true)
+                        .padding(.top, 6)
+                        .padding(.bottom, 18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .defaultScrollAnchor(.bottom)
+                .mask(Self.edgeFade)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            VStack(alignment: .leading, spacing: 8) {
+                columnTitle(Text("Notatki"), systemImage: "note.text")
+                MeetingNotesEditor(draft: notesDraft) { noteTime(meeting) }
+            }
+            .frame(width: stacked ? nil : notesWidth)
+            .frame(maxWidth: stacked ? .infinity : nil)
+            .frame(height: stacked ? Self.stackedNotesHeight : nil)
+            .frame(maxHeight: stacked ? nil : .infinity, alignment: .top)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            liveWidth = width
+        }
+    }
+
+    private func columnTitle(_ title: Text, systemImage: String) -> some View {
+        Label {
+            title
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .font(GlassFont.ui(12, .medium))
+        .foregroundStyle(GlassColor.textSecondary)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    // MARK: Playback
+
+    private func play(_ track: MeetingTrack, from start: Double) {
+        let url = AppPaths.meetingTrackURL(meetingID, track: track)
+        playback = Playback(meetingID: meetingID, track: track)
+        player.play(url, from: max(0, start - 1))
+    }
+
+    private func closePlayback() {
+        player.stop()
+        playback = nil
+    }
+
+    /// Which track plays, the capsule player and a close button.
+    private func playbackBar(_ playback: Playback) -> some View {
+        HStack(spacing: 10) {
+            Text(verbatim: playback.track.defaultLabel)
+                .font(GlassFont.ui(12, .medium))
+                .foregroundStyle(GlassColor.textSecondary)
+                .lineLimit(1)
+                .fixedSize()
+            AudioPlayerView(url: AppPaths.meetingTrackURL(playback.meetingID, track: playback.track), player: player)
+            ToolIconButton("xmark", label: Text("Zamknij odtwarzacz"), size: 26) {
+                closePlayback()
+            }
+        }
+        .padding(.bottom, 6)
+    }
+
+    // MARK: Speakers
+
+    /// Stores the name in one step on the database actor (the AI notes may be writing the same
+    /// row) and shows the saved record.
+    private func rename(speaker label: String, to name: String) {
+        let database = self.database
+        let id = meetingID
+        Task {
+            do {
+                let saved = try await database.modifyMeeting(id: id) { record in
+                    if name.isEmpty {
+                        record.speakerNames.removeValue(forKey: label)
+                    } else {
+                        record.speakerNames[label] = name
+                    }
+                }
+                if let saved, saved.id == meetingID {
+                    meeting = saved
+                }
+            } catch {
+                Log.data.error("Speaker name could not be saved: \(error.localizedDescription, privacy: .public)")
+                notice = Notice(text: String(localized: "Nie udało się zapisać imienia."), tone: .error)
+            }
         }
     }
 
@@ -140,7 +343,8 @@ struct MeetingDetailView: View {
                 Text(verbatim: meeting.title)
                     .font(GlassFont.display(20))
                     .foregroundStyle(GlassColor.textPrimary)
-                    .lineLimit(2)
+                    // While live every line of height goes to the transcript and the notes.
+                    .lineLimit(isLive ? 1 : 2)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                 HStack(spacing: 8) {
@@ -236,51 +440,22 @@ struct MeetingDetailView: View {
 
     // MARK: Tabs
 
+    /// "Transkrypt" and "Notatki AI" (scrolled by the caller); "Notatki" is the editor, which
+    /// scrolls itself.
     @ViewBuilder
     private func tabContent(_ meeting: MeetingRecord) -> some View {
         switch tab {
         case .notes:
-            notes(meeting)
+            EmptyView()
         case .transcript:
-            if isLive {
-                MeetingTranscriptView(meeting: meeting, segments: recorder.liveSegments,
-                                      partials: recorder.partials, isLive: true)
-            } else {
-                MeetingTranscriptView(meeting: meeting, segments: segments)
-            }
+            MeetingTranscriptView(
+                meeting: meeting,
+                segments: segments,
+                onPlay: meeting.hasAudio ? { track, start in play(track, from: start) } : nil,
+                onRename: { label, name in rename(speaker: label, to: name) }
+            )
         case .aiNotes:
             aiNotes(meeting)
-        }
-    }
-
-    /// The user's notes, read only here; each line with the meeting time it was written at.
-    @ViewBuilder
-    private func notes(_ meeting: MeetingRecord) -> some View {
-        if !meeting.noteLines.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(meeting.noteLines) { line in
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text(verbatim: MeetingTime.stamp(line.at))
-                            .font(GlassFont.ui(12, .medium).monospacedDigit())
-                            .foregroundStyle(GlassColor.textTertiary)
-                            .frame(width: 50, alignment: .leading)
-                        Text(verbatim: line.text)
-                            .font(GlassFont.body)
-                            .foregroundStyle(GlassColor.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-            .textSelection(.enabled)
-        } else if !meeting.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            Text(verbatim: meeting.notes)
-                .font(GlassFont.body)
-                .foregroundStyle(GlassColor.textPrimary)
-                .lineSpacing(3)
-                .textSelection(.enabled)
-        } else {
-            ToolCaption("Brak notatek do tego spotkania.")
         }
     }
 

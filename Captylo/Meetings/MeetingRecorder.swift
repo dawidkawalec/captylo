@@ -35,14 +35,29 @@ final class MeetingRecorder {
         case silent
     }
 
+    /// How often the default output is checked for the headphones hint while recording.
+    nonisolated static let outputRouteInterval: Duration = .seconds(4)
+
     private(set) var phase: Phase = .idle
     /// Finished utterances in time order, without the mic's echo of the other side.
     private(set) var liveSegments: [MeetingSegmentRecord] = []
     /// The grey "w trakcie" line per track.
     private(set) var partials: [MeetingTrack: String] = [:]
     private(set) var systemAudioIssue: SystemAudioIssue?
+    /// While recording: the mic could not start (only the other side records). While idle: why
+    /// the last start failed. Cleared by the next start and by a stop.
     private(set) var lastError: String?
     private(set) var lastFinishedMeetingID: UUID?
+    /// Set from the first line of `start` until it returns: a second click must not open a
+    /// second meeting, and "Nagraj spotkanie" stays disabled meanwhile (the first system audio
+    /// start can wait on the permission prompt).
+    private(set) var isStarting = false
+    /// The consent card of this recording ("Nagrywasz spotkanie. Poinformuj uczestników.") is
+    /// still up: set by every start, cleared by its close button and by the stop.
+    private(set) var showsConsentReminder = false
+    /// The default output is the Mac's speakers while recording: the other side will also reach
+    /// the mic, so the live bar suggests headphones.
+    private(set) var usesBuiltInSpeakers = false
 
     @ObservationIgnored private let env: MeetingEnvironment
     @ObservationIgnored private let control = DispatchQueue(label: "com.captylo.app.meeting.recorder", qos: .userInitiated)
@@ -54,10 +69,11 @@ final class MeetingRecorder {
     @ObservationIgnored private var interruptions: [Double] = []
     /// Bumped by every start of the system source: a rebuilt tap is a new session of its feed.
     @ObservationIgnored private var systemSession = 0
-    /// Set from the first line of `start` until it returns: a second click must not open a second meeting.
-    @ObservationIgnored private var isStarting = false
     @ObservationIgnored private var recovery: Task<Void, Never>?
+    @ObservationIgnored private var routeTask: Task<Void, Never>?
     @ObservationIgnored private let systemWatch = OSAllocatedUnfairLock(initialState: SystemTrackWatch())
+    /// Design preview only (`previewLive`): fixed meter levels instead of the sources'.
+    @ObservationIgnored private var previewLevels: [MeetingTrack: Float]?
 
     init(environment: MeetingEnvironment) {
         env = environment
@@ -81,7 +97,13 @@ final class MeetingRecorder {
     }
 
     func level(_ track: MeetingTrack) -> Float {
-        (track == .me ? mic : system)?.level ?? 0
+        if let previewLevels { return previewLevels[track] ?? 0 }
+        return (track == .me ? mic : system)?.level ?? 0
+    }
+
+    /// The close button of the consent card.
+    func dismissConsentReminder() {
+        showsConsentReminder = false
     }
 
     /// "Spotkanie w Zoom, 30 września 14:00" / "Spotkanie, 30 września 14:00".
@@ -208,7 +230,36 @@ final class MeetingRecorder {
             return
         }
         phase = .recording(meetingID: record.id, startedAt: now)
+        showsConsentReminder = true
+        watchOutputRoute()
         Log.audio.info("Meeting recording started")
+    }
+
+    /// Checks the default output now and every `outputRouteInterval` until the stop, off the
+    /// main actor (a Core Audio read can wait on the audio server).
+    private func watchOutputRoute() {
+        let check = env.outputUsesBuiltInSpeakers
+        routeTask?.cancel()
+        routeTask = Task { [weak self] in
+            while !Task.isCancelled {
+                let builtIn = await Task.detached(priority: .utility) { check() }.value
+                guard !Task.isCancelled else { return }
+                self?.setUsesBuiltInSpeakers(builtIn)
+                try? await Task.sleep(for: Self.outputRouteInterval)
+            }
+        }
+    }
+
+    private func setUsesBuiltInSpeakers(_ value: Bool) {
+        if usesBuiltInSpeakers != value {
+            usesBuiltInSpeakers = value
+        }
+    }
+
+    private func stopWatchingOutputRoute() {
+        routeTask?.cancel()
+        routeTask = nil
+        setUsesBuiltInSpeakers(false)
     }
 
     private func makeWriter(_ meetingID: UUID, _ track: MeetingTrack) -> TrackFileWriter? {
@@ -329,6 +380,10 @@ final class MeetingRecorder {
         guard case .recording(let id, let startedAt) = phase else { return }
         let duration = elapsed()
         phase = .finishing(meetingID: id)
+        stopWatchingOutputRoute()
+        showsConsentReminder = false
+        lastError = nil
+        previewLevels = nil
         let mic = self.mic
         let system = self.system
         self.mic = nil
@@ -380,6 +435,7 @@ final class MeetingRecorder {
     func abortForTermination() {
         guard case .recording = phase else { return }
         Log.app.notice("Meeting recording cut short by quit")
+        stopWatchingOutputRoute()
         let mic = self.mic
         let system = self.system
         self.mic = nil
@@ -445,13 +501,37 @@ final class MeetingRecorder {
         }
     }
 
-    private func updateMeeting(_ id: UUID, _ change: (inout MeetingRecord) -> Void) async {
+    /// In one step on the database actor: notes typed while the meeting stops survive.
+    private func updateMeeting(_ id: UUID, _ change: @Sendable (inout MeetingRecord) -> Void) async {
         do {
-            guard var record = try await env.database.meeting(id: id) else { return }
-            change(&record)
-            try await env.database.updateMeeting(record)
+            try await env.database.modifyMeeting(id: id, change)
         } catch {
             Log.data.error("Meeting could not be updated: \(error.localizedDescription, privacy: .public)")
         }
     }
+
+    // MARK: Design preview
+
+    #if DEBUG
+    /// `--design-preview main-spotkania` with `CAPTYLO_PREVIEW_LIVE`: shows `meetingID` as
+    /// recording for `elapsed` seconds with these lines and meter levels, without audio, files
+    /// or a transcriber. The consent card is up, like after a real start.
+    func previewLive(
+        meetingID: UUID,
+        segments: [MeetingSegmentRecord],
+        partials: [MeetingTrack: String],
+        elapsed: TimeInterval,
+        levels: [MeetingTrack: Float],
+        issue: SystemAudioIssue? = nil,
+        builtInSpeakers: Bool = false
+    ) {
+        phase = .recording(meetingID: meetingID, startedAt: Date().addingTimeInterval(-elapsed))
+        liveSegments = segments
+        self.partials = partials
+        systemAudioIssue = issue
+        usesBuiltInSpeakers = builtInSpeakers
+        showsConsentReminder = true
+        previewLevels = levels
+    }
+    #endif
 }

@@ -1,8 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// Content of the menu bar extra (brief "App shell"): start / stop, copy last transcript,
-/// microphone and AI mode submenus, open app, settings, Dock and login toggles, quit.
+/// Content of the menu bar extra (brief "App shell"): start / stop dictation, record / end a
+/// meeting, copy last transcript, microphone and AI mode submenus, open app, settings, Dock and
+/// login toggles, quit.
 @MainActor
 struct MenuBarMenu: View {
     @Environment(AppState.self) private var appState
@@ -22,6 +23,20 @@ struct MenuBarMenu: View {
                 Task { await appState.coordinator.start() }
             }
             .disabled(phase.isProcessing)
+        }
+
+        let meetings = appState.meetingRecorder
+        if meetings.isRecording {
+            Button("Zakończ spotkanie") {
+                Task { await meetings.stop() }
+            }
+        } else {
+            // Spotkania first: a meeting never records without its live bar on screen.
+            Button("Nagraj spotkanie") {
+                appState.windowPresenter.openMain(section: .spotkania)
+                Task { await meetings.start() }
+            }
+            .disabled(meetings.phase != .idle || meetings.isStarting)
         }
 
         Button("Kopiuj ostatnią transkrypcję") {

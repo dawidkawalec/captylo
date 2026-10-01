@@ -29,27 +29,31 @@ struct MeetingNotesProcessor: MeetingPostProcessing {
         }
         let template = templateID.map(BuiltInMeetingTemplates.template(id:)) ?? BuiltInMeetingTemplates.pick(forTitle: meeting.title)
 
-        let outcome: Result<(markdown: String, model: String), any Error>
+        let notes: (markdown: String, model: String)?
+        let failure: String?
         do {
-            outcome = .success(try await summarizer.summarize(meeting: meeting, segments: segments, template: template))
+            notes = try await summarizer.summarize(meeting: meeting, segments: segments, template: template)
+            failure = nil
         } catch {
             Log.enhancement.error("Meeting notes failed: \(error.localizedDescription, privacy: .public)")
-            outcome = .failure(error)
+            notes = nil
+            failure = error.localizedDescription
         }
 
-        // The call can take minutes: re-read, so a title, notes or names edited meanwhile survive.
+        // The call can take minutes: change only the AI fields of the row as it is now, in one
+        // step, so a title, notes or names edited meanwhile (even while this saves) survive.
+        let usedTemplate = template.id
         do {
-            guard var latest = try await database.meeting(id: meetingID) else { return }
-            switch outcome {
-            case .success(let result):
-                latest.summary = result.markdown
-                latest.summaryModel = result.model
-                latest.summaryTemplateID = template.id
-                latest.summaryError = nil
-            case .failure(let error):
-                latest.summaryError = error.localizedDescription
+            try await database.modifyMeeting(id: meetingID) { latest in
+                if let notes {
+                    latest.summary = notes.markdown
+                    latest.summaryModel = notes.model
+                    latest.summaryTemplateID = usedTemplate
+                    latest.summaryError = nil
+                } else if let failure {
+                    latest.summaryError = failure
+                }
             }
-            try await database.updateMeeting(latest)
         } catch {
             Log.data.error("Meeting notes could not be saved: \(error.localizedDescription, privacy: .public)")
         }

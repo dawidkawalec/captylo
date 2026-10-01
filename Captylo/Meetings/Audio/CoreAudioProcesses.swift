@@ -51,6 +51,37 @@ enum CoreAudioProcesses {
         }
     }
 
+    /// True when the default output device is the Mac's own speakers: built-in transport, and
+    /// not the headphone jack when the device names its data source (older Macs switch one
+    /// built-in device between 'ispk' and 'hdpn'). Bluetooth, USB and AirPlay outputs are false.
+    static func defaultOutputIsBuiltInSpeakers() -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var device = AudioObjectID(kAudioObjectUnknown)
+        var size = UInt32(MemoryLayout<AudioObjectID>.size)
+        guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device) == noErr,
+              device != kAudioObjectUnknown,
+              read(device, kAudioDevicePropertyTransportType, default: UInt32(0)) == kAudioDeviceTransportTypeBuiltIn
+        else { return false }
+
+        var source = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyDataSource,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        guard AudioObjectHasProperty(device, &source) else { return true }
+        var value: UInt32 = 0
+        size = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectGetPropertyData(device, &source, 0, nil, &size, &value) == noErr else { return true }
+        return value != headphonesDataSource
+    }
+
+    /// 'hdpn', the built-in headphone jack's data source.
+    private static let headphonesDataSource: UInt32 = 0x6864_706E
+
     // MARK: Property helpers
 
     private static func objectIDs() -> [AudioObjectID] {

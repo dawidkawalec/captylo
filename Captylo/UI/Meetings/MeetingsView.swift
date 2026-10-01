@@ -5,6 +5,12 @@ import SwiftUI
 /// four rows). Before the first meeting only `MeetingsEmptyState` shows. The list reloads from
 /// the `Database` actor whenever the search, the recorder's phase, the last finished meeting or
 /// a delete changes; a reload keeps the selection, or selects the newest meeting.
+///
+/// "Nagraj spotkanie" starts the recorder and the meeting it opens is selected (also when the
+/// menu bar started it), so the live bar is on screen; while it records, the button reads
+/// "Zakończ spotkanie" in Record red. A start that failed leaves its reason under the header.
+/// While the live meeting is selected the list steps aside, so the live transcript and the notes
+/// have room even in the default 920 x 640 window; a header button brings it back.
 @MainActor
 struct MeetingsView: View {
     /// Below this content width the list sits above the details.
@@ -32,6 +38,8 @@ struct MeetingsView: View {
     /// Meeting whose "Usuń spotkanie" awaits confirmation.
     @State private var pendingDelete: UUID?
     @State private var columnsWidth: CGFloat = 0
+    /// The user brought the list back while a meeting records (reset by every start).
+    @State private var showsListWhileLive = false
 
     var body: some View {
         let recorder = appState.meetingRecorder
@@ -43,6 +51,15 @@ struct MeetingsView: View {
                 deletions: deletions
             )) {
                 await reload()
+            }
+            .onChange(of: recorder.currentMeetingID) { _, id in
+                // A start (here or in the menu bar) shows its live bar right away; a search the
+                // new meeting does not match would hide it.
+                if let id {
+                    query = ""
+                    selectedID = id
+                    showsListWhileLive = false
+                }
             }
             .alert("Usunąć spotkanie?", isPresented: isConfirmingDelete) {
                 Button("Usuń", role: .destructive) {
@@ -64,13 +81,18 @@ struct MeetingsView: View {
         if !loaded {
             Color.clear
         } else if meetings.isEmpty, query.isEmpty {
-            // Recording starts from here once the live bar shows it (never without it).
-            MeetingsEmptyState(onRecord: nil)
+            MeetingsEmptyState(onRecord: recordAction(recorder), error: startFailure(recorder))
         } else {
             VStack(spacing: 0) {
-                header
+                header(recorder)
                     .mainColumnFrame()
                     .padding(.top, 14)
+                if let failure = startFailure(recorder) {
+                    ToolStatusLine(text: failure, tone: .error)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .mainColumnFrame()
+                        .padding(.top, 8)
+                }
                 if meetings.isEmpty {
                     noResults
                 } else {
@@ -92,33 +114,65 @@ struct MeetingsView: View {
 
     // MARK: Header
 
-    private var header: some View {
+    private func header(_ recorder: MeetingRecorder) -> some View {
         HStack(spacing: 10) {
             ToolSearchField("Szukaj w spotkaniach", text: $query)
                 .frame(maxWidth: 360)
             Spacer(minLength: 10)
-            MeetingRecordButton(action: nil)
+            if isLiveSelected(recorder) {
+                ToolIconButton(
+                    "sidebar.left",
+                    label: showsListWhileLive ? Text("Ukryj listę spotkań") : Text("Pokaż listę spotkań"),
+                    size: GlassTokens.Size.buttonHeightSmall
+                ) {
+                    showsListWhileLive.toggle()
+                }
+            }
+            MeetingRecordButton(isRecording: recorder.isRecording, action: recordAction(recorder))
         }
+    }
+
+    /// The meeting on screen is the one being recorded or finished.
+    private func isLiveSelected(_ recorder: MeetingRecorder) -> Bool {
+        selectedID != nil && selectedID == recorder.currentMeetingID
+    }
+
+    /// Start while idle, stop while recording; nil (disabled) while a start or a stop runs.
+    private func recordAction(_ recorder: MeetingRecorder) -> (() -> Void)? {
+        if recorder.isStarting { return nil }
+        switch recorder.phase {
+        case .idle:
+            return { Task { await recorder.start() } }
+        case .recording:
+            return { Task { await recorder.stop() } }
+        case .finishing:
+            return nil
+        }
+    }
+
+    /// Why the last start failed, while nothing records (`MeetingRecorder.lastError`).
+    private func startFailure(_ recorder: MeetingRecorder) -> String? {
+        guard recorder.phase == .idle, !recorder.isStarting, let error = recorder.lastError else { return nil }
+        return String(localized: "Nie udało się rozpocząć nagrywania. \(error)")
     }
 
     // MARK: Columns
 
+    /// One layout for every arrangement, so the details keep their identity (and the notes typed
+    /// a moment ago) when the list steps aside, comes back or moves above them.
     private func columns(_ recorder: MeetingRecorder) -> some View {
         let stacked = columnsWidth > 0 && columnsWidth < Self.stackWidth
-        return Group {
-            if stacked {
-                VStack(spacing: 16) {
-                    list(recorder)
-                        .frame(height: MeetingListView.collapsedHeight(rows: meetings.count))
-                    detail(recorder)
-                }
-            } else {
-                HStack(alignment: .top, spacing: 16) {
-                    list(recorder)
-                        .frame(width: Self.listWidth)
-                    detail(recorder)
-                }
+        let showsList = !isLiveSelected(recorder) || showsListWhileLive
+        let layout = stacked
+            ? AnyLayout(VStackLayout(spacing: 16))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 16))
+        return layout {
+            if showsList {
+                list(recorder)
+                    .frame(width: stacked ? nil : Self.listWidth)
+                    .frame(height: stacked ? MeetingListView.collapsedHeight(rows: meetings.count) : nil)
             }
+            detail(recorder)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -140,6 +194,7 @@ struct MeetingsView: View {
                 reloadToken: listVersion,
                 database: appState.database,
                 recorder: recorder,
+                settings: appState.settings,
                 tab: $tab,
                 onCopy: { appState.textOutput.copy($0) },
                 onDelete: { pendingDelete = $0 }

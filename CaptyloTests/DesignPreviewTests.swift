@@ -99,6 +99,25 @@ struct DesignPreviewTests {
         }
     }
 
+    /// `CAPTYLO_PREVIEW_LIVE=1`: a meeting recording right now, newer than every sample meeting,
+    /// so the preview opens on it.
+    @Test func sampleLiveMeetingIsRecordingNow() throws {
+        let now = try #require(ISO8601DateFormatter().date(from: "2026-09-30T16:00:00Z"))
+        let live = DesignPreviewData.sampleLiveMeeting(now: now)
+        #expect(live.meeting.status == .recording)
+        #expect(live.meeting.createdAt == now.addingTimeInterval(-live.elapsed))
+        let newestSample = try #require(DesignPreviewData.sampleMeetings(now: now).first)
+        #expect(live.meeting.createdAt > newestSample.meeting.createdAt)
+        #expect(!live.segments.isEmpty)
+        #expect(live.segments.allSatisfy { $0.meetingID == live.meeting.id && $0.start < $0.end && $0.end <= live.elapsed })
+        #expect(live.segments.map(\.start) == live.segments.map(\.start).sorted())
+        #expect(live.segments.contains { $0.track == .me } && live.segments.contains { $0.track == .them })
+        #expect(!live.partials.isEmpty)
+        #expect(!live.meeting.noteLines.isEmpty)
+        #expect(live.meeting.noteLines.allSatisfy { $0.at <= live.elapsed })
+        #expect(live.meeting.notes == live.meeting.noteLines.map(\.text).joined(separator: "\n"))
+    }
+
     @Test func sampleCustomModeIsTheUsersOwn() {
         let mode = DesignPreviewData.sampleCustomMode
         #expect(mode.builtInKey == nil)

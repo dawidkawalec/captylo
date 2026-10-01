@@ -219,7 +219,8 @@ final class AppState {
             expectingSystemAudio: { CoreAudioProcesses.anyOtherProcessPlaying() },
             language: { settings.transcriptionLanguage },
             setMuteSuppressed: { mute.isSuppressed = $0 },
-            postProcessors: [speakerLabels, meetingNotes]
+            postProcessors: [speakerLabels, meetingNotes],
+            outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() }
         ))
 
         // Output and UI

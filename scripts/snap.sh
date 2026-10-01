@@ -26,6 +26,9 @@
 #                             ("Tło okna"; default: the app default)
 #   CAPTYLO_GLASS_FALLBACK=1  passed through: draws the macOS 14/15 fallbacks on macOS 26
 #                             (material glass, aurora glows instead of the mesh)
+#   CAPTYLO_PREVIEW_LIVE=<m>  passed through, main-spotkania only (Debug): a meeting recording
+#                             right now. `1` with the consent card and the headphones hint;
+#                             `noaccess`, `silent` or `unavailable` with that system audio warning
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

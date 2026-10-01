@@ -14,4 +14,7 @@ struct MeetingEnvironment: Sendable {
     /// On while a meeting records: a dictation take must not mute the call.
     var setMuteSuppressed: @MainActor @Sendable (Bool) -> Void
     var postProcessors: [any MeetingPostProcessing]
+    /// True when the default output is the Mac's own speakers (the headphones hint). Polled off
+    /// the main actor while a meeting records.
+    var outputUsesBuiltInSpeakers: @Sendable () -> Bool = { false }
 }

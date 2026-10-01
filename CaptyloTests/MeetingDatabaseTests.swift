@@ -185,6 +185,50 @@ struct MeetingDatabaseTests {
         try await db.setMeetingAudioRemoved(ids: [])
     }
 
+    @Test func modifyMeetingChangesOnlyWhatTheClosureTouches() async throws {
+        let db = try Self.db()
+        var m = Self.meeting(title: "Budżet")
+        m.summary = "## Podsumowanie"
+        m.speakerNames = ["1": "Anna"]
+        try await db.createMeeting(m)
+        let changed = try await db.modifyMeeting(id: m.id) {
+            $0.notes = "budżet reklam"
+            $0.noteLines = [MeetingNoteLine(text: "budżet reklam", at: 12)]
+        }
+        #expect(changed?.notes == "budżet reklam")
+        let read = try #require(try await db.meeting(id: m.id))
+        #expect(read.notes == "budżet reklam")
+        #expect(read.noteLines.map(\.at) == [12])
+        #expect(read.summary == "## Podsumowanie")
+        #expect(read.speakerNames == ["1": "Anna"])
+        #expect(read.createdAt == m.createdAt)
+        // The notes are searchable right away, like `updateMeeting`.
+        #expect(try await db.meetings(query: "reklam", limit: 10).map(\.id) == [m.id])
+    }
+
+    /// Two writers of different fields at the same time (the notes editor and the recorder's
+    /// stop) both land: each change is read, applied and saved in one step on the actor.
+    @Test func concurrentModificationsOfDifferentFieldsBothLand() async throws {
+        let db = try Self.db()
+        let m = Self.meeting()
+        try await db.createMeeting(m)
+        async let notes: MeetingRecord? = db.modifyMeeting(id: m.id) { $0.notes = "notatka" }
+        async let status: MeetingRecord? = db.modifyMeeting(id: m.id) {
+            $0.status = .completed
+            $0.duration = 90
+        }
+        _ = try await (notes, status)
+        let read = try #require(try await db.meeting(id: m.id))
+        #expect(read.notes == "notatka")
+        #expect(read.status == .completed)
+        #expect(read.duration == 90)
+    }
+
+    @Test func modifyingAMissingMeetingReturnsNil() async throws {
+        let db = try Self.db()
+        #expect(try await db.modifyMeeting(id: UUID()) { $0.notes = "x" } == nil)
+    }
+
     @Test func foldIgnoresCaseAndPolishLetters() {
         #expect(MeetingSearch.fold("Łódź") == "lodz")
         #expect(MeetingSearch.fold("ZARZĄD żółć") == "zarzad zolc")

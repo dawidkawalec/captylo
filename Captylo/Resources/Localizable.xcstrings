@@ -6048,11 +6048,6 @@
         "en": { "stringUnit": { "state": "translated", "value": "Copied to the clipboard." } }
       }
     },
-    "Brak notatek do tego spotkania.": {
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "No notes for this meeting." } }
-      }
-    },
     "Notatki AI pojawią się po zakończeniu spotkania.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "AI notes appear once the meeting ends." } }
@@ -6076,6 +6071,136 @@
     "przerwa w nagraniu": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "gap in the recording" } }
+      }
+    },
+    "Nagrywam spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recording the meeting" } }
+      }
+    },
+    "Zakończ spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "End meeting" } }
+      }
+    },
+    "Kończę spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Finishing the meeting" } }
+      }
+    },
+    "Transkrypt jest zapisany. Reszta może chwilę potrwać.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The transcript is saved. The rest may take a moment." } }
+      }
+    },
+    "Nie słyszę rozmówców. Captylo potrzebuje dostępu do dźwięku systemu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I can't hear the other side. Captylo needs access to system audio." } }
+      }
+    },
+    "Otwórz Ustawienia systemowe": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open System Settings" } }
+      }
+    },
+    "Nagrywam tylko Twój mikrofon: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recording only your mic: %@" } }
+      }
+    },
+    "Od ponad minuty nie słyszę rozmówców. Jeśli ktoś mówi, nagranie może ich pomijać.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I haven't heard the other side for over a minute. If someone is talking, the recording may be missing them." } }
+      }
+    },
+    "Nagrywam tylko rozmówców. %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recording only the other side. %@" } }
+      }
+    },
+    "Bez słuchawek rozmówcy nagrają się też przez mikrofon. Słuchawki dają czystszy transkrypt.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Without headphones, the other side also reaches your mic. Headphones give a cleaner transcript." } }
+      }
+    },
+    "Nagrywasz spotkanie. Poinformuj uczestników.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You are recording this meeting. Let the others know." } }
+      }
+    },
+    "Skopiuj informację": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy the notice" } }
+      }
+    },
+    "Skopiowano": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copied" } }
+      }
+    },
+    "Nie pokazuj więcej": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Don't show again" } }
+      }
+    },
+    "Pisz notatki. Captylo połączy je z rozmową.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Type your notes. Captylo links them to the conversation." } }
+      }
+    },
+    "Transkrypt na żywo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Live transcript" } }
+      }
+    },
+    "Nie udało się rozpocząć nagrywania. %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't start recording. %@" } }
+      }
+    },
+    "Odtwórz od tej chwili": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Play from this moment" } }
+      }
+    },
+    "Odtwórz od %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Play from %@" } }
+      }
+    },
+    "Zamknij odtwarzacz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Close the player" } }
+      }
+    },
+    "Zmień nazwę mówcy": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rename speaker" } }
+      }
+    },
+    "Kto to mówi?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Who is speaking?" } }
+      }
+    },
+    "Imię": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Name" } }
+      }
+    },
+    "Nie udało się zapisać imienia.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't save the name." } }
+      }
+    },
+    "Pokaż listę spotkań": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show the meeting list" } }
+      }
+    },
+    "Ukryj listę spotkań": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Hide the meeting list" } }
       }
     }
   },

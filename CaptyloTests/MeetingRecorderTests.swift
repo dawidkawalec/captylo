@@ -113,6 +113,50 @@ struct MeetingRecorderTests {
         #expect(try await db.segments(meetingID: id).map(\.track) == [.me])
     }
 
+    /// The live bar says the mic is missing while the meeting records; once it stops, `lastError`
+    /// only ever means "the last start failed".
+    @Test func aMicFailureShowsWhileRecordingAndClearsAtStop() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let mic = FakeAudioSource()
+        mic.failOnStart = true
+        let recorder = MeetingRecorder(environment: environment(mic: mic, system: FakeAudioSource(), spy: MuteSpy(), db: db))
+        await recorder.start()
+        #expect(recorder.isRecording)
+        #expect(recorder.lastError != nil)
+        await recorder.stop()
+        #expect(recorder.lastError == nil)
+    }
+
+    /// "Nagrywasz spotkanie. Poinformuj uczestników." comes back with every start until closed.
+    @Test func everyStartShowsTheConsentReminderUntilDismissed() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db))
+        #expect(!recorder.showsConsentReminder)
+        await recorder.start()
+        #expect(recorder.showsConsentReminder)
+        recorder.dismissConsentReminder()
+        #expect(!recorder.showsConsentReminder)
+        await recorder.stop()
+        await recorder.start()
+        #expect(recorder.showsConsentReminder)
+        await recorder.stop()
+        #expect(!recorder.showsConsentReminder)
+    }
+
+    /// The headphones hint follows the default output while a meeting records, and goes away with it.
+    @Test func builtInSpeakersAreReportedOnlyWhileRecording() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        env.outputUsesBuiltInSpeakers = { true }
+        let recorder = MeetingRecorder(environment: env)
+        #expect(!recorder.usesBuiltInSpeakers)
+        await recorder.start()
+        await waitUntil { recorder.usesBuiltInSpeakers }
+        #expect(recorder.usesBuiltInSpeakers)
+        await recorder.stop()
+        #expect(!recorder.usesBuiltInSpeakers)
+    }
+
     @Test func bothSourcesFailingLeavesNothingBehind() async throws {
         let db = Database(modelContainer: try Store.makeInMemoryContainer())
         let mic = FakeAudioSource(), system = FakeAudioSource(), spy = MuteSpy()

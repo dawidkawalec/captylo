@@ -126,4 +126,14 @@ struct MeetingExportTests {
         let long = MeetingExport.fileName(title: String(repeating: "a", count: 200), fileExtension: "md")
         #expect(long == String(repeating: "a", count: MeetingExport.maxNameLength) + ".md")
     }
+
+    /// "Skopiuj informację" on the consent card: one Polish and one English sentence, whatever
+    /// the UI language, so it works in any call.
+    @Test func consentDisclosureNamesCaptyloInPolishAndEnglish() {
+        let text = MeetingConsent.disclosure
+        #expect(text.contains("Captylo"))
+        #expect(text.contains("nagranie zostaje na moim komputerze"))
+        #expect(text.contains("the recording stays on my computer"))
+        #expect(!text.contains("\u{2014}") && !text.contains("\u{2013}"))
+    }
 }

@@ -21,6 +21,20 @@ extension Database {
         try modelContext.save()
     }
 
+    /// Reads, changes and saves one meeting in a single step on the actor. Writers of different
+    /// fields at the same time (the notes editor, the recorder's stop, the AI notes, a speaker
+    /// rename) never undo each other, which a `meeting(id:)` then `updateMeeting` pair can.
+    /// Returns the saved record, or nil when the meeting is gone (deleted meanwhile).
+    @discardableResult
+    func modifyMeeting(id: UUID, _ change: @Sendable (inout MeetingRecord) -> Void) throws -> MeetingRecord? {
+        guard let row = try fetchMeeting(id: id) else { return nil }
+        var record = row.record
+        change(&record)
+        row.apply(record)
+        try modelContext.save()
+        return row.record
+    }
+
     /// Saves one transcribed utterance right away and adds its text to the meeting's search text
     /// (echo segments are kept but never searchable).
     func appendSegment(_ segment: MeetingSegmentRecord) throws {

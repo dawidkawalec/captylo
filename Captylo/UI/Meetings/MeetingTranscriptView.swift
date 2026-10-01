@@ -6,6 +6,9 @@ import SwiftUI
 /// gap shows as a thin "przerwa w nagraniu" separator at its time. While the meeting records,
 /// the grey lines still being transcribed follow at the bottom. Lays out rows only: the details
 /// view scrolls it.
+///
+/// With `onPlay` the stamps are buttons that play the line's track from that moment (no audio:
+/// plain text). With `onRename` a click on a "Mówca N" chip opens a field for the speaker's name.
 @MainActor
 struct MeetingTranscriptView: View {
     let meeting: MeetingRecord
@@ -13,6 +16,10 @@ struct MeetingTranscriptView: View {
     /// The grey "w trakcie" line per track while this meeting records.
     var partials: [MeetingTrack: String] = [:]
     var isLive = false
+    /// Play `track` from this meeting time (the line's start).
+    var onPlay: ((MeetingTrack, Double) -> Void)?
+    /// Store this name for the speaker label ("2"); an empty name brings "Mówca 2" back.
+    var onRename: ((String, String) -> Void)?
 
     var body: some View {
         let items = MeetingTranscriptLines.items(segments, interruptions: meeting.interruptions)
@@ -27,8 +34,7 @@ struct MeetingTranscriptView: View {
                 ForEach(items) { item in
                     switch item {
                     case .line(let line):
-                        row(stamp: MeetingTime.stamp(line.start), stampWidth: stampWidth,
-                            track: line.track, speaker: line.speaker) {
+                        row(start: line.start, stampWidth: stampWidth, track: line.track, speaker: line.speaker) {
                             Text(verbatim: line.text)
                                 .foregroundStyle(GlassColor.textPrimary)
                         }
@@ -37,7 +43,7 @@ struct MeetingTranscriptView: View {
                     }
                 }
                 ForEach(pending, id: \.self) { track in
-                    row(stamp: nil, stampWidth: stampWidth, track: track, speaker: nil) {
+                    row(start: nil, stampWidth: stampWidth, track: track, speaker: nil) {
                         Text(verbatim: partials[track] ?? "")
                             .italic()
                             .foregroundStyle(GlassColor.textTertiary)
@@ -48,17 +54,27 @@ struct MeetingTranscriptView: View {
         }
     }
 
-    private func row(stamp: String?, stampWidth: CGFloat, track: MeetingTrack, speaker: String?,
+    /// `start` nil: a grey line still being transcribed (no stamp).
+    private func row(start: Double?, stampWidth: CGFloat, track: MeetingTrack, speaker: String?,
                      @ViewBuilder text: () -> some View) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(verbatim: stamp ?? "")
-                .font(GlassFont.ui(12, .medium).monospacedDigit())
-                .foregroundStyle(GlassColor.textTertiary)
+            if let start, let onPlay {
+                MeetingStampButton(stamp: MeetingTime.stamp(start)) {
+                    onPlay(track, start)
+                }
                 .frame(width: stampWidth, alignment: .leading)
+            } else {
+                Text(verbatim: start.map(MeetingTime.stamp) ?? "")
+                    .font(GlassFont.ui(12, .medium).monospacedDigit())
+                    .foregroundStyle(GlassColor.textTertiary)
+                    .frame(width: stampWidth, alignment: .leading)
+            }
             VStack(alignment: .leading, spacing: 6) {
                 MeetingSpeakerChip(
                     label: meeting.label(track: track, speaker: speaker),
-                    slot: MeetingTranscriptLines.tintSlot(track: track, speaker: speaker)
+                    slot: MeetingTranscriptLines.tintSlot(track: track, speaker: speaker),
+                    name: speaker.flatMap { meeting.speakerNames[$0] } ?? "",
+                    rename: renameAction(speaker: speaker)
                 )
                 text()
                     .font(GlassFont.body)
@@ -68,7 +84,13 @@ struct MeetingTranscriptView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// Only diarized speakers ("Mówca N") have a label to name; "Ja" and "Rozmówcy" do not.
+    private func renameAction(speaker: String?) -> ((String) -> Void)? {
+        guard let speaker, let onRename else { return nil }
+        return { onRename(speaker, $0) }
     }
 
     private func gapRow(at: Double, stampWidth: CGFloat) -> some View {
@@ -101,16 +123,77 @@ struct MeetingTranscriptView: View {
     }
 }
 
+/// `[12:34]` as a button: tertiary like the plain stamp, brighter with a play glyph on hover.
+@MainActor
+private struct MeetingStampButton: View {
+    let stamp: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 3) {
+                Text(verbatim: stamp)
+                    .font(GlassFont.ui(12, .medium).monospacedDigit())
+                Image(systemName: "play.fill")
+                    .font(.system(size: 7, weight: .bold))
+                    .opacity(isHovered ? 1 : 0)
+            }
+            .foregroundStyle(isHovered ? GlassColor.highlight : GlassColor.textTertiary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .animation(GlassMotion.press, value: isHovered)
+        .help(Text("Odtwórz od tej chwili"))
+        .accessibilityLabel(Text("Odtwórz od \(stamp)"))
+    }
+}
+
 /// Who speaks, as a small capsule: Tide for "Ja", a Glacier tint per speaker for the other side.
+/// With `rename` ("Mówca N") a click opens a popover with the "Imię" field.
 @MainActor
 private struct MeetingSpeakerChip: View {
     let label: String
     /// `MeetingTranscriptLines.tintSlot`: nil for "Ja".
     let slot: Int?
+    /// The name typed for this speaker so far ("" while it reads "Mówca N").
+    var name: String = ""
+    var rename: ((String) -> Void)?
+
+    @State private var isEditing = false
+    @State private var isHovered = false
 
     var body: some View {
+        if let rename {
+            Button {
+                isEditing = true
+            } label: {
+                chip
+                    .overlay {
+                        Capsule().fill(Color.white.opacity(isHovered ? 0.08 : 0))
+                    }
+            }
+            .buttonStyle(.plain)
+            .onHover { isHovered = $0 }
+            .help(Text("Zmień nazwę mówcy"))
+            .popover(isPresented: $isEditing, arrowEdge: .bottom) {
+                MeetingSpeakerNameForm(initial: name) { typed in
+                    isEditing = false
+                    rename(typed)
+                } onCancel: {
+                    isEditing = false
+                }
+            }
+        } else {
+            chip
+        }
+    }
+
+    private var chip: some View {
         let tint = slot.map { GlassColor.speakerTints[$0 % GlassColor.speakerTints.count] } ?? GlassColor.speakerMe
-        HStack(spacing: 6) {
+        return HStack(spacing: 6) {
             Circle()
                 .fill(slot == nil ? Color.white.opacity(0.9) : tint)
                 .frame(width: 6, height: 6)
@@ -128,5 +211,49 @@ private struct MeetingSpeakerChip: View {
             Capsule().strokeBorder(tint.opacity(slot == nil ? 0.8 : 0.45), lineWidth: 1)
         }
         .fixedSize()
+    }
+}
+
+/// The rename popover: "Imię" on the glass track, "Zapisz" (Return) and "Anuluj" (Escape).
+/// An empty name brings "Mówca N" back.
+@MainActor
+private struct MeetingSpeakerNameForm: View {
+    let onSave: (String) -> Void
+    let onCancel: () -> Void
+
+    @State private var name: String
+    @FocusState private var isFocused: Bool
+
+    init(initial: String, onSave: @escaping (String) -> Void, onCancel: @escaping () -> Void) {
+        self.onSave = onSave
+        self.onCancel = onCancel
+        _name = State(initialValue: initial)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Kto to mówi?")
+                .font(GlassFont.sectionTitle)
+                .foregroundStyle(GlassColor.textPrimary)
+            TextField("Imię", text: $name)
+                .textFieldStyle(.glass)
+                .focused($isFocused)
+                .onSubmit(save)
+            HStack(spacing: 8) {
+                Spacer(minLength: 0)
+                Button("Anuluj", action: onCancel)
+                    .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+                    .keyboardShortcut(.cancelAction)
+                Button("Zapisz", action: save)
+                    .buttonStyle(.glass(.accent, size: .small, shape: .capsule))
+            }
+        }
+        .padding(16)
+        .frame(width: 260)
+        .onAppear { isFocused = true }
+    }
+
+    private func save() {
+        onSave(name.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 }
