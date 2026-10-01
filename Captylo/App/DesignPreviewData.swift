@@ -42,10 +42,27 @@ enum DesignPreviewData {
             systemMuteDefaults: defaults,
             pinnedModelStatus: .ready,
             pinnedAccessibilityTrust: true,
-            pinnedPro: true,
+            pinnedPro: !showsFreePlan(),
             isDesignPreview: true
         )
         return AppState(settings: settings, overrides: overrides)
+    }
+
+    /// `CAPTYLO_PREVIEW_FREE=1`: the preview shows the Free plan (the Pro card in "Notatki AI");
+    /// Pro is pinned on otherwise.
+    static func showsFreePlan(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        environment["CAPTYLO_PREVIEW_FREE"] == "1"
+    }
+
+    /// `CAPTYLO_PREVIEW_TAB=notes|transcript|ai`: the tab the `main-spotkania` details open on
+    /// (nil: the app default, "Transkrypt").
+    static func meetingTab(environment: [String: String] = ProcessInfo.processInfo.environment) -> MeetingDetailView.Tab? {
+        switch environment["CAPTYLO_PREVIEW_TAB"]?.lowercased() {
+        case "notes": return .notes
+        case "transcript": return .transcript
+        case "ai": return .aiNotes
+        default: return nil
+        }
     }
 
     /// Inserts the sample history and meetings (the dashboard, Historia and Spotkania read them

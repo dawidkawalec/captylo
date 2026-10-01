@@ -29,6 +29,10 @@
 #   CAPTYLO_PREVIEW_LIVE=<m>  passed through, main-spotkania only (Debug): a meeting recording
 #                             right now. `1` with the consent card and the headphones hint;
 #                             `noaccess`, `silent` or `unavailable` with that system audio warning
+#   CAPTYLO_PREVIEW_TAB=<t>   passed through, main-spotkania: the details open on `notes`,
+#                             `transcript` (default) or `ai` ("Notatki AI")
+#   CAPTYLO_PREVIEW_FREE=1    passed through: the Free plan instead of Pro (the Pro card in
+#                             "Notatki AI")
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

@@ -10,8 +10,9 @@ import UniformTypeIdentifiers
 /// While this meeting records, the live bar sits on top (with its warnings and, once per start,
 /// the consent card) and the tabs give way to two columns: the live transcript
 /// (`MeetingRecorder.liveSegments` and the grey partial lines) and the notes editor, stacked when
-/// narrow. Afterwards a `[mm:ss]` stamp plays its track from a second before that moment in the
-/// player under the tabs, and a "Mówca N" chip takes a name.
+/// narrow. Afterwards a `[mm:ss]` stamp (in the transcript or an AI notes citation) plays its
+/// track from a second before that moment in the player under the tabs, and a "Mówca N" chip
+/// takes a name. "Notatki AI" is `MeetingAINotesView` (Pro notes, or the Pro card in Free).
 @MainActor
 struct MeetingDetailView: View {
     enum Tab: String, CaseIterable, Sendable {
@@ -73,9 +74,15 @@ struct MeetingDetailView: View {
     let database: Database
     let recorder: MeetingRecorder
     let settings: AppSettings
+    /// "Notatki AI": Pro shows the notes, Free the Pro card (follows the dev switch live).
+    let proAccess: ProAccess
+    /// "Wygeneruj ponownie" runs; the section reloads when one finishes.
+    let notesRuns: MeetingNotesRuns
     @Binding var tab: Tab
     let onCopy: (String) -> Void
     let onDelete: (UUID) -> Void
+    /// "Dodaj klucz" under a missing-key failure of the AI notes: opens Modele.
+    let onAddKey: () -> Void
 
     @State private var meeting: MeetingRecord?
     @State private var segments: [MeetingSegmentRecord] = []
@@ -93,18 +100,24 @@ struct MeetingDetailView: View {
         database: Database,
         recorder: MeetingRecorder,
         settings: AppSettings,
+        proAccess: ProAccess,
+        notesRuns: MeetingNotesRuns,
         tab: Binding<Tab>,
         onCopy: @escaping (String) -> Void,
-        onDelete: @escaping (UUID) -> Void
+        onDelete: @escaping (UUID) -> Void,
+        onAddKey: @escaping () -> Void
     ) {
         self.meetingID = meetingID
         self.reloadToken = reloadToken
         self.database = database
         self.recorder = recorder
         self.settings = settings
+        self.proAccess = proAccess
+        self.notesRuns = notesRuns
         _tab = tab
         self.onCopy = onCopy
         self.onDelete = onDelete
+        self.onAddKey = onAddKey
         _notesDraft = State(initialValue: MeetingNotesDraft(database: database))
     }
 
@@ -275,6 +288,12 @@ struct MeetingDetailView: View {
         let url = AppPaths.meetingTrackURL(meetingID, track: track)
         playback = Playback(meetingID: meetingID, track: track)
         player.play(url, from: max(0, start - 1))
+    }
+
+    /// An AI notes citation: the track of the line spoken at that second (the other side when
+    /// the meeting has no lines), from a second before it, like a transcript stamp.
+    private func playCitation(at seconds: Double) {
+        play(MeetingCitations.track(at: seconds, in: segments) ?? .them, from: seconds)
     }
 
     private func closePlayback() {
@@ -459,126 +478,25 @@ struct MeetingDetailView: View {
         }
     }
 
-    @ViewBuilder
+    /// Pro notes, the Pro card in Free (`MeetingAINotesView`). A new meeting starts with the
+    /// template menu and the checked tasks reset.
     private func aiNotes(_ meeting: MeetingRecord) -> some View {
-        if let summary = meeting.summary, !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            MeetingSummaryText(markdown: summary)
-        } else if let error = meeting.summaryError, !error.isEmpty {
-            ToolStatusLine(text: error, tone: .error)
-        } else if isLive || meeting.status == .processing {
-            ToolCaption("Notatki AI pojawią się po zakończeniu spotkania.")
-        } else {
-            ToolCaption("To spotkanie nie ma notatek AI.")
-        }
-    }
-}
-
-/// The AI notes Markdown, line by line: "##" headings as section titles, bullets as rows,
-/// "- [ ]" tasks with a circle, inline bold and italics kept.
-@MainActor
-private struct MeetingSummaryText: View {
-    let markdown: String
-
-    private enum Block {
-        case heading(String)
-        case bullet(String, task: Bool?)
-        case text(String)
-    }
-
-    var body: some View {
-        let blocks = Self.blocks(markdown)
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
-                switch block {
-                case .heading(let title):
-                    Text(Self.inline(title))
-                        .font(GlassFont.sectionTitle)
-                        .foregroundStyle(GlassColor.textPrimary)
-                        .padding(.top, index == 0 ? 0 : 10)
-                        .accessibilityAddTraits(.isHeader)
-                case .bullet(let text, let task):
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        if let task {
-                            Image(systemName: task ? "checkmark.circle" : "circle")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(GlassColor.highlight)
-                        } else {
-                            Text(verbatim: "•")
-                                .foregroundStyle(GlassColor.highlight)
-                        }
-                        Text(Self.inline(text))
-                            .foregroundStyle(GlassColor.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .font(GlassFont.body)
-                case .text(let text):
-                    Text(Self.inline(text))
-                        .font(GlassFont.body)
-                        .foregroundStyle(GlassColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .lineSpacing(2)
-        .textSelection(.enabled)
-    }
-
-    private static func blocks(_ markdown: String) -> [Block] {
-        markdown.split(whereSeparator: \.isNewline).compactMap { raw in
-            let line = raw.trimmingCharacters(in: .whitespaces)
-            guard !line.isEmpty else { return nil }
-            if line.hasPrefix("#") {
-                let title = line.drop { $0 == "#" }.trimmingCharacters(in: .whitespaces)
-                return title.isEmpty ? nil : .heading(title)
-            }
-            if line.hasPrefix("- ") || line.hasPrefix("* ") {
-                let body = line.dropFirst(2)
-                if body.hasPrefix("[ ] ") { return .bullet(String(body.dropFirst(4)), task: false) }
-                if body.lowercased().hasPrefix("[x] ") { return .bullet(String(body.dropFirst(4)), task: true) }
-                return .bullet(String(body), task: nil)
-            }
-            return .text(line)
-        }
-    }
-
-    /// Inline Markdown (bold, italics, code, links); plain text when it does not parse.
-    private static func inline(_ text: String) -> AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
-    }
-}
-
-/// Neutral glass capsule that opens a menu ("Eksportuj"), like "Przetwórz przez AI" in Historia.
-@MainActor
-private struct MeetingMenuLabel: View {
-    let title: Text
-    let systemImage: String
-
-    @Environment(\.isEnabled) private var isEnabled
-    @State private var isHovered = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-            title
-            Image(systemName: "chevron.down")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(Color.white.opacity(0.7))
-        }
-        .font(GlassFont.button.weight(.medium))
-        .foregroundStyle(Color.white.opacity(isEnabled ? 0.97 : 0.55))
-        .lineLimit(1)
-        .padding(.horizontal, 12)
-        .frame(height: GlassTokens.Size.buttonHeightSmall)
-        .background {
-            Capsule().fill(Color.white.opacity(GlassTokens.Opacity.control + (isHovered && isEnabled ? 0.04 : 0)))
-        }
-        .overlay {
-            Capsule().stroke(GlassColor.rim(top: 0.32, bottom: 0.06), lineWidth: GlassTokens.Size.rimWidth)
-        }
-        .contentShape(Capsule())
-        .onHover { isHovered = $0 }
-        .animation(GlassMotion.press, value: isHovered)
+        let id = meeting.id
+        return MeetingAINotesView(
+            meeting: meeting,
+            isPro: proAccess.isPro,
+            isPending: isLive || meeting.status == .processing,
+            isRunning: notesRuns.isRunning(id),
+            onRegenerate: { templateID in
+                notesRuns.regenerate(meetingID: id, templateID: templateID)
+            },
+            onCopy: { markdown in
+                onCopy(markdown)
+                notice = Notice(text: String(localized: "Skopiowano do schowka."), tone: .success)
+            },
+            onAddKey: onAddKey,
+            onPlay: meeting.hasAudio ? { seconds in playCitation(at: seconds) } : nil
+        )
+        .id(id)
     }
 }

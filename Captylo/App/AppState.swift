@@ -62,8 +62,11 @@ final class AppState {
     @ObservationIgnored let proAccess: ProAccess
     /// Itself `@Observable`: views read its phase, live transcript and issues directly.
     @ObservationIgnored let meetingRecorder: MeetingRecorder
-    /// AI notes after a meeting (Pro); the meeting view calls `regenerate` with another template.
+    /// AI notes after a meeting (Pro).
     @ObservationIgnored let meetingNotes: MeetingNotesProcessor
+    /// "Wygeneruj ponownie" in the "Notatki AI" tab: `meetingNotes.regenerate` with the picked
+    /// template. Itself `@Observable` (which meetings are being written, finished runs).
+    @ObservationIgnored let meetingNotesRuns: MeetingNotesRuns
 
     // Output and UI
     @ObservationIgnored let textOutput: TextOutput
@@ -206,6 +209,10 @@ final class AppState {
             isAllowed: { await access.allows(.meetingAINotes) }
         )
         self.meetingNotes = meetingNotes
+        meetingNotesRuns = MeetingNotesRuns { id, templateID in
+            guard await access.allows(.meetingAINotes) else { return }
+            await meetingNotes.regenerate(meetingID: id, templateID: templateID)
+        }
         let mute = systemMute
         meetingRecorder = MeetingRecorder(environment: MeetingEnvironment(
             makeMic: { MeetingMicCapture() },

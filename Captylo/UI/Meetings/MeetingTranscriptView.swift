@@ -123,34 +123,6 @@ struct MeetingTranscriptView: View {
     }
 }
 
-/// `[12:34]` as a button: tertiary like the plain stamp, brighter with a play glyph on hover.
-@MainActor
-private struct MeetingStampButton: View {
-    let stamp: String
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 3) {
-                Text(verbatim: stamp)
-                    .font(GlassFont.ui(12, .medium).monospacedDigit())
-                Image(systemName: "play.fill")
-                    .font(.system(size: 7, weight: .bold))
-                    .opacity(isHovered ? 1 : 0)
-            }
-            .foregroundStyle(isHovered ? GlassColor.highlight : GlassColor.textTertiary)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-        .animation(GlassMotion.press, value: isHovered)
-        .help(Text("Odtwórz od tej chwili"))
-        .accessibilityLabel(Text("Odtwórz od \(stamp)"))
-    }
-}
-
 /// Who speaks, as a small capsule: Tide for "Ja", a Glacier tint per speaker for the other side.
 /// With `rename` ("Mówca N") a click opens a popover with the "Imię" field.
 @MainActor

@@ -6048,16 +6048,6 @@
         "en": { "stringUnit": { "state": "translated", "value": "Copied to the clipboard." } }
       }
     },
-    "Notatki AI pojawią się po zakończeniu spotkania.": {
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "AI notes appear once the meeting ends." } }
-      }
-    },
-    "To spotkanie nie ma notatek AI.": {
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "This meeting has no AI notes." } }
-      }
-    },
     "Słucham. Transkrypt pojawi się po pierwszej wypowiedzi.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Listening. The transcript appears after the first thing someone says." } }
@@ -6201,6 +6191,81 @@
     "Ukryj listę spotkań": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Hide the meeting list" } }
+      }
+    },
+    "Piszę notatki...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Writing notes..." } }
+      }
+    },
+    "Napisz notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Write notes" } }
+      }
+    },
+    "Wygeneruj ponownie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Write again" } }
+      }
+    },
+    "Kopiuj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy" } }
+      }
+    },
+    "Kopiuj notatki AI jako Markdown": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy the AI notes as Markdown" } }
+      }
+    },
+    "Szablon": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Template" } }
+      }
+    },
+    "Szablon: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Template: %@" } }
+      }
+    },
+    "Rodzaj spotkania, pod który AI pisze notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The kind of meeting the AI writes the notes for" } }
+      }
+    },
+    "Dodaj klucz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add key" } }
+      }
+    },
+    "To spotkanie nie ma jeszcze notatek AI. Wybierz szablon i napisz je.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This meeting has no AI notes yet. Pick a template and write them." } }
+      }
+    },
+    "Oznacz jako zrobione": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Mark as done" } }
+      }
+    },
+    "Oznacz jako do zrobienia": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Mark as not done" } }
+      }
+    },
+    "Notatki AI są w Captylo Pro": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI notes are part of Captylo Pro" } }
+      }
+    },
+    "Podsumowanie, decyzje i zadania z każdego spotkania, w Twoim szablonie. Rozpoznawanie, kto mówi.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Summary, decisions and tasks from every meeting, in your template. Knows who is speaking." } }
+      }
+    },
+    "Włącz Tryb Pro (dev) w Ustawieniach": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Turn on Pro mode (dev) in Settings" } }
       }
     }
   },

@@ -118,6 +118,18 @@ struct DesignPreviewTests {
         #expect(live.meeting.notes == live.meeting.noteLines.map(\.text).joined(separator: "\n"))
     }
 
+    /// `CAPTYLO_PREVIEW_TAB` and `CAPTYLO_PREVIEW_FREE` (the "Notatki AI" tab, Pro and Free).
+    @Test func previewPicksTheMeetingTabAndPlan() {
+        #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "ai"]) == .aiNotes)
+        #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "Notes"]) == .notes)
+        #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "transcript"]) == .transcript)
+        #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "x"]) == nil)
+        #expect(DesignPreviewData.meetingTab(environment: [:]) == nil)
+        #expect(DesignPreviewData.showsFreePlan(environment: ["CAPTYLO_PREVIEW_FREE": "1"]))
+        #expect(!DesignPreviewData.showsFreePlan(environment: ["CAPTYLO_PREVIEW_FREE": "0"]))
+        #expect(!DesignPreviewData.showsFreePlan(environment: [:]))
+    }
+
     @Test func sampleCustomModeIsTheUsersOwn() {
         let mode = DesignPreviewData.sampleCustomMode
         #expect(mode.builtInKey == nil)

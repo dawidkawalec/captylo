@@ -4,7 +4,8 @@ import SwiftUI
 /// the selected meeting side by side (stacked below `stackWidth`, the list collapsed to about
 /// four rows). Before the first meeting only `MeetingsEmptyState` shows. The list reloads from
 /// the `Database` actor whenever the search, the recorder's phase, the last finished meeting or
-/// a delete changes; a reload keeps the selection, or selects the newest meeting.
+/// a delete changes, or AI notes written again arrive; a reload keeps the selection, or selects
+/// the newest meeting.
 ///
 /// "Nagraj spotkanie" starts the recorder and the meeting it opens is selected (also when the
 /// menu bar started it), so the live bar is on screen; while it records, the button reads
@@ -23,6 +24,8 @@ struct MeetingsView: View {
         let phase: MeetingRecorder.Phase
         let lastFinishedMeetingID: UUID?
         let deletions: Int
+        /// "Wygeneruj ponownie" finished: new AI notes (or their error) on a row.
+        let notesRuns: Int
     }
 
     @Environment(AppState.self) private var appState
@@ -48,9 +51,16 @@ struct MeetingsView: View {
                 query: query,
                 phase: recorder.phase,
                 lastFinishedMeetingID: recorder.lastFinishedMeetingID,
-                deletions: deletions
+                deletions: deletions,
+                notesRuns: appState.meetingNotesRuns.finishedCount
             )) {
                 await reload()
+            }
+            .onAppear {
+                // `CAPTYLO_PREVIEW_TAB`: the design preview opens the details on another tab.
+                if appState.isDesignPreview, let previewTab = DesignPreviewData.meetingTab() {
+                    tab = previewTab
+                }
             }
             .onChange(of: recorder.currentMeetingID) { _, id in
                 // A start (here or in the menu bar) shows its live bar right away; a search the
@@ -195,9 +205,12 @@ struct MeetingsView: View {
                 database: appState.database,
                 recorder: recorder,
                 settings: appState.settings,
+                proAccess: appState.proAccess,
+                notesRuns: appState.meetingNotesRuns,
                 tab: $tab,
                 onCopy: { appState.textOutput.copy($0) },
-                onDelete: { pendingDelete = $0 }
+                onDelete: { pendingDelete = $0 },
+                onAddKey: { appState.windowPresenter.openMain(section: .modele) }
             )
         } else {
             GlassPanel(alignment: .center) {
