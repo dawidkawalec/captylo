@@ -1,6 +1,6 @@
 # Captylo
 
-Minimalist macOS dictation app: hold a hotkey, speak, the text lands at the cursor. Tagline: "Mów, a tekst pojawia się tam, gdzie piszesz." Local Parakeet v3 (FluidAudio) by default, ElevenLabs Scribe as the optional cloud engine, optional OpenRouter cleanup. Clean rewrite of an older VoiceInk-based app, not a fork (its behaviour is mapped in `docs/reference/port-notes/`).
+Minimalist macOS dictation app: hold a hotkey, speak, the text lands at the cursor. Tagline: "Mów, a tekst pojawia się tam, gdzie piszesz." Local Parakeet v3 (FluidAudio) by default, ElevenLabs Scribe as the optional cloud engine, optional OpenRouter cleanup. It also takes meeting notes on the Mac (mic + system audio, no bot, live local transcript; AI notes and speaker labels in Pro). Clean rewrite of an older VoiceInk-based app, not a fork (its behaviour is mapped in `docs/reference/port-notes/`).
 
 **Identity**: bundle `com.captylo.app`, product `Captylo.app` (executable `Captylo`), data in `~/Library/Application Support/Captylo/`, Keychain service and log subsystem `com.captylo.app`, URL scheme `captylo`, website https://captylo.com, macOS 14.4+, arm64 only. Pre-rename dev builds ("VocaType 2", `pl.kawalec.VocaType2`) are migrated once at launch by `Captylo/App/LegacyMigration.swift`.
 
@@ -14,7 +14,8 @@ Minimalist macOS dictation app: hold a hotkey, speak, the text lands at the curs
 - **Project**: XcodeGen `project.yml` → generated `Captylo.xcodeproj` (git-ignored, never hand-edit)
 - **Speech**: FluidAudio 0.17.4 (Parakeet TDT 0.6b v3), ElevenLabs `scribe_v2` → `Captylo/Transcription/`
 - **AI cleanup**: OpenRouter chat completions, model picked by the user → `Captylo/Enhancement/`
-- **Data**: SwiftData store + `dictionary.json` + WAV recordings → `Captylo/Data/`, `Captylo/Text/`
+- **Meetings (notetaker)**: mic + Core Audio system tap as two tracks, live Parakeet per track, call detection, AI notes and speaker labels (Pro) → `Captylo/Meetings/`, views in `Captylo/UI/Meetings/` (section "Spotkania (notetaker)" in [docs/architecture.md](docs/architecture.md))
+- **Data**: SwiftData store (dictations, meetings, meeting segments) + `dictionary.json` + WAV recordings + meeting CAF tracks → `Captylo/Data/`, `Captylo/Text/`
 - **Tests**: Swift Testing → `CaptyloTests/`
 - **Website**: static landing page → `site/` (captylo.com)
 
@@ -52,4 +53,7 @@ scripts/make-dusk-video.sh           # re-render Resources/Video/dusk-loop.mp4 (
 - UI strings are Polish in code (`String(localized:)` / SwiftUI literals) with English in `Localizable.xcstrings`; never hardcode English UI text.
 - Never write error text into transcript fields; use `errorMessage`. Never remove real Polish words deterministically.
 - No new dependencies without a note in `docs/architecture.md` and an entry in `NOTICE.md` (GPLv3-compatible licences only). No secrets in the repo; API keys live in the login Keychain.
+- Meeting audio never goes under `Recordings/` (the dictation orphan sweep would delete it): it lives in `AppPaths.meetings/<meetingID>/` (`me.caf`, `them.caf`).
+- Diarization (speaker labels) only on macOS 15+: FluidAudio's offline diarizer crashes on macOS 14 (FluidAudio #878). Pro features go through `ProAccess` only.
+- Meetings never record or stop without a visible prompt or click; a recording always shows the live bar and the menu bar state.
 - After adding files run `make gen`; a change is done only when `make build` and `make test` pass.

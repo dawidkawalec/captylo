@@ -39,12 +39,16 @@ Captylo/
                   TokenDiff, CorrectionLearner, WordChecker, LearningData + LearningStore (learning.json), SelfLearning (rules, undo, prompt context), StyleDistiller
                   (Text/SpellingDetector handles words spelled out loud; UI/Main LearnedPanel + StylePanel on Słownik)
   Output/         TextOutput, KeySynth, KeyboardLayout
-  Data/           Models (Dictation, UsageStat), Database (ModelActor) + DatabaseExecutor (serial queue), Stats, HistoryActions, HistorySearch (history page query, read by the Database actor)
+  Meetings/       Notetaker logic (see "Spotkania (notetaker)" below): MeetingRecorder, MeetingTranscriber, MeetingTrackFeed, EchoFilter, ProAccess, MeetingExport, MeetingRetention, ...,
+                  Audio/ (MeetingMicCapture, SystemAudioTap, TrackFileWriter, SilenceWatchdog, CoreAudioProcesses, SystemAudioCheck), Speakers/ (diarization, Pro),
+                  AI/ (templates, prompt, parser, MeetingSummarizer, Pro), Detection/ (MeetingAppCatalog, DetectionTracker, MeetingDetector)
+  Data/           Models (Dictation, UsageStat), MeetingModels (Meeting, MeetingSegment), Database (ModelActor) + Database+Meetings + DatabaseExecutor (serial queue), Stats, HistoryActions, HistorySearch (history page query, read by the Database actor), MeetingSearch
   UI/             DesignSystem, Glass/ (Dusk Glass tokens and components, Grainient.metal + GrainientBackdrop, see docs/design/dusk-glass.md),
                   Recorder/ (RecorderPanel, RecorderView, RecorderCompactView, RecorderExpandedView, RecorderControls, RecorderRow, RecorderMenuValue, RecorderGlass, RecorderBackdropHalo, RecorderMetrics, OrbButton, WaveformView, ToastCenter),
                   Main/ (MainSection, MainView, MainSidebar, SupportCard, MainBanners, MainGlassPage, DashboardView, TrendChart, HistoryView, AudioPlayerView, TranscribeFileView, DictionaryView, ModelsView, SettingsView,
                          Tools/ (ToolPage and small helpers shared by Transkrypcja pliku, Słownik, Modele, Ustawienia),
                          Modes/ ("Tryby AI" on Modele: AIModesPanel, AIModeRow, AIModeEditorSheet, AIModeTestPanel, AIModeSymbolGrid, AIModeDeadlineStepper and helpers)),
+                  Meetings/ (MeetingsView, MeetingListView, MeetingDetailView, MeetingLiveBar, MeetingTranscriptView, MeetingNotesEditor, MeetingAINotesView, MeetingConsentCard, MeetingsEmptyState, MeetingsSettingsPanel and small helpers),
                   MenuBar/ (MenuBarMenu, MenuBarLabel), Onboarding/ (OnboardingView, OnboardingSteps, OnboardingHeader, OnboardingProgressTrack, OnboardingOrb, OnboardingBrandMark, OnboardingKeycap, OnboardingWaveform, PasteOnlyTextView)
   Resources/      Assets.xcassets (AppIcon, MenuBarIcon template, BrandSymbol, BrandWordmark, AccentColor), Fonts/ (Manrope, Inter, OFL), Sounds/, Localizable.xcstrings, InfoPlist.xcstrings
 CaptyloTests/     TextProcessorTests, HotkeyTests, StatsTests, NetworkingTests, EnhancerTests, LegacyMigrationTests, ...
@@ -61,6 +65,40 @@ Ownership rule: a module talks to another only through the protocols in `Dictati
 
 Timing budget on Apple Silicon: key-up to paste <= 400 ms local; with AI cleanup p50 ~1 s, never more than deadline + 0.3 s.
 
+## Spotkania (notetaker)
+
+Records a call on the Mac without a bot: the mic as "Ja" and everything the Mac plays as "Rozmówcy", two separate tracks, transcribed live and locally with Parakeet. Separate from the dictation path: the dictation hotkey keeps working during a meeting and both transcripts land.
+
+**Layout.** Logic in `Captylo/Meetings/` (recorder, transcriber, feeds, echo filter, export, retention, `ProAccess`), with `Audio/` (sources, track files, watchdog, Core Audio process list), `Speakers/` (diarization), `AI/` (templates and notes) and `Detection/` (call detection). Views in `Captylo/UI/Meetings/` (sidebar section "Spotkania": list, live view, details with transcript, "Moje notatki" and "Notatki AI", settings panel). Storage in `Data/MeetingModels.swift` (`Meeting`, `MeetingSegment`) and `Data/Database+Meetings.swift`. One type per file; tests in `CaptyloTests/Meeting*Tests.swift` with fakes in `MeetingFakes.swift`.
+
+**Data flow.**
+
+1. `MeetingRecorder` (`@MainActor @Observable`, one meeting at a time) creates the `Meeting` row, suppresses `SystemMute` for the whole meeting (a dictation take never mutes the call) and starts the sources on its own serial queue: `MeetingMicCapture` (default input on its own `AVAudioEngine`, rebuilt on device changes, holes filled with silence) first, then `SystemAudioTap` (global Core Audio process tap excluding Captylo, private aggregate device, converted to 16 kHz mono Float32). "Nagraj spotkanie" (menu bar, Spotkania, the detector) always opens Spotkania first: a meeting never records without its live bar and the menu bar state.
+2. Each source feeds a `MeetingTrackFeed`, which keeps the track on the meeting clock (pads the start and rebuild holes) and hands every buffer, under one lock, to a `TrackFileWriter` (`me.caf` / `them.caf`, 16 kHz mono Int16, appended as recorded) and to the `MeetingTranscriber` actor.
+3. `MeetingTranscriber`: per track, 4096-sample chunks -> Silero VAD (shared `SpeechDetectorCache`) -> utterances of at most 14 s -> timed Parakeet pass (word times) -> `MeetingSegment` saved right away. Partials (the grey line) about once per second of speech. Memory per track is one open utterance, never the whole meeting.
+4. `stop()` closes the sources and files, `finish()` marks echo between the tracks (`EchoFilter`), the row goes to "processing" and the post-processors run in order (`MeetingPostProcessing`): `SpeakerLabelProcessor` (Pro, macOS 15+), `MeetingNotesProcessor` (AI notes, Pro), `MeetingRetention` (last, it may delete the audio the first one reads). Then "completed".
+5. Crash or quit: segments saved so far stay, the CAF files stay readable (`abortForTermination` closes them on a normal quit); `recoverInterruptedMeetings()` marks the row "Przerwane" at the next launch.
+
+**System audio checks.** A denied grant and the long-session HAL zero-buffer bug both deliver exact zeros with `noErr` everywhere. `SilenceWatchdog` sees zeros while another process plays output (`CoreAudioProcesses.anyOtherProcessPlaying()`); `SystemTrackWatch` decides: "Brak dostępu do dźwięku systemu" banner when nothing was ever heard, otherwise quiet tap rebuilds (30 s, 30 s, 60 s, then every 120 s of zeros) and a gap ("przerwa w nagraniu") when a rebuild brought the audio back. Ustawienia > Spotkania > "Sprawdź" runs the tap for 2 s (`SystemAudioCheck`). The headphones hint shows while the default output is the built-in speakers.
+
+**Permissions.** Microphone (existing) plus "System Audio Recording Only" (`NSAudioCaptureUsageDescription` in `project.yml`, English in `InfoPlist.xcstrings`; the prompt appears at the first `AudioDeviceStart` of the tap, there is no public API to ask or query it; deep link `Privacy_AudioCapture`). No Screen Recording, no ScreenCaptureKit. Meeting detection reads browser window titles through the Accessibility grant the hotkey already needs.
+
+**Diarization.** "Mówca 1/2/3" on the "Rozmówcy" track only with `ProAccess.allows(.speakerLabels)` and macOS 15+: FluidAudio's `OfflineDiarizerManager` crashes on macOS 14 (FluidAudio #878, an Apple BNNS bug fixed in 15). It reads the closed `them.caf`; one remote voice or any failure keeps "Rozmówcy".
+
+**AI notes (Pro).** `MeetingSummarizer` sends one non-streaming request over the whole transcript (a 1 h meeting is about 20-25k tokens) through `OpenRouterClient` on `HTTP.meetingLLMSession` (150 s idle, 180 s total), with the user's AI model and key. The template (`BuiltInMeetingTemplates`: Ogólne, 1:1, Standup, Rozmowa z klientem, Rekrutacja, Wykład / webinar) is picked from the title or by the user ("Wygeneruj ponownie", `MeetingNotesRuns`). Citations `[mm:ss]` play the track at that moment.
+
+**Call detection.** `MeetingDetector` polls `CoreAudioProcesses.usingInput()` every 2 s off the main actor and maps the processes through `MeetingAppCatalog` (Zoom, Teams, Slack, FaceTime, Webex, Discord, Around, Tuple; Chrome, Safari/WebKit, Arc, Edge, Brave, Firefox; helper processes by bundle ID prefix). Browsers count only when a window title names a call service (Meet, Teams, Zoom, Whereby, Jitsi); once in a call they keep counting without it. `DetectionTracker`: a call starts after 5 s of mic use and ends after 45 s without it. Call started while idle: toast "Wygląda na spotkanie w X. Nagrać notatki?" with "Nagraj". A call that held the mic during the recording ended: toast with "Nagrywaj dalej" and a stop after 15 s (cancelled by the button, by the app taking the mic again, or while another call of the same recording runs). Never records or stops without a visible prompt. The poll reads "Wykrywaj spotkania" every time and starts in `startServices()` (never in the design preview or the test host).
+
+**Storage.** `AppPaths.meetings/<meetingID>/me.caf` and `them.caf`, never under `Recordings/` (the dictation orphan sweep would delete them). Rows: `Meeting` (title, status, duration, app name, notes and note lines, AI notes with template, model and error, speaker names, `hasAudio`, interruptions, folded search text) and `MeetingSegment` (track, start, end, text, word times, speaker, echo flag). Schema changes stay additive with defaults; `DatabaseMigrationTests` covers them. "Zachowuj nagrania spotkań" (Nie zachowuj, 7 dni, 30 dni, Zawsze) deletes only the audio folder and sets `hasAudio = false`; transcripts and notes stay. It sweeps at launch and after every finished meeting.
+
+**Export.** Markdown (title, date, notes, AI notes, transcript without echo) and an open JSON format `captylo.meeting.v1` (`MeetingExport.formatID`: ids, tracks, segments with word times, notes, AI notes), the format later devices and sync will read.
+
+**Pro.** Every Pro check goes through `ProAccess.isPro` / `allows(_:)`. Until accounts exist it is true with the DEBUG switch "Tryb Pro (dev)" (`dev.pro`) or `CAPTYLO_DEV_PRO=1`; the design preview pins it. Free keeps recording, live local transcription, notes, list and export.
+
+**Debug.** `--meeting-from-files <me-audio> <them-audio>` runs the pipeline on two files without the mic or the tap (see the debug flags below).
+
+**Known limits.** Echo without headphones is removed from the transcript (`EchoFilter`, 3+ words that mostly repeat an overlapping "Rozmówcy" segment), not cancelled acoustically; short replies like "tak" are kept on purpose. The HAL zero-buffer bug is handled by rebuilding the tap, which can leave a short gap. Browser meetings are detected only with the Accessibility grant and a call service in the window title. Slack huddles and FaceTime have no reliable title, so their mic use alone is the signal, and FaceTime audio may run in a system daemon the catalog does not see. Diarization needs macOS 15+.
+
 ## Windows
 
 The look of every window follows the Dusk Glass design language in the Deep Tide palette: [docs/design/dusk-glass.md](design/dusk-glass.md) (every window is an opaque animated background, by default the Metal "Grainient" gradient, with clear frosted glass panels on it; Manrope + Inter bundled in `Resources/Fonts`; component catalog, widget states, screen-by-screen guidance, the design preview harness).
@@ -70,7 +108,7 @@ The look of every window follows the Dusk Glass design language in the Deep Tide
 - Toasts: one reusable non-activating panel above the widget (small Dusk Glass capsules).
 - Main window: `Window("main")` with sidebar (Pulpit, Spotkania, Historia, Transkrypcja pliku, Słownik, Modele, Ustawienia), ~920 x 640 min. The shell is an `HStack` (`MainSidebar` attached to the left edge + content column), not `NavigationSplitView`, whose system sidebar would paint its own material; Cmd+1...7 and the arrow keys (sidebar focused) switch sections through the `MainRouter`. Dock icon policy switches to `.accessory` when "Ukryj ikonę w Docku" is on and no main window is open.
 - Support card (Free plan monetization): a small raised card at the bottom of `MainSidebar`, visible on every section, never in the widget or onboarding. `SupportPromo` picks one message a day (`dayNumber` modulo the options): "Captylo Pro" (opens https://captylo.com/#cennik) and "Postaw kawę twórcy" (opens https://captylo.com/kawa/, a page on our site that holds the Stripe Payment Link, so the link changes without an app release). "x" hides it for 14 days (`AppSettings.supportCardHiddenUntil`). A paid sponsor joins the rotation by setting `SponsorAd.current` in a release; it is compiled in, never fetched, so no network call is made. When the Pro licence exists, hide the card for Pro users.
-- Menu bar extra: start/stop, copy last transcript, microphone and "Tryb AI" submenus, open app, settings, quit. Icon swaps to the `MenuBarIconRecording` template asset while recording (a status item flattens its label, so no overlay dot).
+- Menu bar extra: start/stop dictation, "Nagraj spotkanie" / "Zakończ spotkanie", copy last transcript, microphone and "Tryb AI" submenus, open app, settings, quit. Icon swaps to the `MenuBarIconRecording` template asset while a take or a meeting records (a status item flattens its label, so no overlay dot).
 
 ## Debug CLI flags (kept in Release, documented for support)
 

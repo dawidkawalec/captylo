@@ -16,6 +16,7 @@ Captylo is a minimalist, open source dictation app for macOS. Hold a hotkey, spe
 - Dictionary: vocabulary hints and replacement rules for names and terms.
 - History with audio playback, search and CSV export; dashboard with words, sessions and time saved.
 - File transcription: drop an audio or video file or use "Otwórz za pomocą" in Finder.
+- Meeting notes: records the call (mic + system audio, no bot) and transcribes it live on your Mac; AI notes and speaker labels in Pro.
 - Menu bar menu, Polish UI with English translations.
 
 ## Requirements
@@ -23,6 +24,7 @@ Captylo is a minimalist, open source dictation app for macOS. Hold a hotkey, spe
 - macOS 14.4 or later
 - Apple Silicon (M1 or newer)
 - Microphone and Accessibility permissions (for the global hotkey and pasting)
+- For meeting notes: the "System Audio Recording Only" permission (asked the first time a meeting records)
 
 ## Build it yourself
 
@@ -70,6 +72,8 @@ Self-built copies are signed ad hoc, so macOS may forget the Microphone and Acce
 Transcription runs locally on your Mac by default: recordings and text never leave it. The cloud features are optional and off until you turn them on: cloud transcription receives the recording, the AI modes receive the transcript. API keys are stored in the macOS login Keychain. The code is open, so you can check all of this yourself.
 
 Learning from your corrections ("Ucz się z moich poprawek", Settings) stays on your Mac too: after a paste Captylo reads back only that text field for a short while, never password fields, password managers or terminals, and keeps what it learned in `learning.json` next to the dictionary. With an AI mode on, a few before/after pairs go to the same AI to update your style description. Every lesson can be undone in Słownik, and the switch turns it all off.
+
+Meetings are recorded and transcribed on your Mac as well; the audio files can be deleted automatically (Settings > Spotkania) while transcripts and notes stay. Only AI notes send the transcript, to the same AI as the AI modes. Meeting detection only checks which apps use the microphone and, for browsers, whether a window title names a call service; it stores nothing and never records without asking.
 
 ## Pricing
 
