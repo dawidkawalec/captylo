@@ -69,6 +69,9 @@ final class AppState {
     @ObservationIgnored let meetingNotesRuns: MeetingNotesRuns
     /// "Zachowuj nagrania spotkań": the last post-processor, and a sweep at launch.
     @ObservationIgnored let meetingRetention: MeetingRetention
+    /// "Wykrywaj spotkania": asks to record when a call starts and to stop when it ends.
+    /// Polls only after `startServices()` (never in the design preview or the test host).
+    @ObservationIgnored let meetingDetector: MeetingDetector
 
     // Output and UI
     @ObservationIgnored let textOutput: TextOutput
@@ -277,6 +280,12 @@ final class AppState {
         let presenter = WindowPresenter(settings: settings)
         windowPresenter = presenter
         oldAppDetector = OldAppDetector()
+        meetingDetector = MeetingDetector(
+            recorder: meetingRecorder,
+            toasts: toasts,
+            isEnabled: { settings.meetingsAutoDetect },
+            openMeetings: { presenter.openMain(section: .spotkania) }
+        )
 
         // Hotkeys: the tap comes first, the controller resolves through the relay.
         let relay = HotkeyRelay()
@@ -464,6 +473,9 @@ final class AppState {
 
         windowPresenter.start()
         oldAppDetector.start()
+        // Always polling: it reads "Wykrywaj spotkania" every time and idles while it is off,
+        // so switching it on in Ustawienia works without a relaunch.
+        meetingDetector.start()
         observeSettings()
 
         if storeIsFallback {
@@ -478,6 +490,7 @@ final class AppState {
     /// (nothing else would), drops a live take and restores the user's clipboard early. A meeting
     /// that still records gets its track files finalized; the next launch marks it interrupted.
     func stopServices() {
+        meetingDetector.stop()
         meetingRecorder.abortForTermination()
         systemMute.restore()
         dictationController.abortForTermination()

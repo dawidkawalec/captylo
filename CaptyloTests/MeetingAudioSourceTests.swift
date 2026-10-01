@@ -214,5 +214,8 @@ struct MeetingAudioSourceTests {
         }
         // Must not crash or hang; the answer depends on what the Mac plays right now.
         _ = CoreAudioProcesses.anyOtherProcessPlaying()
+        // The mic users are a subset of the full list (which apps record depends on the Mac).
+        let recording = CoreAudioProcesses.usingInput()
+        #expect(recording.allSatisfy { $0.isRunningInput && $0.objectID != 0 })
     }
 }

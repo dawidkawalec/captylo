@@ -14,6 +14,8 @@ struct Toast: Sendable {
 
     let message: String
     let kind: Kind
+    /// Seconds on screen instead of the kind's default.
+    var lifetime: TimeInterval? = nil
 
     static let infoDuration: TimeInterval = 3
     static let errorDuration: TimeInterval = 7
@@ -31,6 +33,7 @@ struct Toast: Sendable {
     }
 
     var duration: TimeInterval {
+        if let lifetime { return lifetime }
         switch kind {
         case .info: return Self.infoDuration
         case .error, .action: return Self.errorDuration
@@ -110,6 +113,10 @@ final class ToastCenter: ToastPresenting {
 
     func showAction(message: String, buttonTitle: String, action: @escaping @MainActor () -> Void) {
         enqueue(Toast(message: message, kind: .action(buttonTitle: buttonTitle, action: action)))
+    }
+
+    func showAction(message: String, buttonTitle: String, lifetime: TimeInterval, action: @escaping @MainActor () -> Void) {
+        enqueue(Toast(message: message, kind: .action(buttonTitle: buttonTitle, action: action), lifetime: lifetime))
     }
 
     /// Fades the visible toast out now; the next queued toast follows.

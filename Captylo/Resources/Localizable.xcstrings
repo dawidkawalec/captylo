@@ -6357,6 +6357,26 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Play something for a moment (e.g. a video) and check again." } }
       }
+    },
+    "Wygląda na spotkanie w %@. Nagrać notatki?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Looks like a meeting in %@. Record notes?" } }
+      }
+    },
+    "Nagraj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Record" } }
+      }
+    },
+    "Spotkanie w %@ zakończone? Kończę notatki za 15 s.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting in %@ over? Finishing the notes in 15 s." } }
+      }
+    },
+    "Nagrywaj dalej": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep recording" } }
+      }
     }
   },
   "version": "1.0"

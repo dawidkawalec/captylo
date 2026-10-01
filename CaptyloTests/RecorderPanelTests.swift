@@ -109,6 +109,12 @@ struct RecorderPanelTests {
         center.dismissCurrent()
     }
 
+    @Test func toastLifetimeOverridesTheKindDefault() {
+        #expect(Toast(message: "x", kind: .action(buttonTitle: "OK", action: {})).duration == Toast.errorDuration)
+        #expect(Toast(message: "x", kind: .action(buttonTitle: "OK", action: {}), lifetime: 15).duration == 15)
+        #expect(Toast(message: "x", kind: .info).duration == Toast.infoDuration)
+    }
+
     @Test func demoFactoryBuildsEveryState() {
         guard hasDisplay else { return }
         for state in WidgetDebugState.allCases {

@@ -24,6 +24,21 @@ enum CoreAudioProcesses {
         }
     }
 
+    /// Processes running audio input right now. Polled every 2 s by `MeetingDetector`, so it
+    /// reads one property per process and the PID and bundle ID only of the ones that record.
+    static func usingInput() -> [Process] {
+        objectIDs().compactMap { id in
+            guard read(id, kAudioProcessPropertyIsRunningInput, default: UInt32(0)) != 0 else { return nil }
+            return Process(
+                objectID: id,
+                pid: read(id, kAudioProcessPropertyPID, default: pid_t(-1)),
+                bundleID: readString(id, kAudioProcessPropertyBundleID) ?? "",
+                isRunningInput: true,
+                isRunningOutput: read(id, kAudioProcessPropertyIsRunningOutput, default: UInt32(0)) != 0
+            )
+        }
+    }
+
     static func ownObjectID() -> AudioObjectID? {
         var pid = ProcessInfo.processInfo.processIdentifier
         var address = AudioObjectPropertyAddress(

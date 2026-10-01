@@ -300,12 +300,19 @@ protocol ToastPresenting: AnyObject {
     func showError(_ message: String)
     /// 7 s toast with one action button.
     func showAction(message: String, buttonTitle: String, action: @escaping @MainActor () -> Void)
+    /// Toast with one action button that stays up for `lifetime` seconds, e.g. as long as the
+    /// countdown its button can stop.
+    func showAction(message: String, buttonTitle: String, lifetime: TimeInterval, action: @escaping @MainActor () -> Void)
 }
 
 extension ToastPresenting {
     func showError(_ error: any Error) {
         let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         showError(message)
+    }
+
+    func showAction(message: String, buttonTitle: String, lifetime: TimeInterval, action: @escaping @MainActor () -> Void) {
+        showAction(message: message, buttonTitle: buttonTitle, action: action)
     }
 }
 
