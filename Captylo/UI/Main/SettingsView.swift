@@ -2,8 +2,9 @@ import AppKit
 import SwiftUI
 
 /// "Ustawienia": grouped Dusk Glass panels of rows and blue switches (mockup 03): the shortcut
-/// recorder as a glass keycap, microphone menu, recording / pasting / history toggles, login item,
-/// onboarding reset, the import from the old VocaType ("Dane") and the version footer.
+/// recorder as a glass keycap, microphone menu, recording toggles, meetings
+/// (`MeetingsSettingsPanel`), pasting / history toggles, login item, onboarding reset, the import
+/// from the old VocaType ("Dane") and the version footer.
 @MainActor
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
@@ -65,6 +66,8 @@ struct SettingsView: View {
                 GlassToggleRow("Wycisz system podczas nagrywania", systemImage: "speaker.slash", isOn: $settings.muteWhileRecording)
                 GlassToggleRow("Podgląd na żywo", systemImage: "text.bubble", isOn: $settings.livePreview)
             }
+
+            MeetingsSettingsPanel()
 
             GlassPanel(spacing: 4) {
                 sectionHeader("Wklejanie", systemImage: "text.cursor")

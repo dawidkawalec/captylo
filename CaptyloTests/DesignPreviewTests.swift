@@ -130,6 +130,31 @@ struct DesignPreviewTests {
         #expect(!DesignPreviewData.showsFreePlan(environment: [:]))
     }
 
+    /// `CAPTYLO_PREVIEW_AUDIO_CHECK`: the result the system audio check row in Ustawienia shows.
+    @Test func previewPicksTheSystemAudioCheckResult() {
+        #expect(DesignPreviewData.audioCheckOutcome(environment: ["CAPTYLO_PREVIEW_AUDIO_CHECK": "works"]) == .works)
+        #expect(DesignPreviewData.audioCheckOutcome(environment: ["CAPTYLO_PREVIEW_AUDIO_CHECK": "NoAccess"]) == .noAccess)
+        #expect(DesignPreviewData.audioCheckOutcome(environment: ["CAPTYLO_PREVIEW_AUDIO_CHECK": "nothing"]) == .nothingPlaying)
+        if case .failed(let message)? = DesignPreviewData.audioCheckOutcome(environment: ["CAPTYLO_PREVIEW_AUDIO_CHECK": "failed"]) {
+            #expect(!message.isEmpty)
+        } else {
+            Issue.record("expected a failed outcome")
+        }
+        #expect(DesignPreviewData.audioCheckOutcome(environment: ["CAPTYLO_PREVIEW_AUDIO_CHECK": "x"]) == nil)
+        #expect(DesignPreviewData.audioCheckOutcome(environment: [:]) == nil)
+    }
+
+    /// `CAPTYLO_PREVIEW_SCROLL`: how far down a long page opens (0 top, 1 bottom), clamped.
+    @Test func previewScrollsLongPages() {
+        #expect(DesignPreviewData.scrollFraction(environment: ["CAPTYLO_PREVIEW_SCROLL": "0.4"]) == 0.4)
+        #expect(DesignPreviewData.scrollFraction(environment: ["CAPTYLO_PREVIEW_SCROLL": "1"]) == 1)
+        #expect(DesignPreviewData.scrollFraction(environment: ["CAPTYLO_PREVIEW_SCROLL": "7"]) == 1)
+        #expect(DesignPreviewData.scrollFraction(environment: ["CAPTYLO_PREVIEW_SCROLL": "-1"]) == 0)
+        #expect(DesignPreviewData.scrollFraction(environment: ["CAPTYLO_PREVIEW_SCROLL": "x"]) == nil)
+        #expect(DesignPreviewData.scrollFraction(environment: ["CAPTYLO_PREVIEW_SCROLL": "nan"]) == nil)
+        #expect(DesignPreviewData.scrollFraction(environment: [:]) == nil)
+    }
+
     @Test func sampleCustomModeIsTheUsersOwn() {
         let mode = DesignPreviewData.sampleCustomMode
         #expect(mode.builtInKey == nil)

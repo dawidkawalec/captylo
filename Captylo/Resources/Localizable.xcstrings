@@ -6267,6 +6267,96 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Turn on Pro mode (dev) in Settings" } }
       }
+    },
+    "Wykrywaj spotkania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Detect meetings" } }
+      }
+    },
+    "Gdy aplikacja do rozmów zacznie używać mikrofonu, Captylo zapyta, czy nagrać spotkanie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "When a call app starts using the microphone, Captylo asks whether to record the meeting." } }
+      }
+    },
+    "Przypominaj o poinformowaniu uczestników": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remind me to tell participants" } }
+      }
+    },
+    "Na początku nagrania pokazuje gotowe zdanie do skopiowania na czat.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Shows a ready sentence to copy into the chat when a recording starts." } }
+      }
+    },
+    "Zachowuj nagrania spotkań": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep meeting recordings" } }
+      }
+    },
+    "Dotyczy tylko plików audio; transkrypcje i notatki zostają.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Audio files only; transcripts and notes stay." } }
+      }
+    },
+    "Tryb Pro (dev)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pro mode (dev)" } }
+      }
+    },
+    "Tylko w wersji deweloperskiej: włącza notatki AI i rozpoznawanie mówców bez konta.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Development builds only: turns on AI notes and speaker labels without an account." } }
+      }
+    },
+    "Dostęp do dźwięku systemu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "System audio access" } }
+      }
+    },
+    "Tak Captylo słyszy rozmówców. Puść coś (np. film) i sprawdź.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This is how Captylo hears the other side. Play something (e.g. a video) and check." } }
+      }
+    },
+    "Sprawdź dostęp do dźwięku systemu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check system audio access" } }
+      }
+    },
+    "Działa": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Works" } }
+      }
+    },
+    "Brak dostępu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No access" } }
+      }
+    },
+    "Sprawdzisz po zakończeniu nagrywania spotkania.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You can check once the meeting recording ends." } }
+      }
+    },
+    "Słucham dźwięku systemu przez 2 sekundy...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Listening to system audio for 2 seconds..." } }
+      }
+    },
+    "Captylo słyszy dźwięk innych aplikacji.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo hears audio from other apps." } }
+      }
+    },
+    "Coś gra, a Captylo słyszy ciszę. Zezwól na nagrywanie dźwięku systemu i sprawdź ponownie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Something is playing, but Captylo hears silence. Allow system audio recording and check again." } }
+      }
+    },
+    "Puść coś na chwilę (np. film) i sprawdź ponownie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Play something for a moment (e.g. a video) and check again." } }
+      }
     }
   },
   "version": "1.0"

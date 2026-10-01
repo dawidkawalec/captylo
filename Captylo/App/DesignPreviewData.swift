@@ -65,6 +65,25 @@ enum DesignPreviewData {
         }
     }
 
+    /// `CAPTYLO_PREVIEW_AUDIO_CHECK=works|noaccess|nothing|failed`: the result the "Dostęp do
+    /// dźwięku systemu" row in Ustawienia shows, as if "Sprawdź" had just run (nil: not checked).
+    static func audioCheckOutcome(environment: [String: String] = ProcessInfo.processInfo.environment) -> SystemAudioCheck.Outcome? {
+        switch environment["CAPTYLO_PREVIEW_AUDIO_CHECK"]?.lowercased() {
+        case "works": return .works
+        case "noaccess": return .noAccess
+        case "nothing": return .nothingPlaying
+        case "failed": return .failed(MeetingAudioError.tap(-50).localizedDescription)
+        default: return nil
+        }
+    }
+
+    /// `CAPTYLO_PREVIEW_SCROLL=<0...1>`: how far down a long page opens, 0 the top and 1 the
+    /// bottom (Ustawienia is taller than any screen). Clamped; nil leaves the page at the top.
+    static func scrollFraction(environment: [String: String] = ProcessInfo.processInfo.environment) -> Double? {
+        guard let raw = environment["CAPTYLO_PREVIEW_SCROLL"], let value = Double(raw), value.isFinite else { return nil }
+        return min(1, max(0, value))
+    }
+
     /// Inserts the sample history and meetings (the dashboard, Historia and Spotkania read them
     /// through `Database`).
     static func populate(_ database: Database, now: Date = Date()) async {

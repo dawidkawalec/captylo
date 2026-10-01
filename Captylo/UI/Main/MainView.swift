@@ -40,6 +40,7 @@ struct MainShellView: View {
                     .padding(.top, 12)
                 screen(for: router.selection)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .defaultScrollAnchor(previewScrollAnchor)
             }
             .padding(.top, MainShellMetrics.windowInset)
             .animation(reduceMotion ? nil : GlassMotion.spring, value: bannerSignature)
@@ -69,6 +70,13 @@ struct MainShellView: View {
         case .modele: ModelsView()
         case .ustawienia: SettingsView()
         }
+    }
+
+    /// `CAPTYLO_PREVIEW_SCROLL`: the design preview opens a long page further down; nil (the
+    /// system default, the top) everywhere else.
+    private var previewScrollAnchor: UnitPoint? {
+        guard appState.isDesignPreview, let fraction = DesignPreviewData.scrollFraction() else { return nil }
+        return UnitPoint(x: 0.5, y: fraction)
     }
 
     /// Which banners are up; animating on it slides the page down when one appears.

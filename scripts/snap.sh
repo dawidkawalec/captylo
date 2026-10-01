@@ -33,6 +33,12 @@
 #                             `transcript` (default) or `ai` ("Notatki AI")
 #   CAPTYLO_PREVIEW_FREE=1    passed through: the Free plan instead of Pro (the Pro card in
 #                             "Notatki AI")
+#   CAPTYLO_PREVIEW_AUDIO_CHECK=<r>  passed through, main-ustawienia: the "Dostęp do dźwięku
+#                             systemu" row shows a check result: `works`, `noaccess`, `nothing`
+#                             or `failed`
+#   CAPTYLO_PREVIEW_SIZE=<w>x<h>  passed through: main window size (tall captures of long pages)
+#   CAPTYLO_PREVIEW_SCROLL=<f>    passed through: a long page opens scrolled to `f` (0 top,
+#                             1 bottom), e.g. 0.45 shows "Spotkania" in main-ustawienia
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

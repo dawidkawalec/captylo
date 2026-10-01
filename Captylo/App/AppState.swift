@@ -67,6 +67,8 @@ final class AppState {
     /// "Wygeneruj ponownie" in the "Notatki AI" tab: `meetingNotes.regenerate` with the picked
     /// template. Itself `@Observable` (which meetings are being written, finished runs).
     @ObservationIgnored let meetingNotesRuns: MeetingNotesRuns
+    /// "Zachowuj nagrania spotkań": the last post-processor, and a sweep at launch.
+    @ObservationIgnored let meetingRetention: MeetingRetention
 
     // Output and UI
     @ObservationIgnored let textOutput: TextOutput
@@ -213,6 +215,13 @@ final class AppState {
             guard await access.allows(.meetingAINotes) else { return }
             await meetingNotes.regenerate(meetingID: id, templateID: templateID)
         }
+        // Last: the speaker labels read the track files, the AI notes do not need them.
+        let meetingRetention = MeetingRetention(
+            database: database,
+            policy: { await MainActor.run { settings.meetingAudioRetention } },
+            folder: { AppPaths.meetingFolder($0) }
+        )
+        self.meetingRetention = meetingRetention
         let mute = systemMute
         meetingRecorder = MeetingRecorder(environment: MeetingEnvironment(
             makeMic: { MeetingMicCapture() },
@@ -226,7 +235,7 @@ final class AppState {
             expectingSystemAudio: { CoreAudioProcesses.anyOtherProcessPlaying() },
             language: { settings.transcriptionLanguage },
             setMuteSuppressed: { mute.isSuppressed = $0 },
-            postProcessors: [speakerLabels, meetingNotes],
+            postProcessors: [speakerLabels, meetingNotes, meetingRetention],
             outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() }
         ))
 
@@ -448,6 +457,10 @@ final class AppState {
                 await Retention.sweepOrphans(database: database)
             }
         }
+        // Meeting audio ("Zachowuj nagrania spotkań"): goes by the rows, so the in-memory
+        // fallback store (no rows) removes nothing. Every finished meeting sweeps again.
+        let meetingRetention = self.meetingRetention
+        Task { await meetingRetention.sweep() }
 
         windowPresenter.start()
         oldAppDetector.start()
