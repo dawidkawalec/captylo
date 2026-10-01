@@ -182,9 +182,10 @@ final class AppState {
         self.database = database
 
         // Meetings: nothing records until the user starts a meeting (the design preview and the
-        // test host never do). The VAD loads once, on the first meeting, and serves both tracks.
-        // After a meeting stops: speaker labels (Pro, macOS 15+; the diarizer loads on first use),
-        // then AI notes (Pro) with the user's AI key and model, so the notes see "Mówca N".
+        // test host never do), and never without the speech model on disk. The VAD loads once,
+        // on the first meeting, and serves both tracks. After a meeting stops, in the background:
+        // speaker labels (Pro, macOS 15+; the diarizer loads on first use), then AI notes (Pro)
+        // with the user's AI key and model, so the notes see "Mówca N".
         let access = ProAccess(settings: settings, pinned: overrides.pinnedPro)
         proAccess = access
         let meetingVAD = SpeechDetectorCache { try await FluidSpeechDetector.load() }
@@ -239,7 +240,8 @@ final class AppState {
             language: { settings.transcriptionLanguage },
             setMuteSuppressed: { mute.isSuppressed = $0 },
             postProcessors: [speakerLabels, meetingNotes, meetingRetention],
-            outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() }
+            outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() },
+            speechModelReady: { ParakeetEngine.isDownloaded }
         ))
 
         // Output and UI

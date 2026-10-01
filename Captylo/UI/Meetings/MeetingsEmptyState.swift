@@ -2,11 +2,12 @@ import SwiftUI
 
 /// Spotkania before the first meeting: one centered panel with what the section is for and
 /// "Nagraj spotkanie". A nil `onRecord` shows the button disabled; `error` is why the last start
-/// failed.
+/// failed, with "Otwórz Modele" under it when `onOpenModels` is set (no speech model).
 @MainActor
 struct MeetingsEmptyState: View {
     var onRecord: (() -> Void)?
     var error: String?
+    var onOpenModels: (() -> Void)?
 
     var body: some View {
         VStack {
@@ -29,6 +30,11 @@ struct MeetingsEmptyState: View {
                 if let error {
                     ToolStatusLine(text: error, tone: .error)
                         .multilineTextAlignment(.center)
+                }
+                if let onOpenModels {
+                    Button("Otwórz Modele", action: onOpenModels)
+                        .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+                        .fixedSize()
                 }
             }
             .frame(maxWidth: 440)

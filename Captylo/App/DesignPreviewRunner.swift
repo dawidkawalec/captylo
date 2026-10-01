@@ -42,6 +42,7 @@ final class DesignPreviewRunner {
         await DesignPreviewData.populate(appState.database)
         #if DEBUG
         await startLiveMeetingIfAsked(target)
+        refuseMeetingStartIfAsked(target)
         #endif
         appState.bumpStats()
         hideSceneWindows()
@@ -93,7 +94,8 @@ final class DesignPreviewRunner {
     /// `CAPTYLO_PREVIEW_LIVE=1` on `main-spotkania`: a meeting recording right now
     /// (`DesignPreviewData.sampleLiveMeeting`) on the recorder, without audio, with the consent
     /// card and the headphones hint. `noaccess`, `silent` or `unavailable` show that system audio
-    /// warning instead of the hint.
+    /// warning instead of the hint; `nomodel` or `novad` the warning that speech does not turn
+    /// into lines (speech model failing, voice detection not loaded).
     private func startLiveMeetingIfAsked(_ target: DesignPreviewTarget) async {
         guard target == .mainSpotkania,
               let mode = ProcessInfo.processInfo.environment["CAPTYLO_PREVIEW_LIVE"],
@@ -116,6 +118,12 @@ final class DesignPreviewRunner {
         case "unavailable": issue = .unavailable(MeetingAudioError.format.localizedDescription)
         default: issue = nil
         }
+        let problem: MeetingLiveUpdate.Problem?
+        switch mode {
+        case "nomodel": problem = .speechModel
+        case "novad": problem = .speechDetector
+        default: problem = nil
+        }
         appState.meetingRecorder.previewLive(
             meetingID: live.meeting.id,
             segments: live.segments,
@@ -123,8 +131,18 @@ final class DesignPreviewRunner {
             elapsed: live.elapsed,
             levels: [.me: 0.32, .them: 0.68],
             issue: issue,
-            builtInSpeakers: issue == nil
+            problem: problem,
+            builtInSpeakers: issue == nil && problem == nil
         )
+    }
+
+    /// `CAPTYLO_PREVIEW_START=nomodel` on `main-spotkania`: "Nagraj spotkanie" was just refused
+    /// because the speech model is missing (the reason and "Otwórz Modele" under the header).
+    private func refuseMeetingStartIfAsked(_ target: DesignPreviewTarget) {
+        guard target == .mainSpotkania,
+              ProcessInfo.processInfo.environment["CAPTYLO_PREVIEW_START"] == "nomodel"
+        else { return }
+        appState.meetingRecorder.previewMissingSpeechModel()
     }
     #endif
 

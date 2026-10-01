@@ -17,4 +17,7 @@ struct MeetingEnvironment: Sendable {
     /// True when the default output is the Mac's own speakers (the headphones hint). Polled off
     /// the main actor while a meeting records.
     var outputUsesBuiltInSpeakers: @Sendable () -> Bool = { false }
+    /// True when the speech model is on disk. Read by `start`: without it every pass fails and
+    /// the meeting would record audio with no transcript, so it does not start at all.
+    var speechModelReady: @Sendable () -> Bool = { true }
 }

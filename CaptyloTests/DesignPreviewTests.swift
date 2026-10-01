@@ -128,6 +128,8 @@ struct DesignPreviewTests {
         #expect(DesignPreviewData.showsFreePlan(environment: ["CAPTYLO_PREVIEW_FREE": "1"]))
         #expect(!DesignPreviewData.showsFreePlan(environment: ["CAPTYLO_PREVIEW_FREE": "0"]))
         #expect(!DesignPreviewData.showsFreePlan(environment: [:]))
+        #expect(DesignPreviewData.editsMeetingTitle(environment: ["CAPTYLO_PREVIEW_TITLE_EDIT": "1"]))
+        #expect(!DesignPreviewData.editsMeetingTitle(environment: [:]))
     }
 
     /// `CAPTYLO_PREVIEW_AUDIO_CHECK`: the result the system audio check row in Ustawienia shows.

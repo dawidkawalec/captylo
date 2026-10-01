@@ -6078,9 +6078,44 @@
         "en": { "stringUnit": { "state": "translated", "value": "Finishing the meeting" } }
       }
     },
-    "Transkrypt jest zapisany. Reszta może chwilę potrwać.": {
+    "Zapisuję ostatnie wypowiedzi.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The transcript is saved. The rest may take a moment." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Saving the last lines." } }
+      }
+    },
+    "Brakuje modelu mowy. Pobierz go w zakładce Modele.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The speech model is missing. Download it on the Models tab." } }
+      }
+    },
+    "Otwórz Modele": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open Models" } }
+      }
+    },
+    "Model mowy nie działa, więc transkrypt nie powstaje. Dźwięk dalej się nagrywa. Sprawdź model w zakładce Modele.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The speech model isn't working, so no transcript is being made. Audio is still recording. Check the model on the Models tab." } }
+      }
+    },
+    "Nie udało się wczytać wykrywania mowy, więc transkrypt nie powstaje. Za pierwszym razem potrzebny jest internet. Dźwięk dalej się nagrywa, próbuję ponownie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't load speech detection, so no transcript is being made. The first time needs an internet connection. Audio is still recording; trying again." } }
+      }
+    },
+    "Zmień tytuł spotkania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rename meeting" } }
+      }
+    },
+    "Tytuł spotkania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting title" } }
+      }
+    },
+    "Nie udało się zapisać tytułu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't save the title." } }
       }
     },
     "Nie słyszę rozmówców. Captylo potrzebuje dostępu do dźwięku systemu.": {

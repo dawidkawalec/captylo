@@ -2,10 +2,10 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// One meeting on a glass panel: title and when / how long / which app, "Eksportuj" (copy or
-/// save Markdown, save JSON, delete) and the tabs "Notatki" (the editable notes), "Transkrypt",
-/// "Notatki AI". Reads the meeting and its segments from the `Database` actor whenever the
-/// selection or `reloadToken` changes.
+/// One meeting on a glass panel: the title (a click renames it, also while it records) and
+/// when / how long / which app, "Eksportuj" (copy or save Markdown, save JSON, delete) and the
+/// tabs "Notatki" (the editable notes), "Transkrypt", "Notatki AI". Reads the meeting and its
+/// segments from the `Database` actor whenever the selection or `reloadToken` changes.
 ///
 /// While this meeting records, the live bar sits on top (with its warnings and, once per start,
 /// the consent card) and the tabs give way to two columns: the live transcript
@@ -81,8 +81,13 @@ struct MeetingDetailView: View {
     @Binding var tab: Tab
     let onCopy: (String) -> Void
     let onDelete: (UUID) -> Void
-    /// "Dodaj klucz" under a missing-key failure of the AI notes: opens Modele.
-    let onAddKey: () -> Void
+    /// Opens Modele: "Dodaj klucz" under a missing-key failure of the AI notes, "Otwórz Modele"
+    /// when the speech model fails while recording.
+    let onOpenModels: () -> Void
+    /// A new title was saved (the saved row): the list shows it without a reload.
+    let onRenamed: (MeetingRecord) -> Void
+    /// Design preview: the title opens as a field.
+    let startsEditingTitle: Bool
 
     @State private var meeting: MeetingRecord?
     @State private var segments: [MeetingSegmentRecord] = []
@@ -105,7 +110,9 @@ struct MeetingDetailView: View {
         tab: Binding<Tab>,
         onCopy: @escaping (String) -> Void,
         onDelete: @escaping (UUID) -> Void,
-        onAddKey: @escaping () -> Void
+        onOpenModels: @escaping () -> Void,
+        onRenamed: @escaping (MeetingRecord) -> Void,
+        startsEditingTitle: Bool = false
     ) {
         self.meetingID = meetingID
         self.reloadToken = reloadToken
@@ -117,7 +124,9 @@ struct MeetingDetailView: View {
         _tab = tab
         self.onCopy = onCopy
         self.onDelete = onDelete
-        self.onAddKey = onAddKey
+        self.onOpenModels = onOpenModels
+        self.onRenamed = onRenamed
+        self.startsEditingTitle = startsEditingTitle
         _notesDraft = State(initialValue: MeetingNotesDraft(database: database))
     }
 
@@ -128,7 +137,7 @@ struct MeetingDetailView: View {
         GlassPanel(spacing: 14) {
             if let meeting, meeting.id == meetingID {
                 if isLive {
-                    MeetingLiveBar(recorder: recorder) {
+                    MeetingLiveBar(recorder: recorder, onOpenModels: onOpenModels) {
                         Task { await recorder.stop() }
                     }
                     if recorder.isRecording, recorder.showsConsentReminder, settings.meetingsConsentReminder {
@@ -343,6 +352,35 @@ struct MeetingDetailView: View {
         }
     }
 
+    // MARK: Title
+
+    /// Shows the typed title at once and saves it in one step on the database actor (the notes
+    /// and the AI notes may be writing the same row), then hands the saved row to the list.
+    /// Everything comes from the editor that was open, so a field closed by switching meetings
+    /// still renames its own meeting.
+    private func rename(_ id: UUID, from current: String, to typed: String) {
+        guard let title = MeetingRecord.editedTitle(typed, current: current) else { return }
+        if meeting?.id == id {
+            meeting?.title = title
+        }
+        let database = self.database
+        Task {
+            do {
+                guard let saved = try await database.modifyMeeting(id: id, { $0.title = title }) else { return }
+                if meeting?.id == saved.id {
+                    meeting = saved
+                }
+                onRenamed(saved)
+            } catch {
+                Log.data.error("Meeting title could not be saved: \(error.localizedDescription, privacy: .public)")
+                if meeting?.id == id {
+                    meeting?.title = current
+                }
+                notice = Notice(text: String(localized: "Nie udało się zapisać tytułu."), tone: .error)
+            }
+        }
+    }
+
     /// Scrolled rows fade out under the tabs and toward the panel bottom instead of a hard cut.
     private static var edgeFade: some View {
         VStack(spacing: 0) {
@@ -359,13 +397,11 @@ struct MeetingDetailView: View {
     private func header(_ meeting: MeetingRecord) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(verbatim: meeting.title)
-                    .font(GlassFont.display(20))
-                    .foregroundStyle(GlassColor.textPrimary)
-                    // While live every line of height goes to the transcript and the notes.
-                    .lineLimit(isLive ? 1 : 2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
+                // While live every line of height goes to the transcript and the notes.
+                MeetingTitleEditor(title: meeting.title, lineLimit: isLive ? 1 : 2, startsEditing: startsEditingTitle) { typed in
+                    rename(meeting.id, from: meeting.title, to: typed)
+                }
+                .id(meeting.id)
                 HStack(spacing: 8) {
                     Text(verbatim: metaText(meeting))
                         .font(GlassFont.caption.monospacedDigit())
@@ -494,7 +530,7 @@ struct MeetingDetailView: View {
                 onCopy(markdown)
                 notice = Notice(text: String(localized: "Skopiowano do schowka."), tone: .success)
             },
-            onAddKey: onAddKey,
+            onAddKey: onOpenModels,
             onPlay: meeting.hasAudio ? { seconds in playCitation(at: seconds) } : nil
         )
         .id(id)

@@ -14,6 +14,11 @@ import os
 ///
 /// A crash or quit leaves the row "recording" with the segments saved so far and readable
 /// tracks; `recoverInterruptedMeetings()` marks it "interrupted" at the next launch.
+///
+/// `stop` returns to idle once the transcript, the echo marks and the meeting's length are
+/// saved. The post-processors (speaker labels, AI notes, retention) then run in the background,
+/// one meeting at a time in stop order, while the row reads "processing": a call that starts
+/// right after can be recorded at once.
 @MainActor
 @Observable
 final class MeetingRecorder {
@@ -47,7 +52,16 @@ final class MeetingRecorder {
     /// While recording: the mic could not start (only the other side records). While idle: why
     /// the last start failed. Cleared by the next start and by a stop.
     private(set) var lastError: String?
+    /// The last start was refused because the speech model is not on disk (`lastError` says
+    /// so); Spotkania offers to open Modele. Cleared by the next start.
+    private(set) var needsSpeechModel = false
+    /// While recording: speech is not turning into lines (`MeetingTranscriber` reports it); the
+    /// live bar warns. Cleared by the stop.
+    private(set) var transcriptionProblem: MeetingLiveUpdate.Problem?
     private(set) var lastFinishedMeetingID: UUID?
+    /// Bumped each time the post-processors are done with a meeting (it reads "completed" now):
+    /// Spotkania reloads to show the speaker labels and the AI notes.
+    private(set) var processedCount = 0
     /// Set from the first line of `start` until it returns: a second click must not open a
     /// second meeting, and "Nagraj spotkanie" stays disabled meanwhile (the first system audio
     /// start can wait on the permission prompt).
@@ -70,6 +84,8 @@ final class MeetingRecorder {
     /// Bumped by every start of the system source: a rebuilt tap is a new session of its feed.
     @ObservationIgnored private var systemSession = 0
     @ObservationIgnored private var recovery: Task<Void, Never>?
+    /// The post-processing of the last stopped meeting; it waits for the one before it.
+    @ObservationIgnored private var postProcessing: Task<Void, Never>?
     @ObservationIgnored private var routeTask: Task<Void, Never>?
     @ObservationIgnored private let systemWatch = OSAllocatedUnfairLock(initialState: SystemTrackWatch())
     /// Design preview only (`previewLive`): fixed meter levels instead of the sources'.
@@ -162,6 +178,11 @@ final class MeetingRecorder {
 
     func start(title: String? = nil, appName: String? = nil) async {
         guard phase == .idle, !isStarting else { return }
+        guard env.speechModelReady() else {
+            refuseWithoutSpeechModel()
+            return
+        }
+        needsSpeechModel = false
         isStarting = true
         defer { isStarting = false }
         await recovery?.value
@@ -178,6 +199,7 @@ final class MeetingRecorder {
         }
         lastError = nil
         systemAudioIssue = nil
+        transcriptionProblem = nil
         liveSegments = []
         partials = [:]
         interruptions = []
@@ -233,6 +255,14 @@ final class MeetingRecorder {
         showsConsentReminder = true
         watchOutputRoute()
         Log.audio.info("Meeting recording started")
+    }
+
+    /// No speech model on disk: nothing starts (no row, no folder, no sources) and Spotkania
+    /// shows why, with the way to Modele.
+    private func refuseWithoutSpeechModel() {
+        needsSpeechModel = true
+        lastError = String(localized: "Brakuje modelu mowy. Pobierz go w zakładce Modele.")
+        Log.audio.error("Meeting not started: the speech model is not downloaded")
     }
 
     /// Checks the default output now and every `outputRouteInterval` until the stop, off the
@@ -371,6 +401,11 @@ final class MeetingRecorder {
             liveSegments = Self.liveTranscript(adding: segment, to: liveSegments)
         case .partial(let track, let text):
             partials[track] = text.isEmpty ? nil : text
+        case .problem(let problem):
+            if let problem {
+                Log.transcription.warning("Meeting speech is not turning into lines: \(String(describing: problem), privacy: .public)")
+            }
+            transcriptionProblem = problem
         }
     }
 
@@ -413,6 +448,7 @@ final class MeetingRecorder {
         updatesTask = nil
         transcriber = nil
         partials = [:]
+        transcriptionProblem = nil
 
         let gaps = interruptions
         await updateMeeting(id) {
@@ -420,13 +456,37 @@ final class MeetingRecorder {
             $0.duration = duration
             $0.interruptions = gaps
         }
-        for processor in env.postProcessors {
-            await processor.process(meetingID: id)
-        }
-        await updateMeeting(id) { $0.status = .completed }
         lastFinishedMeetingID = id
         phase = .idle
         Log.audio.info("Meeting recording finished")
+        postProcess(id)
+    }
+
+    /// The post-processors for `id`, then "completed", in the background: after the meeting
+    /// stopped before it is done, so they never run for two meetings at once (the diarizer and
+    /// the AI call are heavy, and retention must follow the speaker labels of the same meeting).
+    private func postProcess(_ id: UUID) {
+        let previous = postProcessing
+        let processors = env.postProcessors
+        let database = env.database
+        postProcessing = Task { [weak self] in
+            await previous?.value
+            for processor in processors {
+                await processor.process(meetingID: id)
+            }
+            do {
+                try await database.modifyMeeting(id: id) { $0.status = .completed }
+            } catch {
+                Log.data.error("Meeting could not be marked completed: \(error.localizedDescription, privacy: .public)")
+            }
+            self?.processedCount += 1
+            Log.audio.info("Meeting post-processing finished")
+        }
+    }
+
+    /// Returns once every meeting stopped so far is processed and reads "completed".
+    func waitForPostProcessing() async {
+        await postProcessing?.value
     }
 
     /// Quit (`applicationWillTerminate`), synchronous: stops both sources and closes the track
@@ -451,6 +511,7 @@ final class MeetingRecorder {
         updatesTask = nil
         transcriber = nil
         partials = [:]
+        transcriptionProblem = nil
         phase = .idle
     }
 
@@ -467,6 +528,7 @@ final class MeetingRecorder {
         transcriber = nil
         liveSegments = []
         partials = [:]
+        transcriptionProblem = nil
         do {
             try await env.database.deleteMeeting(id: meetingID)
         } catch {
@@ -523,15 +585,23 @@ final class MeetingRecorder {
         elapsed: TimeInterval,
         levels: [MeetingTrack: Float],
         issue: SystemAudioIssue? = nil,
+        problem: MeetingLiveUpdate.Problem? = nil,
         builtInSpeakers: Bool = false
     ) {
         phase = .recording(meetingID: meetingID, startedAt: Date().addingTimeInterval(-elapsed))
         liveSegments = segments
         self.partials = partials
         systemAudioIssue = issue
+        transcriptionProblem = problem
         usesBuiltInSpeakers = builtInSpeakers
         showsConsentReminder = true
         previewLevels = levels
+    }
+
+    /// `--design-preview main-spotkania` with `CAPTYLO_PREVIEW_START=nomodel`: the state a start
+    /// leaves without the speech model, without touching the recorder otherwise.
+    func previewMissingSpeechModel() {
+        refuseWithoutSpeechModel()
     }
     #endif
 }

@@ -25,6 +25,17 @@ struct MeetingRecord: Sendable, Equatable, Identifiable {
     /// Meeting times where capture had a gap ("przerwa w nagraniu").
     var interruptions: [Double] = []
 
+    /// What the title field in the details saves: `typed` on one line and trimmed, or nil when
+    /// that is empty or the title it already has (nothing to save).
+    static func editedTitle(_ typed: String, current: String) -> String? {
+        let title = typed
+            .components(separatedBy: .newlines)
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty, title != current else { return nil }
+        return title
+    }
+
     /// Display label for a segment: user name, "Mówca N", or the track default.
     func label(for segment: MeetingSegmentRecord) -> String {
         label(track: segment.track, speaker: segment.speaker)

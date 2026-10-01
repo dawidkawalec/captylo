@@ -2,13 +2,17 @@ import SwiftUI
 
 /// The top of a meeting's details while it records: the pulsing Record dot, "Nagrywam spotkanie"
 /// with the meeting clock, a small level meter per track ("Ja", "Rozmówcy") and "Zakończ". While
-/// the recorder finishes the meeting (last lines, speakers, AI notes) a spinner replaces them.
-/// Under the bar the warnings about the recording: no access to system audio, only the mic, a
-/// silent other side, a mic that did not start, and the quiet headphones hint. Raised cards, not
-/// glass: the bar sits on the details panel.
+/// the recorder transcribes the last lines a spinner replaces them (speaker labels and AI notes
+/// follow in the background, after the details show the tabs again).
+/// Under the bar the warnings about the recording: speech that does not turn into lines (no
+/// speech model, no voice detection), no access to system audio, only the mic, a silent other
+/// side, a mic that did not start, and the quiet headphones hint. Raised cards, not glass: the
+/// bar sits on the details panel.
 @MainActor
 struct MeetingLiveBar: View {
     let recorder: MeetingRecorder
+    /// "Otwórz Modele" when the speech model fails.
+    let onOpenModels: () -> Void
     let onStop: () -> Void
 
     var body: some View {
@@ -70,7 +74,7 @@ struct MeetingLiveBar: View {
                 Text("Kończę spotkanie")
                     .font(GlassFont.bodyMedium)
                     .foregroundStyle(GlassColor.textPrimary)
-                Text("Transkrypt jest zapisany. Reszta może chwilę potrwać.")
+                Text("Zapisuję ostatnie wypowiedzi.")
                     .font(GlassFont.caption)
                     .foregroundStyle(GlassColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -88,6 +92,28 @@ struct MeetingLiveBar: View {
 
     @ViewBuilder
     private var notices: some View {
+        switch recorder.transcriptionProblem {
+        case .speechModel?:
+            MainBanner(
+                symbol: "text.badge.xmark",
+                tone: .danger,
+                text: String(localized: "Model mowy nie działa, więc transkrypt nie powstaje. Dźwięk dalej się nagrywa. Sprawdź model w zakładce Modele."),
+                surface: .raised
+            ) {
+                Button("Otwórz Modele", action: onOpenModels)
+            }
+        case .speechDetector?:
+            MainBanner(
+                symbol: "waveform.badge.exclamationmark",
+                tone: .warning,
+                text: String(localized: "Nie udało się wczytać wykrywania mowy, więc transkrypt nie powstaje. Za pierwszym razem potrzebny jest internet. Dźwięk dalej się nagrywa, próbuję ponownie."),
+                surface: .raised
+            ) {
+                EmptyView()
+            }
+        case nil:
+            EmptyView()
+        }
         switch recorder.systemAudioIssue {
         case .noAccess?:
             MainBanner(

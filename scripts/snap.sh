@@ -28,7 +28,12 @@
 #                             (material glass, aurora glows instead of the mesh)
 #   CAPTYLO_PREVIEW_LIVE=<m>  passed through, main-spotkania only (Debug): a meeting recording
 #                             right now. `1` with the consent card and the headphones hint;
-#                             `noaccess`, `silent` or `unavailable` with that system audio warning
+#                             `noaccess`, `silent` or `unavailable` with that system audio warning;
+#                             `nomodel` or `novad` with the warning that no transcript is made
+#   CAPTYLO_PREVIEW_START=nomodel  passed through, main-spotkania only (Debug): a start refused
+#                             for the missing speech model ("Otwórz Modele" under the header)
+#   CAPTYLO_PREVIEW_TITLE_EDIT=1  passed through, main-spotkania: the details title opens as
+#                             a field
 #   CAPTYLO_PREVIEW_TAB=<t>   passed through, main-spotkania: the details open on `notes`,
 #                             `transcript` (default) or `ai` ("Notatki AI")
 #   CAPTYLO_PREVIEW_FREE=1    passed through: the Free plan instead of Pro (the Pro card in

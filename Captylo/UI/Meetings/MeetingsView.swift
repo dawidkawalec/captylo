@@ -3,13 +3,15 @@ import SwiftUI
 /// "Spotkania": search and "Nagraj spotkanie" on top, then the meeting list and the details of
 /// the selected meeting side by side (stacked below `stackWidth`, the list collapsed to about
 /// four rows). Before the first meeting only `MeetingsEmptyState` shows. The list reloads from
-/// the `Database` actor whenever the search, the recorder's phase, the last finished meeting or
-/// a delete changes, or AI notes written again arrive; a reload keeps the selection, or selects
-/// the newest meeting.
+/// the `Database` actor whenever the search, the recorder's phase, the last finished meeting, a
+/// finished post-processing (speaker labels, AI notes) or a delete changes, or AI notes written
+/// again arrive; a reload keeps the selection, or selects the newest meeting. A title renamed in
+/// the details updates its row in place.
 ///
 /// "Nagraj spotkanie" starts the recorder and the meeting it opens is selected (also when the
 /// menu bar started it), so the live bar is on screen; while it records, the button reads
-/// "Zakończ spotkanie" in Record red. A start that failed leaves its reason under the header.
+/// "Zakończ spotkanie" in Record red. A start that failed leaves its reason under the header,
+/// with "Otwórz Modele" when the speech model is missing.
 /// While the live meeting is selected the list steps aside, so the live transcript and the notes
 /// have room even in the default 920 x 640 window; a header button brings it back.
 @MainActor
@@ -23,6 +25,8 @@ struct MeetingsView: View {
         let query: String
         let phase: MeetingRecorder.Phase
         let lastFinishedMeetingID: UUID?
+        /// The post-processors finished a meeting: its status, speakers and AI notes changed.
+        let processed: Int
         let deletions: Int
         /// "Wygeneruj ponownie" finished: new AI notes (or their error) on a row.
         let notesRuns: Int
@@ -51,6 +55,7 @@ struct MeetingsView: View {
                 query: query,
                 phase: recorder.phase,
                 lastFinishedMeetingID: recorder.lastFinishedMeetingID,
+                processed: recorder.processedCount,
                 deletions: deletions,
                 notesRuns: appState.meetingNotesRuns.finishedCount
             )) {
@@ -91,14 +96,18 @@ struct MeetingsView: View {
         if !loaded {
             Color.clear
         } else if meetings.isEmpty, query.isEmpty {
-            MeetingsEmptyState(onRecord: recordAction(recorder), error: startFailure(recorder))
+            MeetingsEmptyState(
+                onRecord: recordAction(recorder),
+                error: startFailure(recorder),
+                onOpenModels: openModelsAction(recorder)
+            )
         } else {
             VStack(spacing: 0) {
                 header(recorder)
                     .mainColumnFrame()
                     .padding(.top, 14)
                 if let failure = startFailure(recorder) {
-                    ToolStatusLine(text: failure, tone: .error)
+                    startFailureLine(failure, openModels: openModelsAction(recorder))
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .mainColumnFrame()
                         .padding(.top, 8)
@@ -166,6 +175,27 @@ struct MeetingsView: View {
         return String(localized: "Nie udało się rozpocząć nagrywania. \(error)")
     }
 
+    /// "Otwórz Modele" next to a start refused for the missing speech model; nil otherwise.
+    private func openModelsAction(_ recorder: MeetingRecorder) -> (() -> Void)? {
+        guard recorder.needsSpeechModel, startFailure(recorder) != nil else { return nil }
+        return { openModels() }
+    }
+
+    private func openModels() {
+        appState.windowPresenter.openMain(section: .modele)
+    }
+
+    private func startFailureLine(_ failure: String, openModels: (() -> Void)?) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            ToolStatusLine(text: failure, tone: .error)
+            if let openModels {
+                Button("Otwórz Modele") { openModels() }
+                    .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+                    .fixedSize()
+            }
+        }
+    }
+
     // MARK: Columns
 
     /// One layout for every arrangement, so the details keep their identity (and the notes typed
@@ -210,7 +240,13 @@ struct MeetingsView: View {
                 tab: $tab,
                 onCopy: { appState.textOutput.copy($0) },
                 onDelete: { pendingDelete = $0 },
-                onAddKey: { appState.windowPresenter.openMain(section: .modele) }
+                onOpenModels: { openModels() },
+                onRenamed: { saved in
+                    if let index = meetings.firstIndex(where: { $0.id == saved.id }) {
+                        meetings[index] = saved
+                    }
+                },
+                startsEditingTitle: appState.isDesignPreview && DesignPreviewData.editsMeetingTitle()
             )
         } else {
             GlassPanel(alignment: .center) {

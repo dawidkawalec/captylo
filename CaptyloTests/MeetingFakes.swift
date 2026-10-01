@@ -68,6 +68,87 @@ actor CountingMeetingTranscriber: MeetingSpeechTranscribing {
     }
 }
 
+/// Throws on its first `failures` passes (a missing or broken speech model), then answers like
+/// `CountingMeetingTranscriber`.
+actor FlakyMeetingTranscriber: MeetingSpeechTranscribing {
+    private(set) var calls = 0
+    private let failures: Int
+
+    init(failures: Int) {
+        self.failures = failures
+    }
+
+    func transcribeTimed(_ samples: [Float], language: String?) async throws -> TimedTranscript {
+        calls += 1
+        guard calls > failures else { throw ScriptedFailure() }
+        let text = "słowa \(calls)"
+        return TimedTranscript(text: text, words: [MeetingWord(text: text, start: 0, end: Double(samples.count) / 16_000)])
+    }
+}
+
+/// Holds everyone who waits on it until `open()`; afterwards nobody waits.
+actor TestGate {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// Callers that had to wait so far.
+    private(set) var waited = 0
+
+    func wait() async {
+        guard !isOpen else { return }
+        waited += 1
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func open() {
+        isOpen = true
+        let held = waiters
+        waiters = []
+        for waiter in held { waiter.resume() }
+    }
+}
+
+/// A speech model whose every pass waits for `gate`: keeps a meeting's stop in "finishing".
+actor GatedMeetingTranscriber: MeetingSpeechTranscribing {
+    private let gate: TestGate
+
+    init(gate: TestGate) {
+        self.gate = gate
+    }
+
+    func transcribeTimed(_ samples: [Float], language: String?) async throws -> TimedTranscript {
+        await gate.wait()
+        return TimedTranscript(text: "słowa", words: [MeetingWord(text: "słowa", start: 0, end: Double(samples.count) / 16_000)])
+    }
+}
+
+/// A post-processor that logs when it starts and finishes each meeting, reads the meeting's
+/// title as it starts, and holds every run until `gate` opens.
+actor GatedPostProcessor: MeetingPostProcessing {
+    enum Event: Equatable {
+        case started(UUID)
+        case finished(UUID)
+    }
+
+    private(set) var events: [Event] = []
+    private(set) var titles: [String] = []
+    private let gate: TestGate
+    private let database: Database
+
+    init(gate: TestGate, database: Database) {
+        self.gate = gate
+        self.database = database
+    }
+
+    func process(meetingID: UUID) async {
+        events.append(.started(meetingID))
+        if let title = try? await database.meeting(id: meetingID)?.title {
+            titles.append(title)
+        }
+        await gate.wait()
+        events.append(.finished(meetingID))
+    }
+}
+
 actor SegmentSink {
     private(set) var saved: [MeetingSegmentRecord] = []
     func save(_ segment: MeetingSegmentRecord) { saved.append(segment) }

@@ -103,6 +103,30 @@ struct MeetingDatabaseTests {
         #expect(try await db.meetings(query: "standup", limit: 10).isEmpty)
     }
 
+    /// What the title field saves: trimmed, one line, never empty, nothing when it did not change.
+    @Test func editedTitleIsTrimmedAndNeverEmpty() {
+        let current = "Spotkanie w Zoom, 30 września 14:00"
+        #expect(MeetingRecord.editedTitle("  Daily zespołu \n", current: current) == "Daily zespołu")
+        #expect(MeetingRecord.editedTitle("Budżet\nQ4", current: current) == "Budżet Q4")
+        #expect(MeetingRecord.editedTitle("   ", current: current) == nil)
+        #expect(MeetingRecord.editedTitle("", current: current) == nil)
+        #expect(MeetingRecord.editedTitle(" \(current) ", current: current) == nil)
+    }
+
+    /// A rename in the details goes through `modifyMeeting`: the new title is searchable, the
+    /// old one is not, and the notes typed meanwhile stay.
+    @Test func renamingThroughModifyMeetingReindexesTheTitle() async throws {
+        let db = try Self.db()
+        var m = Self.meeting(title: "Spotkanie w Zoom, 30 września 14:00")
+        m.notes = "budżet"
+        try await db.createMeeting(m)
+        let saved = try await db.modifyMeeting(id: m.id) { $0.title = "Daily zespołu" }
+        #expect(saved?.title == "Daily zespołu")
+        #expect(saved?.notes == "budżet")
+        #expect(try await db.meetings(query: "daily", limit: 10).map(\.id) == [m.id])
+        #expect(try await db.meetings(query: "zoom", limit: 10).isEmpty)
+    }
+
     @Test func echoSegmentsAreKeptButNotSearchable() async throws {
         let db = try Self.db()
         let m = Self.meeting(title: "Klient")

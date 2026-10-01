@@ -65,6 +65,11 @@ enum DesignPreviewData {
         }
     }
 
+    /// `CAPTYLO_PREVIEW_TITLE_EDIT=1`: the `main-spotkania` details open with the title as a field.
+    static func editsMeetingTitle(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        environment["CAPTYLO_PREVIEW_TITLE_EDIT"] == "1"
+    }
+
     /// `CAPTYLO_PREVIEW_AUDIO_CHECK=works|noaccess|nothing|failed`: the result the "Dostęp do
     /// dźwięku systemu" row in Ustawienia shows, as if "Sprawdź" had just run (nil: not checked).
     static func audioCheckOutcome(environment: [String: String] = ProcessInfo.processInfo.environment) -> SystemAudioCheck.Outcome? {

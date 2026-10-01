@@ -139,14 +139,18 @@ struct MeetingDetectorFlowTests {
         let database: Database
     }
 
-    private func rig(stopDelay: Duration = .milliseconds(40)) throws -> Rig {
+    private func rig(
+        stopDelay: Duration = .milliseconds(40),
+        engine: any MeetingSpeechTranscribing = CountingMeetingTranscriber(),
+        mic: FakeAudioSource = FakeAudioSource()
+    ) throws -> Rig {
         let database = Database(modelContainer: try Store.makeInMemoryContainer())
         let folder = FileManager.default.temporaryDirectory.appending(path: "detection-tests-\(UUID().uuidString)")
         let recorder = MeetingRecorder(environment: MeetingEnvironment(
-            makeMic: { FakeAudioSource() },
+            makeMic: { mic },
             makeSystem: { FakeAudioSource() },
             makeTranscriber: { id, language, save in
-                MeetingTranscriber(meetingID: id, language: language, engine: CountingMeetingTranscriber(),
+                MeetingTranscriber(meetingID: id, language: language, engine: engine,
                                    detectorFactory: { _ in ScriptedSpeechDetector(startAt: 0, endAt: 3) },
                                    save: save,
                                    config: .init(maxSamples: 224_000, minSamples: 1_000, preRollSamples: 0, partialEverySamples: 1_000_000))
@@ -286,6 +290,50 @@ struct MeetingDetectorFlowTests {
         #expect(rig.toasts.shown.isEmpty)
         await poll(rig, [zoom], at: 17)
         #expect(rig.toasts.shown.map(\.message) == [recordPrompt("Zoom")])
+    }
+
+    /// Back-to-back calls: the next call starts while the last meeting still finishes. It is
+    /// asked about once the recorder is idle again, and only once.
+    @Test func aCallThatStartsWhileTheLastMeetingFinishesIsAskedAboutOnceIdle() async throws {
+        let gate = TestGate()
+        let mic = FakeAudioSource()
+        let rig = try rig(engine: GatedMeetingTranscriber(gate: gate), mic: mic)
+        await rig.recorder.start(title: "Poprzednie")
+        // An utterance whose pass waits for the gate: the stop stays in "finishing".
+        mic.push(Array(repeating: 0.2, count: 4_096 * 5))
+        let stopping = Task { await rig.recorder.stop() }
+        await waitUntil { rig.recorder.currentMeetingID != nil && !rig.recorder.isRecording }
+        try #require(rig.recorder.currentMeetingID != nil && !rig.recorder.isRecording)
+        await poll(rig, [zoom], at: 0)
+        await poll(rig, [zoom], at: 6)
+        #expect(rig.toasts.shown.isEmpty)
+
+        await gate.open()
+        await stopping.value
+        #expect(rig.recorder.phase == .idle)
+        await poll(rig, [zoom], at: 8)
+        #expect(rig.toasts.shown.map(\.message) == [recordPrompt("Zoom")])
+        await poll(rig, [zoom], at: 10)
+        #expect(rig.toasts.shown.count == 1)
+    }
+
+    /// A call that started and ended while the last meeting finished is not asked about.
+    @Test func aCallThatEndedWhileTheLastMeetingFinishedIsNotAskedAbout() async throws {
+        let gate = TestGate()
+        let mic = FakeAudioSource()
+        let rig = try rig(engine: GatedMeetingTranscriber(gate: gate), mic: mic)
+        await rig.recorder.start(title: "Poprzednie")
+        mic.push(Array(repeating: 0.2, count: 4_096 * 5))
+        let stopping = Task { await rig.recorder.stop() }
+        await waitUntil { rig.recorder.currentMeetingID != nil && !rig.recorder.isRecording }
+        await poll(rig, [zoom], at: 0)
+        await poll(rig, [zoom], at: 6)
+        await poll(rig, [], at: 8)
+        await poll(rig, [], at: 54)
+        await gate.open()
+        await stopping.value
+        await poll(rig, [], at: 56)
+        #expect(rig.toasts.shown.isEmpty)
     }
 
     @Test func noRecordPromptWhileAMeetingRecords() async throws {

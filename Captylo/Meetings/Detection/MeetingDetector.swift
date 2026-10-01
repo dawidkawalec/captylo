@@ -14,7 +14,8 @@ import Foundation
 ///
 /// - A call starts while no meeting records: "Wygląda na spotkanie w Zoom. Nagrać notatki?"
 ///   with "Nagraj", which opens Spotkania (the live bar must be on screen) and starts the
-///   recorder.
+///   recorder. A call that starts while the last meeting is still finishing (back-to-back
+///   calls) is asked about as soon as the recorder is idle, if it still runs.
 /// - A call that held the mic during this recording ends: "Spotkanie w Zoom zakończone? Kończę
 ///   notatki za 15 s." with "Nagrywaj dalej"; the recorder stops after `stopDelay` unless the
 ///   button was pressed or the app took the mic again. No prompt while another call of the same
@@ -55,6 +56,8 @@ final class MeetingDetector {
     private var inCall: Set<String> = []
     private var link: Link?
     private var pendingStop: PendingStop?
+    /// Calls that started while the recorder was finishing the last meeting, in start order.
+    private var deferredOffers: [MeetingApp] = []
     private var loop: Task<Void, Never>?
 
     /// - Parameters:
@@ -125,6 +128,7 @@ final class MeetingDetector {
                 offerToStop(app)
             }
         }
+        offerDeferred()
         linkCalls(present: present)
         // The app took the mic again during the countdown: the call goes on.
         if let pendingStop, present.contains(pendingStop.appName) {
@@ -136,6 +140,13 @@ final class MeetingDetector {
     // MARK: Prompts
 
     private func offerToRecord(_ app: MeetingApp) {
+        // The tracker reports a start once: keep it for when the last meeting is finished.
+        if case .finishing = recorder.phase {
+            if !deferredOffers.contains(app) {
+                deferredOffers.append(app)
+            }
+            return
+        }
         guard recorder.phase == .idle, !recorder.isStarting else { return }
         Log.audio.info("Call detected in \(app.name, privacy: .public)")
         toasts.showAction(
@@ -143,6 +154,19 @@ final class MeetingDetector {
             buttonTitle: String(localized: "Nagraj")
         ) { [weak self] in
             self?.record(app)
+        }
+    }
+
+    /// The calls kept by `offerToRecord` while the recorder finished: asked about once it is
+    /// idle, if they still run. A recording started meanwhile takes them in instead.
+    private func offerDeferred() {
+        guard !deferredOffers.isEmpty else { return }
+        deferredOffers.removeAll { !inCall.contains($0.name) }
+        if case .finishing = recorder.phase { return }
+        let waiting = deferredOffers
+        deferredOffers = []
+        for app in waiting {
+            offerToRecord(app)
         }
     }
 
@@ -207,6 +231,7 @@ final class MeetingDetector {
         tracker = freshTracker
         inCall = []
         link = nil
+        deferredOffers = []
         cancelPendingStop()
     }
 

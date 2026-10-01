@@ -154,6 +154,58 @@ struct MeetingTranscriberTests {
         #expect(abs(segment.end - segment.start - 3.0 * 4_096 / 16_000) < 0.001)
     }
 
+    private func problems(_ updates: [MeetingLiveUpdate]) -> [MeetingLiveUpdate] {
+        updates.filter {
+            if case .problem = $0 { return true }
+            return false
+        }
+    }
+
+    /// The first meeting offline: the VAD cannot download, so nothing becomes a line. The live
+    /// view must say so until a retry loads it.
+    @Test func aVadThatCannotLoadIsReportedUntilItLoads() async throws {
+        let flaky = FlakyDetectorFactory(failures: 1) { ScriptedSpeechDetector(startAt: 1, endAt: 3) }
+        let transcriber = MeetingTranscriber(
+            meetingID: UUID(), language: "pl", engine: CountingMeetingTranscriber(),
+            detectorFactory: { _ in try await flaky.detector() },
+            save: { _ in },
+            config: quick
+        )
+        await transcriber.start()
+        let retryChunk = (MeetingTranscriber.detectorRetrySamples + 4_095) / 4_096
+        for _ in 0..<(retryChunk + 8) { transcriber.feed(chunk(), track: .me) }
+        _ = await transcriber.finish()
+        var updates: [MeetingLiveUpdate] = []
+        for await update in transcriber.updates { updates.append(update) }
+        #expect(problems(updates) == [.problem(.speechDetector), .problem(nil)])
+        #expect(updates.first == .problem(.speechDetector))
+        #expect(updates.contains { if case .segment = $0 { return true } else { return false } })
+    }
+
+    /// A pass that throws (the model is missing or broken) loses that line: the live view says
+    /// so until a pass works again, whichever track it was on.
+    @Test func aFailingPassIsReportedUntilAPassWorks() async throws {
+        let sink = SegmentSink()
+        let engine = FlakyMeetingTranscriber(failures: 1)
+        let transcriber = MeetingTranscriber(
+            meetingID: UUID(), language: "pl", engine: engine,
+            detectorFactory: { _ in ScriptedSpeechDetector(startAt: 0, endAt: 3) },
+            save: { await sink.save($0) },
+            config: quick
+        )
+        await transcriber.start()
+        for _ in 0..<4 { transcriber.feed(chunk(), track: .me) }
+        for _ in 0..<300 where await engine.calls == 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        for _ in 0..<4 { transcriber.feed(chunk(), track: .them) }
+        _ = await transcriber.finish()
+        var updates: [MeetingLiveUpdate] = []
+        for await update in transcriber.updates { updates.append(update) }
+        #expect(problems(updates) == [.problem(.speechModel), .problem(nil)])
+        #expect(await sink.saved.map(\.track) == [.them])
+    }
+
     @Test func partialsAreSkippedWhileTheTrackIsBehind() async throws {
         let sink = SegmentSink()
         let engine = CountingMeetingTranscriber()

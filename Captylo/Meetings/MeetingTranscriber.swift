@@ -13,6 +13,11 @@ import os
 /// that pauses feeds silence for the pause), or the later segments of that track land too early.
 /// Echo between the tracks is marked once, in `finish()`.
 ///
+/// A VAD that cannot load (offline on the first meeting) or a pass that throws (no speech model)
+/// would otherwise only reach the log while the meeting ends up without a transcript, so
+/// `updates` also carries `.problem` whenever that state changes, and `.problem(nil)` once the
+/// VAD loads or a pass works again.
+///
 /// Memory per track: at most one open utterance (14 s), its pre-roll and one VAD chunk. The input
 /// streams never drop audio, so they only hold more while the model falls behind.
 actor MeetingTranscriber {
@@ -53,6 +58,12 @@ actor MeetingTranscriber {
     private var consumers: [Task<Void, Never>] = []
     private var finishing: Task<Outcome, Never>?
     private var segments: [MeetingSegmentRecord] = []
+    /// Tracks whose VAD failed to load and has not loaded since.
+    private var tracksWithoutDetector: Set<MeetingTrack> = []
+    /// The last final pass threw.
+    private var passFailing = false
+    /// The problem last sent in `updates`.
+    private var reportedProblem: MeetingLiveUpdate.Problem?
 
     /// - Parameters:
     ///   - detectorFactory: called once per track on its first samples (and again later if it throws);
@@ -165,10 +176,13 @@ actor MeetingTranscriber {
                 let detector = try await detectorFactory(track)
                 state.vadState = await detector.initialState()
                 state.detector = detector
+                tracksWithoutDetector.remove(track)
             } catch {
                 state.nextDetectorAttempt = state.received + Self.detectorRetrySamples
+                tracksWithoutDetector.insert(track)
                 Log.transcription.error("Meeting VAD failed to load (\(track.rawValue, privacy: .public)): \(error.localizedDescription, privacy: .public)")
             }
+            reportProblem()
         }
         state.received += samples.count
         let chunks = state.accumulator.push(samples)
@@ -226,8 +240,12 @@ actor MeetingTranscriber {
             timed = try await engine.transcribeTimed(samples, language: language)
         } catch {
             Log.transcription.error("Meeting pass failed (\(track.rawValue, privacy: .public)): \(error.localizedDescription, privacy: .public)")
+            passFailing = true
+            reportProblem()
             return
         }
+        passFailing = false
+        reportProblem()
         guard !timed.text.isEmpty else { return }
         let offset = Double(start) / Self.sampleRate
         let segment = MeetingSegmentRecord(
@@ -241,6 +259,22 @@ actor MeetingTranscriber {
         segments.append(segment)
         await save(segment)
         updatesContinuation.yield(.segment(segment))
+    }
+
+    /// Sends the current problem when it differs from the last one sent. A failing pass comes
+    /// first: it means lines are lost even where the VAD works.
+    private func reportProblem() {
+        let current: MeetingLiveUpdate.Problem?
+        if passFailing {
+            current = .speechModel
+        } else if !tracksWithoutDetector.isEmpty {
+            current = .speechDetector
+        } else {
+            current = nil
+        }
+        guard current != reportedProblem else { return }
+        reportedProblem = current
+        updatesContinuation.yield(.problem(current))
     }
 
     private static func isFinal(_ output: UtteranceSegmenter.Output) -> Bool {

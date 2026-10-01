@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import os
 import Testing
 @testable import Captylo
 
@@ -49,6 +50,7 @@ struct MeetingRecorderTests {
         system.push(speech())
         await recorder.stop()
         #expect(recorder.phase == .idle)
+        await recorder.waitForPostProcessing()
         let meeting = try #require(try await db.meeting(id: id))
         #expect(meeting.status == .completed)
         #expect(meeting.title == "Test")
@@ -261,6 +263,7 @@ struct MeetingRecorderTests {
         try await Task.sleep(for: .milliseconds(100))
         #expect(recorder.systemAudioIssue == nil)
         await recorder.stop()
+        await recorder.waitForPostProcessing()
         let meeting = try #require(try await db.meeting(id: id))
         #expect(meeting.interruptions == [0])
         #expect(meeting.status == .completed)
@@ -385,7 +388,143 @@ struct MeetingRecorderTests {
         #expect(try await db.meeting(id: old.id)?.status == .interrupted)
         #expect(try await db.meeting(id: id)?.status == .recording)
         await recorder.stop()
+        await recorder.waitForPostProcessing()
         #expect(try await db.meeting(id: id)?.status == .completed)
+    }
+
+    // MARK: Speech model and VAD
+
+    /// Without the speech model every pass would fail: the meeting would record audio and end
+    /// with no transcript. The start is refused and Spotkania points to Modele instead.
+    @Test func aMissingSpeechModelKeepsTheMeetingFromStarting() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let mic = FakeAudioSource(), system = FakeAudioSource(), spy = MuteSpy()
+        let ready = OSAllocatedUnfairLock(initialState: false)
+        var env = environment(mic: mic, system: system, spy: spy, db: db)
+        env.speechModelReady = { ready.withLock { $0 } }
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start()
+        #expect(recorder.phase == .idle)
+        #expect(recorder.needsSpeechModel)
+        #expect(recorder.lastError == String(localized: "Brakuje modelu mowy. Pobierz go w zakładce Modele."))
+        #expect(try await db.meetings(query: "", limit: 10).isEmpty)
+        #expect(mic.startCount == 0)
+        #expect(system.startCount == 0)
+        #expect(spy.calls.isEmpty)
+
+        ready.withLock { $0 = true }
+        await recorder.start()
+        #expect(recorder.isRecording)
+        #expect(!recorder.needsSpeechModel)
+        #expect(recorder.lastError == nil)
+        await recorder.stop()
+    }
+
+    /// The VAD downloads on the first meeting; offline it cannot load and nothing becomes a
+    /// line. The live bar says so while it records, and the warning goes with the stop.
+    @Test func aSpeechDetectorThatCannotLoadIsShownWhileRecording() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let mic = FakeAudioSource()
+        var env = environment(mic: mic, system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        env.makeTranscriber = { id, language, save in
+            MeetingTranscriber(meetingID: id, language: language, engine: CountingMeetingTranscriber(),
+                               detectorFactory: { _ in throw ScriptedFailure() }, save: save)
+        }
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start()
+        #expect(recorder.transcriptionProblem == nil)
+        mic.push(silence())
+        await waitUntil { recorder.transcriptionProblem == .speechDetector }
+        #expect(recorder.transcriptionProblem == .speechDetector)
+        await recorder.stop()
+        #expect(recorder.transcriptionProblem == nil)
+    }
+
+    // MARK: After the stop
+
+    /// Speaker labels and AI notes can take minutes: the recorder is idle again as soon as the
+    /// transcript is saved (a back-to-back call can be recorded), and the meeting reads
+    /// "processing" until they are done.
+    @Test func theRecorderIsIdleWhileThePostProcessorsRun() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let mic = FakeAudioSource()
+        let gate = TestGate()
+        let processor = GatedPostProcessor(gate: gate, database: db)
+        var env = environment(mic: mic, system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        env.postProcessors = [processor]
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start(title: "Pierwsze")
+        let id = try #require(recorder.currentMeetingID)
+        mic.push(speech())
+        await recorder.stop()
+        #expect(recorder.phase == .idle)
+        #expect(recorder.lastFinishedMeetingID == id)
+        #expect(recorder.processedCount == 0)
+        let stopped = try #require(try await db.meeting(id: id))
+        #expect(stopped.status == .processing)
+        #expect(stopped.duration > 0)
+        #expect(try await db.segments(meetingID: id).count == 1)
+
+        await recorder.start(title: "Drugie")
+        #expect(recorder.isRecording)
+        await recorder.stop()
+
+        await gate.open()
+        await recorder.waitForPostProcessing()
+        #expect(recorder.processedCount == 2)
+        #expect(try await db.meeting(id: id)?.status == .completed)
+    }
+
+    /// Two meetings stopped back to back are processed one after the other, in stop order.
+    @Test func postProcessingRunsOneMeetingAtATime() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let gate = TestGate()
+        let processor = GatedPostProcessor(gate: gate, database: db)
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        env.postProcessors = [processor]
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start(title: "A")
+        let first = try #require(recorder.currentMeetingID)
+        await recorder.stop()
+        await recorder.start(title: "B")
+        let second = try #require(recorder.currentMeetingID)
+        await recorder.stop()
+        for _ in 0..<300 where await processor.events.isEmpty {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(await processor.events == [.started(first)])
+        #expect(try await db.meeting(id: second)?.status == .processing)
+
+        await gate.open()
+        await recorder.waitForPostProcessing()
+        #expect(await processor.events == [.started(first), .finished(first), .started(second), .finished(second)])
+        #expect(try await db.meeting(id: first)?.status == .completed)
+        #expect(try await db.meeting(id: second)?.status == .completed)
+    }
+
+    // MARK: Title
+
+    /// A title typed while the meeting records is what the AI notes see at the stop, so the
+    /// template follows it ("Daily" picks Standup); the stop never writes the old title back.
+    @Test func aTitleChangedWhileRecordingReachesThePostProcessors() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let gate = TestGate()
+        await gate.open()
+        let processor = GatedPostProcessor(gate: gate, database: db)
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        env.postProcessors = [processor]
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start(appName: "Zoom")
+        let id = try #require(recorder.currentMeetingID)
+        let initial = try #require(try await db.meeting(id: id)?.title)
+        #expect(BuiltInMeetingTemplates.pick(forTitle: initial).id == BuiltInMeetingTemplates.general.id)
+        try await db.modifyMeeting(id: id) { $0.title = "Daily zespołu" }
+        await recorder.stop()
+        await recorder.waitForPostProcessing()
+        #expect(await processor.titles == ["Daily zespołu"])
+        #expect(try await db.meeting(id: id)?.title == "Daily zespołu")
+        #expect(BuiltInMeetingTemplates.pick(forTitle: "Daily zespołu").id == "standup")
     }
 
     @Test func liveTranscriptHidesMicEchoWhicheverTrackArrivesFirst() {
