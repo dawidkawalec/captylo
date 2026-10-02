@@ -33,6 +33,8 @@ final class Meeting {
     var calendarEventID: String? = nil
     /// JSON `[String]` (attendee names from the calendar event).
     var participantsJSON: Data = Data()
+    /// JSON `[MeetingQuestion]` ("Zapytaj", Pro); empty when never asked.
+    var questionsJSON: Data = Data()
     /// Folded text of every segment that is not echo (`MeetingSearch`), for search without a join.
     var searchText: String = ""
     /// Folded title and notes (`MeetingSearch.titleNotes`), kept in step by `apply`.
@@ -64,6 +66,7 @@ final class Meeting {
         transcriptError = record.transcriptError
         calendarEventID = record.calendarEventID
         participantsJSON = record.participants.isEmpty ? Data() : Self.encode(record.participants)
+        questionsJSON = record.questions.isEmpty ? Data() : Self.encode(record.questions)
         titleNotesSearchText = MeetingSearch.titleNotes(title: record.title, notes: record.notes)
     }
 
@@ -88,7 +91,8 @@ final class Meeting {
             transcriptAIModel: transcriptAIModel,
             transcriptError: transcriptError,
             calendarEventID: calendarEventID,
-            participants: Self.decode([String].self, from: participantsJSON) ?? []
+            participants: Self.decode([String].self, from: participantsJSON) ?? [],
+            questions: Self.decode([MeetingQuestion].self, from: questionsJSON) ?? []
         )
     }
 

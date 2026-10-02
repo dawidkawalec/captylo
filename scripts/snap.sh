@@ -35,7 +35,8 @@
 #   CAPTYLO_PREVIEW_TITLE_EDIT=1  passed through, main-spotkania: the details title opens as
 #                             a field
 #   CAPTYLO_PREVIEW_TAB=<t>   passed through, main-spotkania: the details open on `notes`,
-#                             `transcript` (default) or `ai` ("Notatki AI")
+#                             `transcript` (default), `ai` ("Notatki AI") or `ask` ("Zapytaj",
+#                             two seeded questions on the budget meeting)
 #   CAPTYLO_PREVIEW_QUERY=<q> passed through, main-spotkania: the search field opens with `q`
 #                             typed (`oferta`: two sample meetings with hit lines under the rows)
 #   CAPTYLO_PREVIEW_HIT=1     passed through, with CAPTYLO_PREVIEW_QUERY: the first hit line is

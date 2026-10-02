@@ -35,6 +35,9 @@ struct MeetingRecord: Sendable, Equatable, Identifiable {
     var calendarEventID: String? = nil
     /// Attendee names from the calendar event (the user left out), empty without an event.
     var participants: [String] = []
+    /// "Zapytaj" (Pro): questions about this meeting and their answers, oldest first, at most
+    /// `MeetingAsker.maxStoredQuestions`.
+    var questions: [MeetingQuestion] = []
 
     /// What the title field in the details saves: `typed` on one line and trimmed, or nil when
     /// that is empty or the title it already has (nothing to save).

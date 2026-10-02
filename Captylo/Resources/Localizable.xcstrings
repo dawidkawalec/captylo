@@ -6462,6 +6462,86 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Meeting speech detection: not downloaded (%@)" } }
       }
+    },
+    "Zapytaj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask" } }
+      }
+    },
+    "Zapytaj o to spotkanie...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask about this meeting..." } }
+      }
+    },
+    "Zapytaj o cokolwiek z tego spotkania. Odpowiedź wskaże momenty rozmowy, z których pochodzi.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask anything about this meeting. The answer points to the moments of the conversation it comes from." } }
+      }
+    },
+    "Co ustaliliśmy?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "What did we agree on?" } }
+      }
+    },
+    "Jakie są zadania i kto je robi?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "What are the tasks and who does them?" } }
+      }
+    },
+    "O co pytał klient?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "What did the client ask about?" } }
+      }
+    },
+    "Szukam odpowiedzi...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Looking for the answer..." } }
+      }
+    },
+    "Wyczyścić pytania?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear the questions?" } }
+      }
+    },
+    "Pytania i odpowiedzi o to spotkanie znikną.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The questions and answers about this meeting will be removed." } }
+      }
+    },
+    "Usuń pytania i odpowiedzi o to spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove the questions and answers about this meeting" } }
+      }
+    },
+    "Nie udało się wyczyścić pytań.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not clear the questions." } }
+      }
+    },
+    "Zapytaj działa po zakończeniu spotkania.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask works once the meeting has ended." } }
+      }
+    },
+    "W tym spotkaniu jest za mało rozmowy, żeby odpowiedzieć.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "There is too little conversation in this meeting to answer." } }
+      }
+    },
+    "Zapytaj jest w Captylo Pro": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask is part of Captylo Pro" } }
+      }
+    },
+    "Zadaj pytanie o spotkanie i dostań krótką odpowiedź z odnośnikami do momentów rozmowy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask a question about a meeting and get a short answer that links to the moments of the conversation." } }
+      }
+    },
+    "Pytania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Questions" } }
+      }
     }
   },
   "version": "1.0"

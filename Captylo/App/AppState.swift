@@ -70,6 +70,9 @@ final class AppState {
     /// "Wygeneruj ponownie" in the "Notatki AI" tab: `meetingNotes.regenerate` with the picked
     /// template. Itself `@Observable` (which meetings are being written, finished runs).
     @ObservationIgnored let meetingNotesRuns: MeetingNotesRuns
+    /// "Zapytaj" about one meeting (Pro): `MeetingAsker` with the meetings model and the AI key.
+    /// Itself `@Observable` (the question being answered per meeting, finished questions).
+    @ObservationIgnored let meetingAskRuns: MeetingAskRuns
     /// The transcript actions in the details (cloud again, AI fix, restore). Itself `@Observable`.
     @ObservationIgnored let meetingTranscriptRuns: MeetingTranscriptRuns
     /// "Zachowuj nagrania spotkań": the last post-processor, and a sweep at launch.
@@ -266,6 +269,19 @@ final class AppState {
         meetingNotesRuns = MeetingNotesRuns { id, templateID in
             guard await access.allows(.meetingAINotes) else { return }
             await meetingNotes.regenerate(meetingID: id, templateID: templateID)
+        }
+        let meetingAsker = MeetingAsker(
+            database: database,
+            client: openRouter,
+            key: openRouterKey,
+            model: meetingModel,
+            reasoning: reasoningPolicy
+        )
+        // The design preview never reaches the network: its questions are seeded.
+        let asksOffline = overrides.isDesignPreview
+        meetingAskRuns = MeetingAskRuns { id, question in
+            guard !asksOffline, await access.allows(.meetingAsk) else { return }
+            _ = await meetingAsker.ask(meetingID: id, question: question)
         }
         meetingTranscriptRuns = MeetingTranscriptRuns { id, kind in
             switch kind {

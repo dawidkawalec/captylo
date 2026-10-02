@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 /// One meeting on a glass panel: the title (a click renames it, also while it records) and
 /// when / how long / which app, "Eksportuj" (copy or save Markdown, save JSON, delete) and the
-/// tabs "Notatki" (the editable notes), "Transkrypt", "Notatki AI". Reads the meeting and its
+/// tabs "Notatki" (the editable notes), "Transkrypt", "Notatki AI", "Zapytaj". Reads the meeting and its
 /// segments from the `Database` actor whenever the selection or `reloadToken` changes.
 ///
 /// While this meeting records, the live bar sits on top (with its warnings and, once per start,
@@ -12,7 +12,8 @@ import UniformTypeIdentifiers
 /// (`MeetingRecorder.liveSegments` and the grey partial lines) and the notes editor, stacked when
 /// narrow. Afterwards a `[mm:ss]` stamp (in the transcript or an AI notes citation) plays its
 /// track from a second before that moment in the player under the tabs, and a "Mówca N" chip
-/// takes a name. "Notatki AI" is `MeetingAINotesView` (Pro notes, or the Pro card in Free).
+/// takes a name. "Notatki AI" is `MeetingAINotesView` (Pro notes, or the Pro card in Free),
+/// "Zapytaj" is `MeetingAskView` (questions about this meeting, Pro), whose citations play too.
 ///
 /// A search hit line clicked in the list arrives as `jump`: once this meeting and its segments
 /// are loaded on "Transkrypt", the transcript scrolls to the line holding the segment and lights
@@ -23,12 +24,14 @@ struct MeetingDetailView: View {
         case notes
         case transcript
         case aiNotes
+        case ask
 
         var title: String {
             switch self {
             case .notes: return String(localized: "Notatki")
             case .transcript: return String(localized: "Transkrypt")
             case .aiNotes: return String(localized: "Notatki AI")
+            case .ask: return String(localized: "Zapytaj")
             }
         }
 
@@ -37,6 +40,7 @@ struct MeetingDetailView: View {
             case .notes: return "note.text"
             case .transcript: return "text.quote"
             case .aiNotes: return "sparkles"
+            case .ask: return "bubble.left.and.text.bubble.right"
             }
         }
     }
@@ -93,6 +97,8 @@ struct MeetingDetailView: View {
     let proAccess: ProAccess
     /// "Wygeneruj ponownie" runs; the section reloads when one finishes.
     let notesRuns: MeetingNotesRuns
+    /// "Zapytaj" questions being answered; the section reloads when one finishes.
+    let askRuns: MeetingAskRuns
     /// "Popraw" above the transcript (Pro): cloud again, AI fix, restore.
     let transcriptRuns: MeetingTranscriptRuns
     @Binding var tab: Tab
@@ -134,6 +140,7 @@ struct MeetingDetailView: View {
         settings: AppSettings,
         proAccess: ProAccess,
         notesRuns: MeetingNotesRuns,
+        askRuns: MeetingAskRuns,
         transcriptRuns: MeetingTranscriptRuns,
         tab: Binding<Tab>,
         onCopy: @escaping (String) -> Void,
@@ -151,6 +158,7 @@ struct MeetingDetailView: View {
         self.settings = settings
         self.proAccess = proAccess
         self.notesRuns = notesRuns
+        self.askRuns = askRuns
         self.transcriptRuns = transcriptRuns
         _tab = tab
         self.onCopy = onCopy
@@ -186,10 +194,16 @@ struct MeetingDetailView: View {
                 if isLive {
                     liveColumns(meeting)
                 } else {
-                    GlassSegmentedPicker(selection: $tab, title: { $0.title }, systemImage: { $0.symbol })
+                    // Four tabs with icons are too wide for a narrow details panel: titles only.
+                    ViewThatFits(in: .horizontal) {
+                        GlassSegmentedPicker(selection: $tab, title: { $0.title }, systemImage: { $0.symbol })
+                        GlassSegmentedPicker(selection: $tab, title: { $0.title })
+                    }
                     if tab == .notes {
                         MeetingNotesEditor(draft: notesDraft) { noteTime(meeting) }
                             .padding(.bottom, 4)
+                    } else if tab == .ask {
+                        ask(meeting)
                     } else {
                         ScrollViewReader { proxy in
                             ScrollView {
@@ -454,7 +468,7 @@ struct MeetingDetailView: View {
     }
 
     /// Scrolled rows fade out under the tabs and toward the panel bottom instead of a hard cut.
-    private static var edgeFade: some View {
+    static var edgeFade: some View {
         VStack(spacing: 0) {
             LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
                 .frame(height: 8)
@@ -581,12 +595,12 @@ struct MeetingDetailView: View {
 
     // MARK: Tabs
 
-    /// "Transkrypt" and "Notatki AI" (scrolled by the caller); "Notatki" is the editor, which
-    /// scrolls itself.
+    /// "Transkrypt" and "Notatki AI" (scrolled by the caller); "Notatki" (the editor) and
+    /// "Zapytaj" (the conversation over its field) scroll themselves.
     @ViewBuilder
     private func tabContent(_ meeting: MeetingRecord) -> some View {
         switch tab {
-        case .notes:
+        case .notes, .ask:
             EmptyView()
         case .transcript:
             VStack(alignment: .leading, spacing: 14) {
@@ -707,5 +721,40 @@ struct MeetingDetailView: View {
             onPlay: meeting.hasAudio ? { seconds in playCitation(at: seconds) } : nil
         )
         .id(id)
+    }
+
+    /// "Zapytaj" (Pro; the Pro card in Free). A new meeting starts with an empty field.
+    private func ask(_ meeting: MeetingRecord) -> some View {
+        let id = meeting.id
+        return MeetingAskView(
+            meeting: meeting,
+            isPro: proAccess.isPro,
+            isRecording: isLive || meeting.status == .recording,
+            pendingQuestion: askRuns.pendingQuestion(id),
+            onAsk: { question in
+                askRuns.ask(meetingID: id, question: question)
+            },
+            onClear: { clearQuestions(id) },
+            onAddKey: onOpenModels,
+            onPlay: meeting.hasAudio ? { seconds in playCitation(at: seconds) } : nil
+        )
+        .id(id)
+    }
+
+    /// "Wyczyść" in "Zapytaj": removes the questions in one step on the database actor (an
+    /// answer may be saving meanwhile) and shows the saved record.
+    private func clearQuestions(_ id: UUID) {
+        let database = self.database
+        Task {
+            do {
+                let saved = try await database.modifyMeeting(id: id) { $0.questions = [] }
+                if let saved, saved.id == meetingID {
+                    meeting = saved
+                }
+            } catch {
+                Log.data.error("Meeting questions could not be cleared: \(error.localizedDescription, privacy: .public)")
+                notice = Notice(text: String(localized: "Nie udało się wyczyścić pytań."), tone: .error)
+            }
+        }
     }
 }

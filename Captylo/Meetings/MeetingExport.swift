@@ -1,11 +1,13 @@
 import Foundation
 
 /// Open, versioned exports. The JSON is the portable format the future phone app, sync and
-/// device share ("captylo.meeting.v1"): ids, tracks, segments with word times, notes, AI notes.
+/// device share ("captylo.meeting.v1"): ids, tracks, segments with word times, notes, AI notes,
+/// questions.
 enum MeetingExport {
     static let formatID = "captylo.meeting.v1"
 
-    /// Title, date and length, the user's notes, the AI notes and the transcript (echo left out).
+    /// Title, date and length, the user's notes, the AI notes, the answered "Zapytaj" questions
+    /// (each a "###" heading over its answer) and the transcript (echo left out).
     static func markdown(_ meeting: MeetingRecord, segments: [MeetingSegmentRecord]) -> String {
         var parts: [String] = ["# \(meeting.title)"]
         let date = meeting.createdAt.formatted(date: .long, time: .shortened)
@@ -21,6 +23,14 @@ enum MeetingExport {
         let summary = meeting.summary?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !summary.isEmpty {
             parts.append("## \(String(localized: "Notatki AI"))\n\n\(demoted(summary))")
+        }
+        let answered = meeting.questions.filter(\.hasAnswer).map { asked in
+            let question = asked.question.components(separatedBy: .newlines).joined(separator: " ")
+            let answer = (asked.answer ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return "### \(question)\n\n\(demoted(demoted(answer)))"
+        }
+        if !answered.isEmpty {
+            parts.append("## \(String(localized: "Pytania"))\n\n" + answered.joined(separator: "\n\n"))
         }
         let lines = segments.filter { !$0.isEcho }.sorted { $0.start < $1.start }.map {
             "**\(MeetingTime.stamp($0.start)) \(meeting.label(for: $0)):** \($0.text)"
@@ -93,6 +103,8 @@ enum MeetingExport {
         let noteLines: [MeetingNoteLine]
         let speakerNames: [String: String]
         let ai: AI?
+        /// "Zapytaj" questions, oldest first, failed ones too (empty when never asked).
+        let questions: [MeetingQuestion]
         let segments: [MeetingSegmentRecord]
 
         /// A recorded track and its file name inside the meeting folder.
@@ -128,6 +140,7 @@ enum MeetingExport {
             noteLines: meeting.noteLines,
             speakerNames: meeting.speakerNames,
             ai: meeting.summary.map { Document.AI(markdown: $0, templateID: meeting.summaryTemplateID, model: meeting.summaryModel) },
+            questions: meeting.questions,
             segments: segments.sorted { $0.start < $1.start }
         )
         let encoder = JSONEncoder()

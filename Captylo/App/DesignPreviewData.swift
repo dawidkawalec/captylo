@@ -63,13 +63,14 @@ enum DesignPreviewData {
         environment["CAPTYLO_PREVIEW_CALENDAR"] == "1"
     }
 
-    /// `CAPTYLO_PREVIEW_TAB=notes|transcript|ai`: the tab the `main-spotkania` details open on
+    /// `CAPTYLO_PREVIEW_TAB=notes|transcript|ai|ask`: the tab the `main-spotkania` details open on
     /// (nil: the app default, "Transkrypt").
     static func meetingTab(environment: [String: String] = ProcessInfo.processInfo.environment) -> MeetingDetailView.Tab? {
         switch environment["CAPTYLO_PREVIEW_TAB"]?.lowercased() {
         case "notes": return .notes
         case "transcript": return .transcript
         case "ai": return .aiNotes
+        case "ask": return .ask
         default: return nil
         }
     }
@@ -396,6 +397,25 @@ enum DesignPreviewData {
         ## Następne kroki
         - Spotkanie z wynikami testu 15 października [1:58]
         """
+        // "Zapytaj": two answered questions, the tab's `CAPTYLO_PREVIEW_TAB=ask` look.
+        meeting.questions = [
+            MeetingQuestion(
+                question: "Ile możemy wydać na test LinkedIn?",
+                answer: "Maksymalnie **5 tys. zł** na dwutygodniowy test na dwóch grupach odbiorców [1:45]. Wyniki porównacie 15 października [1:58].",
+                model: "openai/gpt-4.1-mini",
+                askedAt: createdAt.addingTimeInterval(3_000)
+            ),
+            MeetingQuestion(
+                question: "Jakie są zadania i kto je robi?",
+                answer: """
+                - Mówca 2: trzy warianty grafik do testu, do środy [10:20]
+                - Ja: zapytać agencję o ofertę na wideo, jutro [22:13]
+                - Mówca 2: podsumowanie liczb po spotkaniu [45:00]
+                """,
+                model: "openai/gpt-4.1-mini",
+                askedAt: createdAt.addingTimeInterval(3_060)
+            ),
+        ]
         let lines: [SampleLine] = [
             (4, 11, .me, nil, "Dzień dobry, zaczynamy od budżetu na czwarty kwartał. Anna, pokażesz liczby?"),
             (12.5, 24, .them, "1", "Jasne. We wrześniu wydaliśmy trzydzieści dwa tysiące, z czego ponad połowa poszła na reklamy w wyszukiwarce."),

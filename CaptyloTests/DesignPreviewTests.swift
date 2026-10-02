@@ -79,6 +79,15 @@ struct DesignPreviewTests {
         #expect(!newest.meeting.noteLines.isEmpty)
         #expect(newest.segments.count == 12)
         #expect(newest.segments.contains { $0.speaker != nil && newest.meeting.speakerNames[$0.speaker ?? ""] == nil })
+        // "Zapytaj": two answers whose every citation is a moment of the meeting.
+        #expect(newest.meeting.questions.count == 2)
+        #expect(newest.meeting.questions.allSatisfy { $0.hasAnswer })
+        for asked in newest.meeting.questions {
+            let lines = MeetingNotesDocument(markdown: asked.answer ?? "").sections.flatMap { $0.items }.map { $0.line }
+            let cited = lines.flatMap { $0.citations }
+            #expect(lines.allSatisfy { !$0.citations.isEmpty && !$0.text.contains("[") })
+            #expect(cited.allSatisfy { $0 <= newest.meeting.duration })
+        }
 
         #expect(meetings.contains { $0.meeting.summary == nil && $0.meeting.status == .completed })
         let interrupted = try #require(meetings.first { $0.meeting.status == .interrupted })
@@ -142,6 +151,7 @@ struct DesignPreviewTests {
     /// `CAPTYLO_PREVIEW_TAB` and `CAPTYLO_PREVIEW_FREE` (the "Notatki AI" tab, Pro and Free).
     @Test func previewPicksTheMeetingTabAndPlan() {
         #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "ai"]) == .aiNotes)
+        #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "ask"]) == .ask)
         #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "Notes"]) == .notes)
         #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "transcript"]) == .transcript)
         #expect(DesignPreviewData.meetingTab(environment: ["CAPTYLO_PREVIEW_TAB": "x"]) == nil)

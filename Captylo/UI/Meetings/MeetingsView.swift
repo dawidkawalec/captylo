@@ -39,6 +39,8 @@ struct MeetingsView: View {
         let deletions: Int
         /// "Wygeneruj ponownie" finished: new AI notes (or their error) on a row.
         let notesRuns: Int
+        /// A "Zapytaj" question was answered (or failed): a new entry on a row.
+        let askRuns: Int
         /// A transcript action finished (cloud again, AI fix, restore): new lines on a row.
         let transcriptRuns: Int
     }
@@ -75,6 +77,7 @@ struct MeetingsView: View {
                 processed: recorder.processedCount,
                 deletions: deletions,
                 notesRuns: appState.meetingNotesRuns.finishedCount,
+                askRuns: appState.meetingAskRuns.finishedCount,
                 transcriptRuns: appState.meetingTranscriptRuns.finishedCount
             )) {
                 await reload()
@@ -337,6 +340,7 @@ struct MeetingsView: View {
                 settings: appState.settings,
                 proAccess: appState.proAccess,
                 notesRuns: appState.meetingNotesRuns,
+                askRuns: appState.meetingAskRuns,
                 transcriptRuns: appState.meetingTranscriptRuns,
                 tab: $tab,
                 onCopy: { appState.textOutput.copy($0) },

@@ -121,6 +121,43 @@ struct MeetingExportTests {
         #expect(readback.createdAt == meeting.createdAt)
     }
 
+    /// Answered "Zapytaj" questions follow the AI notes, each question a heading with its answer
+    /// under it; failed ones stay out of the Markdown but are kept in the JSON.
+    @Test func questionsFollowTheAINotesAndGoIntoTheJSON() throws {
+        var (meeting, segments) = sample()
+        let answered = MeetingQuestion(question: "Ile na reklamy?\nI kiedy?", answer: "- 20 tys. [1:05]\n## Uwaga\nnic", model: "model-y")
+        let failed = MeetingQuestion(question: "Kto to zrobi?", error: "Brak klucza AI")
+        meeting.questions = [answered, failed]
+        let md = MeetingExport.markdown(meeting, segments: segments)
+        let ai = try #require(md.range(of: "## \(String(localized: "Notatki AI"))"))
+        let questions = try #require(md.range(of: "## \(String(localized: "Pytania"))\n\n### Ile na reklamy? I kiedy?\n\n- 20 tys. [1:05]\n#### Uwaga\nnic"))
+        let transcript = try #require(md.range(of: "## \(String(localized: "Transkrypt"))"))
+        #expect(ai.lowerBound < questions.lowerBound)
+        #expect(questions.lowerBound < transcript.lowerBound)
+        #expect(!md.contains("Kto to zrobi?"))
+
+        let object = try #require(try JSONSerialization.jsonObject(with: MeetingExport.json(meeting, segments: segments)) as? [String: Any])
+        let exported = try #require(object["questions"] as? [[String: Any]])
+        #expect(exported.count == 2)
+        #expect(exported.first?["answer"] as? String == answered.answer)
+        #expect(exported.first?["model"] as? String == "model-y")
+        #expect(exported.last?["error"] as? String == "Brak klucza AI")
+        struct Readback: Decodable {
+            let questions: [MeetingQuestion]
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let readback = try decoder.decode(Readback.self, from: MeetingExport.json(meeting, segments: segments))
+        #expect(readback.questions.map(\.id) == [answered.id, failed.id])
+
+        // Only failed questions: no section at all.
+        meeting.questions = [failed]
+        #expect(!MeetingExport.markdown(meeting, segments: segments).contains("## \(String(localized: "Pytania"))"))
+        meeting.questions = []
+        let empty = try #require(try JSONSerialization.jsonObject(with: MeetingExport.json(meeting, segments: segments)) as? [String: Any])
+        #expect((empty["questions"] as? [Any])?.isEmpty == true)
+    }
+
     @Test func jsonLeavesOutAIWhenThereAreNoNotes() throws {
         var meeting = MeetingRecord(title: "Bez AI", status: .completed)
         meeting.hasAudio = false

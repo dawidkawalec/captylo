@@ -237,7 +237,7 @@ extension Database {
             \.id, \.createdAt, \.title, \.status, \.duration, \.appName, \.notes, \.noteLinesJSON,
             \.summary, \.summaryTemplateID, \.summaryModel, \.summaryError, \.speakerNamesJSON,
             \.hasAudio, \.interruptionsJSON, \.transcriptModel, \.transcriptAIModel, \.transcriptError,
-            \.calendarEventID, \.participantsJSON,
+            \.calendarEventID, \.participantsJSON, \.questionsJSON,
         ]
     }
 
