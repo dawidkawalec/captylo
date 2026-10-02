@@ -119,6 +119,11 @@ struct DebugCommandTests {
         #expect(DebugCommand.compareModels(url: audio, reference: nil, language: nil).isHeadless)
     }
 
+    @Test func parsesRebuildSearchIndex() {
+        #expect(DebugCommand.parse(["Captylo", "--rebuild-search-index"]) == .rebuildSearchIndex)
+        #expect(DebugCommand.rebuildSearchIndex.isHeadless)
+    }
+
     @Test func compareModelsRejectsMissingValues() {
         #expect(DebugCommand.parse(["Captylo", "--compare-models"]) == nil)
         #expect(DebugCommand.parse(["Captylo", "--compare-models", "--language", "pl"]) == nil)

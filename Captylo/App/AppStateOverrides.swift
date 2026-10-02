@@ -8,6 +8,10 @@ import SwiftData
 struct AppStateOverrides {
     /// SwiftData container used instead of `Store.makeContainer()` (which creates the data directory).
     var modelContainer: ModelContainer?
+    /// Meeting search index file instead of `AppPaths.searchIndex`. With an overridden (or
+    /// fallback) store and no file here the index stays in memory, so the design preview and the
+    /// test host never open the real index.
+    var searchIndexURL: URL?
     /// `dictionary.json` location instead of `AppPaths.dictionaryJSON`.
     var dictionaryURL: URL?
     /// Key store instead of the login Keychain one.

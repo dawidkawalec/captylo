@@ -43,6 +43,34 @@ final class DebugRunner: DebugCommandRunner {
             return await meetingFromFiles(me: me, them: them)
         case .compareModels(let url, let reference, let language):
             return await compareModels(url: url, reference: reference, language: language)
+        case .rebuildSearchIndex:
+            return await rebuildSearchIndex()
+        }
+    }
+
+    // MARK: --rebuild-search-index
+
+    /// The meeting search index rebuilt from the store this run opened (`AppPaths`, so a copy
+    /// through `CAPTYLO_DATA_DIR`). An in-memory fallback store is refused: it would empty the index.
+    private func rebuildSearchIndex() async -> Int32 {
+        guard !appState.storeIsFallback else {
+            Self.emit(["ok": false, "error": "The store could not be opened"])
+            return 1
+        }
+        do {
+            let result = try await appState.meetingSearchIndex.rebuild(from: appState.database)
+            Self.emit([
+                "ok": true,
+                "file": Self.orNull(appState.meetingSearchIndex.url?.path(percentEncoded: false)),
+                "meetings": result.meetings,
+                "rows": result.rows,
+                "ms": result.ms,
+            ])
+            return 0
+        } catch {
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            Self.emit(["ok": false, "error": message])
+            return 1
         }
     }
 

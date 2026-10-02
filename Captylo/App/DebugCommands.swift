@@ -44,10 +44,13 @@ enum DebugCommand: Sendable, Equatable {
     /// texts with timings, peak memory and, with a reference transcript, the word error rate.
     /// `language` is the raw flag value like `--transcribe` (nil = the app setting).
     case compareModels(url: URL, reference: URL?, language: String?)
+    /// `--rebuild-search-index`: empties the meeting search index and fills it again from the
+    /// store at `AppPaths` (point `CAPTYLO_DATA_DIR` at a copy), then prints meetings, rows and ms.
+    case rebuildSearchIndex
 
     static let primaryFlags: [String] = [
         "--transcribe", "--show-widget", "--check", "--reset-onboarding", "--open-section", "--design-preview",
-        "--ax-probe", "--watch-paste", "--meeting-from-files", "--compare-models",
+        "--ax-probe", "--watch-paste", "--meeting-from-files", "--compare-models", "--rebuild-search-index",
     ]
 
     /// Headless commands never start the services; all but `--open-section` go to `DebugRunner`.
@@ -65,6 +68,8 @@ enum DebugCommand: Sendable, Equatable {
         switch args[start] {
         case "--check":
             return .check
+        case "--rebuild-search-index":
+            return .rebuildSearchIndex
         case "--reset-onboarding":
             return .resetOnboarding
         case "--show-widget":

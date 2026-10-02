@@ -57,6 +57,9 @@ final class AppState {
     @ObservationIgnored let learning: SelfLearning
     @ObservationIgnored let modelContainer: ModelContainer
     @ObservationIgnored let database: Database
+    /// Full-text meeting search (FTS5), kept in step by `database`. Checked against the store and
+    /// rebuilt when needed by `startServices()`; until it is ready search uses the store.
+    @ObservationIgnored let meetingSearchIndex: MeetingSearchIndex
 
     // Meetings
     @ObservationIgnored let proAccess: ProAccess
@@ -190,7 +193,13 @@ final class AppState {
         let (container, isFallback) = overrides.modelContainer.map { ($0, false) } ?? Store.makeContainer()
         modelContainer = container
         storeIsFallback = isFallback
-        let database = Database(modelContainer: container)
+        // The real index file only next to the real store: an overridden or fallback store gets
+        // an in-memory index (a fallback store would otherwise wipe the real index).
+        let searchIndexURL = overrides.searchIndexURL
+            ?? ((overrides.modelContainer == nil && !isFallback) ? AppPaths.searchIndex : nil)
+        let searchIndex = MeetingSearchIndex(url: searchIndexURL)
+        meetingSearchIndex = searchIndex
+        let database = Database(modelContainer: container, searchIndex: searchIndex)
         self.database = database
 
         // Meetings: nothing records until the user starts a meeting (the design preview and the
@@ -487,6 +496,14 @@ final class AppState {
         // A crash or quit mid-meeting left its row "recording": it becomes "Przerwane" with the
         // segments it saved. A meeting started right after launch waits for this.
         meetingRecorder.recoverInterruptedMeetings()
+
+        // Search index: opened, checked against the store and rebuilt when missing, old, corrupt
+        // or out of step, on its own queue. Search uses the store until it is ready.
+        let searchIndex = meetingSearchIndex
+        let indexedDatabase = database
+        Task.detached(priority: .utility) {
+            await searchIndex.prepare(database: indexedDatabase)
+        }
 
         // API keys: read once on the Keychain queue so the hot path hits the cache.
         keyStore.preload([KeyStore.Account.openRouter, KeyStore.Account.elevenLabs])

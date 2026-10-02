@@ -4,12 +4,17 @@ import SwiftData
 /// Meeting reads and writes. Like the dictation methods, models never leave the actor: callers get
 /// `MeetingRecord` and `MeetingSegmentRecord`. Every segment is saved the moment it is appended, so
 /// a crash or quit mid-meeting keeps the transcript up to that point.
+///
+/// Every write that changes searchable text tells `searchIndex` after its save succeeded, in the
+/// same actor step (so the index sees the changes in store order). Those calls only queue work
+/// and never throw back here.
 extension Database {
     // MARK: Meeting writes
 
     func createMeeting(_ record: MeetingRecord) throws {
         modelContext.insert(Meeting(record))
         try modelContext.save()
+        searchIndex?.indexTitleNotes(record)
     }
 
     /// Overwrites every field of the row (title, status, notes, AI notes, speaker names...).
@@ -17,8 +22,12 @@ extension Database {
         guard let row = try fetchMeeting(id: record.id) else {
             throw DatabaseError.notFound(record.id)
         }
+        let titleNotesChanged = row.title != record.title || row.notes != record.notes
         row.apply(record)
         try modelContext.save()
+        if titleNotesChanged {
+            searchIndex?.indexTitleNotes(record)
+        }
     }
 
     /// Reads, changes and saves one meeting in a single step on the actor. Writers of different
@@ -29,10 +38,15 @@ extension Database {
     func modifyMeeting(id: UUID, _ change: @Sendable (inout MeetingRecord) -> Void) throws -> MeetingRecord? {
         guard let row = try fetchMeeting(id: id) else { return nil }
         var record = row.record
+        let before = (record.title, record.notes)
         change(&record)
         row.apply(record)
         try modelContext.save()
-        return row.record
+        let saved = row.record
+        if before != (saved.title, saved.notes) {
+            searchIndex?.indexTitleNotes(saved)
+        }
+        return saved
     }
 
     /// Saves one transcribed utterance right away and adds its text to the meeting's search text
@@ -43,6 +57,9 @@ extension Database {
             meeting.searchText += MeetingSearch.transcript([segment.text])
         }
         try modelContext.save()
+        if !segment.isEcho {
+            searchIndex?.indexSegments([segment])
+        }
     }
 
     /// Overwrites the given segments by id (speaker labels after diarization, echo marks). When a
@@ -55,10 +72,19 @@ extension Database {
         )
         let byID = Dictionary(segments.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         var reindex: Set<UUID> = []
+        // The index holds the text, start and track (speaker labels are not in it).
+        var indexed: [MeetingSegmentRecord] = []
         for row in rows {
             guard let record = byID[row.id] else { continue }
             if row.text != record.text || row.isEcho != record.isEcho {
                 reindex.insert(row.meetingID)
+            }
+            if row.text != record.text || row.isEcho != record.isEcho || row.start != record.start
+                || row.track != record.track.rawValue {
+                // `apply` keeps the row's meeting id.
+                var saved = record
+                saved.meetingID = row.meetingID
+                indexed.append(saved)
             }
             row.apply(record)
         }
@@ -66,6 +92,7 @@ extension Database {
             try rebuildSearchText(meetingID: meetingID)
         }
         try modelContext.save()
+        searchIndex?.indexSegments(indexed)
     }
 
     /// The cloud transcript of one track replaces its live segments (speaker labels and AI fixes
@@ -83,6 +110,7 @@ extension Database {
         }
         try rebuildSearchText(meetingID: meetingID)
         try modelContext.save()
+        queueReindex(meetingID: meetingID)
     }
 
     /// "Przywróć transkrypt": every line the AI fixed gets its earlier text back, and the meeting
@@ -103,6 +131,9 @@ extension Database {
             try rebuildSearchText(meetingID: meetingID)
         }
         try modelContext.save()
+        if restored > 0 {
+            queueReindex(meetingID: meetingID)
+        }
         return restored
     }
 
@@ -115,6 +146,7 @@ extension Database {
             modelContext.delete(segment)
         }
         try modelContext.save()
+        searchIndex?.removeMeeting(id)
     }
 
     /// Launch recovery for meetings of a run that ended (crash, quit, power loss).
@@ -133,6 +165,7 @@ extension Database {
         ))
         guard !rows.isEmpty else { return MeetingRecovery() }
         var recovery = MeetingRecovery()
+        var echoMarked: [UUID] = []
         for row in rows {
             guard row.status == recording else {
                 row.status = MeetingStatus.completed.rawValue
@@ -153,8 +186,12 @@ extension Database {
                 }
             }
             try rebuildSearchText(meetingID: row.id)
+            echoMarked.append(row.id)
         }
         try modelContext.save()
+        for id in echoMarked {
+            queueReindex(meetingID: id)
+        }
         return recovery
     }
 
@@ -213,6 +250,39 @@ extension Database {
         return rows.map(\.id)
     }
 
+    // MARK: Search index
+
+    /// Every meeting id, newest first (the search index rebuild).
+    func meetingIDs() throws -> [UUID] {
+        var descriptor = FetchDescriptor<Meeting>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse), SortDescriptor(\.id)]
+        )
+        descriptor.propertiesToFetch = [\.id, \.createdAt]
+        return try modelContext.fetch(descriptor).map(\.id)
+    }
+
+    /// What a full search index build holds for this store: one title row per meeting and one
+    /// row per segment that is not echo. The launch check compares it with the index file.
+    func searchIndexCounts() throws -> MeetingSearchIndex.Counts {
+        MeetingSearchIndex.Counts(
+            meetings: try modelContext.fetchCount(FetchDescriptor<Meeting>()),
+            segments: try modelContext.fetchCount(FetchDescriptor<MeetingSegment>(
+                predicate: #Predicate { $0.isEcho == false }
+            ))
+        )
+    }
+
+    /// Reads one meeting and its segments and queues them on `index` in this same actor step, so
+    /// any later save queues its own index change after this one (the rebuild runs next to live
+    /// writes). A meeting deleted meanwhile is removed from the index.
+    func reindexMeeting(id: UUID, into index: any MeetingIndexing) throws {
+        guard let meeting = try fetchMeeting(id: id)?.record else {
+            index.removeMeeting(id)
+            return
+        }
+        index.indexMeeting(meeting, segments: try fetchSegments(meetingID: id).map(\.record))
+    }
+
     // MARK: Meeting helpers
 
     private static func transcriptOrder(_ a: MeetingSegmentRecord, _ b: MeetingSegmentRecord) -> Bool {
@@ -231,6 +301,17 @@ extension Database {
             predicate: #Predicate { $0.meetingID == meetingID },
             sortBy: [SortDescriptor(\.start)]
         ))
+    }
+
+    /// After a save that rewrote many segments of one meeting: queues its full row set on the
+    /// search index. A failed read is logged, never thrown (the save already succeeded).
+    private func queueReindex(meetingID: UUID) {
+        guard let searchIndex else { return }
+        do {
+            try reindexMeeting(id: meetingID, into: searchIndex)
+        } catch {
+            Log.data.error("Search index update skipped: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     /// Recomputes `Meeting.searchText` from the segments in time order (echo left out).

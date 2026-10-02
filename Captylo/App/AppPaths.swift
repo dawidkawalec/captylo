@@ -23,6 +23,9 @@ enum AppPaths {
     /// SwiftData store (`-wal` / `-shm` live next to it).
     static var store: URL { dataDirectory.appending(path: storeFileName) }
 
+    /// Meeting search index (`MeetingSearchIndex`, FTS5): rebuilt from the store when missing.
+    static var searchIndex: URL { dataDirectory.appending(path: MeetingSearchIndex.fileName) }
+
     static var dictionaryJSON: URL { dataDirectory.appending(path: "dictionary.json") }
     /// Self-learning memory (candidates, learned terms, style), next to the dictionary.
     static var learningJSON: URL { dataDirectory.appending(path: "learning.json") }

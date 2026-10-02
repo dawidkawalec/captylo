@@ -82,9 +82,13 @@ enum DatabaseError: LocalizedError, Sendable, Equatable {
 actor Database: ModelActor {
     nonisolated let modelExecutor: any ModelExecutor
     nonisolated let modelContainer: ModelContainer
+    /// The meeting search index, told about every saved change to searchable meeting text
+    /// (`Database+Meetings`); nil where nothing searches (most tests).
+    nonisolated let searchIndex: (any MeetingIndexing)?
 
-    init(modelContainer: ModelContainer) {
+    init(modelContainer: ModelContainer, searchIndex: (any MeetingIndexing)? = nil) {
         self.modelContainer = modelContainer
+        self.searchIndex = searchIndex
         modelExecutor = DatabaseExecutor(modelContext: ModelContext(modelContainer))
     }
 
