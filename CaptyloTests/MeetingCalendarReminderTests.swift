@@ -207,6 +207,25 @@ struct MeetingCalendarReminderTests {
         #expect(rig.toasts.shown.count == 1)
     }
 
+    /// Occurrences of a recurring event share `EKEvent.eventIdentifier`; a daily standup still
+    /// gets its toast on the next day of the same launch.
+    @Test func recurringOccurrencesSharingAnIdGetOneToastEach() throws {
+        let rig = try rig()
+        let day: TimeInterval = 24 * 60 * 60
+        rig.world.events = [event("standup", title: "Standup", startsIn: 30), event("standup", title: "Standup", startsIn: day + 30)]
+        rig.reminder.tick()
+        #expect(rig.toasts.shown.count == 1)
+        rig.reminder.tick()
+        #expect(rig.toasts.shown.count == 1)
+
+        // The next day, inside the window of the second occurrence.
+        rig.world.now = base.addingTimeInterval(day)
+        rig.reminder.tick()
+        #expect(rig.toasts.shown.count == 2)
+        rig.reminder.tick()
+        #expect(rig.toasts.shown.count == 2)
+    }
+
     @Test func twoEventsInTheWindowGetOneToastEach() throws {
         let rig = try rig()
         rig.world.minutes = 2

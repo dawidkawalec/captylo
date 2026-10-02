@@ -8,9 +8,22 @@ import Foundation
 /// Quiet while a meeting records or starts, for events without a call link (in-person meetings
 /// are started by hand) and more than `graceAfterStart` after the start (the Mac was asleep).
 /// A call the detector offered within the last `detectorQuiet` silences its event for good: the
-/// user already answered once about this call. One toast per event id per launch.
+/// user already answered once about this call. One toast per occurrence (event id and start)
+/// per launch: the occurrences of a recurring event share one `eventIdentifier`, and the app
+/// stays running for days.
 @MainActor
 final class CalendarReminder {
+    /// One occurrence of an event: `eventIdentifier` plus its start.
+    private struct Occurrence: Hashable {
+        let id: String
+        let start: Date
+
+        init(_ event: CalendarEvent) {
+            id = event.id
+            start = event.start
+        }
+    }
+
     nonisolated static let checkInterval: Duration = .seconds(30)
     /// An event still gets its toast this long after its start.
     nonisolated static let graceAfterStart: TimeInterval = 60
@@ -26,8 +39,8 @@ final class CalendarReminder {
     private let openMeetings: @MainActor () -> Void
     private let now: @MainActor () -> Date
 
-    /// Event ids shown (or silenced by a detector offer) since launch.
-    private var reminded: Set<String> = []
+    /// Occurrences shown (or silenced by a detector offer) since launch.
+    private var reminded: Set<Occurrence> = []
     private var loop: Task<Void, Never>?
 
     /// - Parameters:
@@ -86,10 +99,10 @@ final class CalendarReminder {
         let at = now()
         let lead = TimeInterval(max(0, minutesBefore())) * 60
         let detectorOffered = lastDetectorOffer().map { abs(at.timeIntervalSince($0)) < Self.detectorQuiet } ?? false
-        for event in upcoming where event.hasCallLink && !event.isAllDay && !reminded.contains(event.id) {
+        for event in upcoming where event.hasCallLink && !event.isAllDay && !reminded.contains(Occurrence(event)) {
             let untilStart = event.start.timeIntervalSince(at)
             guard untilStart <= lead, untilStart >= -Self.graceAfterStart else { continue }
-            reminded.insert(event.id)
+            reminded.insert(Occurrence(event))
             if detectorOffered {
                 Log.calendar.info("Calendar reminder skipped: the detector offered a call just now")
                 continue
