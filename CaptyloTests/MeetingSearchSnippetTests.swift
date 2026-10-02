@@ -50,6 +50,13 @@ struct MeetingSearchSnippetTests {
         #expect(Self.bold(MeetingSearchSnippet.make("BUDŻETU nie ruszamy", terms: ["budzet"])) == ["BUDŻETU"])
     }
 
+    /// A letter that folds into two ("ß" -> "ss", "ﬁ" -> "fi") still marks the right words.
+    @Test func lettersThatFoldLongerKeepTheMatchInPlace() {
+        #expect(Self.bold(MeetingSearchSnippet.make("Straße i potem oferta", terms: ["ofert"])) == ["oferta"])
+        #expect(Self.bold(MeetingSearchSnippet.make("Plik ﬁnał, a potem oferta", terms: ["final", "ofert"])) == ["ﬁnał", "oferta"])
+        #expect(Self.bold(MeetingSearchSnippet.make("Ulica Straße", terms: ["strasse"])) == ["Straße"])
+    }
+
     @Test func everyWordOfTheQueryIsBold() {
         let snippet = MeetingSearchSnippet.make("Wyślę ofertę jutro rano, a jutro po południu zadzwonię.", terms: ["ofert", "jutro"])
         #expect(Self.bold(snippet) == ["ofertę", "jutro", "jutro"])

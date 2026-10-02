@@ -165,6 +165,28 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         }
     }
 
+    /// Hits ranked per meeting rather than per entry: the `meetings` meetings whose best entry
+    /// ranks best, each with at most `segmentsPerMeeting` segment hits (its best ones) plus its
+    /// title and notes hits, meetings in the order of their best hit. A meeting that says a word
+    /// hundreds of times never crowds out the others, as a flat `limit` over entries would. Nil
+    /// when not ready or the query fails.
+    func meetingHits(terms: [String], all: Bool, meetings: Int, segmentsPerMeeting: Int) async -> [SearchHit]? {
+        guard !terms.isEmpty, meetings > 0, isReady else { return nil }
+        let match = SearchQuery.match(terms, all: all)
+        let perMeeting = max(segmentsPerMeeting, 0)
+        return await onQueue {
+            guard let connection = self.openIfNeeded() else { return nil }
+            do {
+                return try self.meetingHits(match: match, meetings: meetings, perMeeting: perMeeting, in: connection)
+            } catch let failure as SQLiteConnection.Failure {
+                Log.data.error("Search index query failed: SQLite \(failure.code, privacy: .public)")
+                return nil
+            } catch {
+                return nil
+            }
+        }
+    }
+
     // MARK: MeetingIndexing
 
     func indexMeeting(_ meeting: MeetingRecord, segments: [MeetingSegmentRecord]) {
@@ -403,15 +425,50 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         try statement.step()
     }
 
+    /// The weighted bm25 of an entry: title and notes count more than a transcript line.
+    private static let score = "bm25(entries) * CASE kind WHEN 'title' THEN 2.0 WHEN 'notes' THEN 1.5 ELSE 1.0 END"
+
     private func hits(match: String, limit: Int, in connection: SQLiteConnection) throws -> [SearchHit] {
         let statement = try connection.statement("""
-            SELECT meeting, segment, kind, start, track,
-                   bm25(entries) * CASE kind WHEN 'title' THEN 2.0 WHEN 'notes' THEN 1.5 ELSE 1.0 END AS score
+            SELECT meeting, segment, kind, start, track, \(Self.score) AS score
             FROM entries WHERE entries MATCH ? ORDER BY score LIMIT ?
             """)
         defer { statement.reset() }
         try statement.bind(1, match)
         try statement.bind(2, Int64(limit))
+        return try read(statement)
+    }
+
+    /// Every match is scored once (`scored`), the meetings are ranked by their best entry
+    /// (`best`, cut to `meetings`), and each meeting keeps its best `perMeeting` segment hits
+    /// (title and notes are one row each).
+    private func meetingHits(match: String, meetings: Int, perMeeting: Int, in connection: SQLiteConnection) throws -> [SearchHit] {
+        let statement = try connection.statement("""
+            WITH scored AS MATERIALIZED (
+                SELECT meeting, segment, kind, start, track, \(Self.score) AS score
+                FROM entries WHERE entries MATCH ?1
+            ),
+            best AS (
+                SELECT meeting, min(score) AS best FROM scored GROUP BY meeting ORDER BY best, meeting LIMIT ?2
+            ),
+            numbered AS (
+                SELECT scored.*, best.best AS best,
+                       row_number() OVER (PARTITION BY scored.meeting, scored.kind ORDER BY scored.score) AS place
+                FROM scored JOIN best ON best.meeting = scored.meeting
+            )
+            SELECT meeting, segment, kind, start, track, score FROM numbered
+            WHERE kind != 'segment' OR place <= ?3
+            ORDER BY best, meeting, score
+            """)
+        defer { statement.reset() }
+        try statement.bind(1, match)
+        try statement.bind(2, Int64(meetings))
+        try statement.bind(3, Int64(perMeeting))
+        return try read(statement)
+    }
+
+    /// Rows of `meeting, segment, kind, start, track, score` as hits; a row that does not parse is skipped.
+    private func read(_ statement: SQLiteStatement) throws -> [SearchHit] {
         var hits: [SearchHit] = []
         while try statement.step() {
             guard let meetingID = UUID(uuidString: statement.text(0)),

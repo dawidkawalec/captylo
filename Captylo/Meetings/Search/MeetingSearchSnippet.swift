@@ -74,24 +74,16 @@ struct MeetingSearchSnippet: Sendable, Equatable {
 
     /// Every word that contains a term (folded), as character ranges of `characters`, merged.
     private static func matches(in characters: [Character], terms: [String]) -> [Range<Int>] {
-        // The folded text, and for each folded character the original one it came from.
-        var folded: [Character] = []
-        var owner: [Int] = []
-        for (offset, character) in characters.enumerated() {
-            for piece in MeetingSearch.fold(String(character)) {
-                folded.append(piece)
-                owner.append(offset)
-            }
-        }
+        let (folded, owner) = fold(characters)
         var ranges: [Range<Int>] = []
         for term in terms {
             let needle = Array(term)
             guard !needle.isEmpty, needle.count <= folded.count else { continue }
             var position = 0
             while position + needle.count <= folded.count {
-                if Array(folded[position..<(position + needle.count)]) == needle {
-                    var lower = owner[position]
-                    var upper = owner[position + needle.count - 1] + 1
+                if folded[position..<(position + needle.count)].elementsEqual(needle) {
+                    var lower = owner?[position] ?? position
+                    var upper = (owner?[position + needle.count - 1] ?? (position + needle.count - 1)) + 1
                     while lower > 0, isWordCharacter(characters[lower - 1]) { lower -= 1 }
                     while upper < characters.count, isWordCharacter(characters[upper]) { upper += 1 }
                     ranges.append(lower..<upper)
@@ -110,6 +102,28 @@ struct MeetingSearchSnippet: Sendable, Equatable {
             }
         }
         return merged
+    }
+
+    /// The folded text, and for each folded character the offset of the original one it came
+    /// from. The whole text is folded in one go; when that keeps the length (Polish letters, plain
+    /// text) folded and original line up one to one and `owner` is nil. A letter that folds into
+    /// more ("ß" -> "ss") makes the length differ: then each character is folded on its own.
+    private static func fold(_ characters: [Character]) -> (folded: [Character], owner: [Int]?) {
+        let whole = Array(MeetingSearch.fold(String(characters)))
+        if whole.count == characters.count {
+            return (whole, nil)
+        }
+        var folded: [Character] = []
+        var owner: [Int] = []
+        folded.reserveCapacity(whole.count)
+        owner.reserveCapacity(whole.count)
+        for (offset, character) in characters.enumerated() {
+            for piece in MeetingSearch.fold(String(character)) {
+                folded.append(piece)
+                owner.append(offset)
+            }
+        }
+        return (folded, owner)
     }
 
     private static func isWordCharacter(_ character: Character) -> Bool {

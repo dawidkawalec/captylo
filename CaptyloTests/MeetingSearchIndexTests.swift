@@ -119,6 +119,39 @@ struct MeetingSearchIndexTests {
         #expect(hits.map(\.rank) == hits.map(\.rank).sorted())
     }
 
+    /// Grouped per meeting in SQL: every matching meeting is there however many hits another
+    /// one has, each with at most its best segment hits plus its title and notes hits, meetings
+    /// in the order of their best hit.
+    @Test func meetingHitsKeepEveryMeetingAndCapItsSegments() async throws {
+        let (index, db) = try Self.fixture()
+        var busy = MeetingRecord(title: "Klient premium")
+        busy.notes = "zadzwonić do klienta"
+        try await db.createMeeting(busy)
+        try await db.replaceSegments(meetingID: busy.id, track: .them, with: (0..<400).map { line in
+            Self.segment(busy, "klient klient klient", start: Double(line))
+        })
+        let quiet = MeetingRecord(title: "Standup")
+        try await db.createMeeting(quiet)
+        try await db.appendSegment(Self.segment(quiet, "Omawialiśmy plan wdrożenia, testy, terminy i jednego klienta", start: 50))
+
+        // The flat search reads 300 entries: all of the busy meeting.
+        let flat = try #require(await index.search("klient", limit: 300))
+        #expect(!flat.contains { $0.meetingID == quiet.id })
+
+        let hits = try #require(await index.meetingHits(terms: ["klien"], all: true, meetings: 10, segmentsPerMeeting: 2))
+        let meetings = hits.map(\.meetingID).reduce(into: [UUID]()) { if !$0.contains($1) { $0.append($1) } }
+        #expect(meetings == [busy.id, quiet.id])
+        let busyHits = hits.filter { $0.meetingID == busy.id }
+        #expect(busyHits.filter { $0.kind == .segment }.count == 2)
+        #expect(busyHits.filter { $0.kind == .title }.count == 1)
+        #expect(busyHits.filter { $0.kind == .notes }.count == 1)
+        #expect(hits.filter { $0.meetingID == quiet.id }.map(\.kind) == [.segment])
+
+        let first = try #require(await index.meetingHits(terms: ["klien"], all: true, meetings: 1, segmentsPerMeeting: 2))
+        #expect(Set(first.map(\.meetingID)) == [busy.id])
+        #expect(await index.meetingHits(terms: [], all: true, meetings: 10, segmentsPerMeeting: 2) == nil)
+    }
+
     // MARK: Sync with the store
 
     @Test func echoIsNeverIndexedAndLeavesWhenMarked() async throws {
@@ -367,6 +400,15 @@ struct MeetingSearchIndexTests {
             print("Search index: \"\(query)\" over 120000 rows -> \(hits.count) hits in \(elapsed)")
             #expect(!hits.isEmpty)
             #expect(elapsed < .milliseconds(500))
+
+            // The list asks per meeting: every one of the 200 meetings is ranked.
+            let terms = try #require(SearchQuery.terms(query))
+            let groupedStart = ContinuousClock.now
+            let grouped = try #require(await index.meetingHits(terms: terms, all: true, meetings: 200, segmentsPerMeeting: 2))
+            let groupedElapsed = ContinuousClock.now - groupedStart
+            print("Search index: \"\(query)\" per meeting -> \(Set(grouped.map(\.meetingID)).count) meetings in \(groupedElapsed)")
+            #expect(!grouped.isEmpty)
+            #expect(groupedElapsed < .milliseconds(500))
         }
     }
 }

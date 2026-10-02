@@ -1,12 +1,11 @@
 import Foundation
 
 /// The Spotkania list search over `MeetingSearchIndex`: queries of 3+ characters with a word of
-/// 3+ letters ask the index, group its hits per meeting (best rank first, then newest), read
-/// those meetings and the hit segments from the store and build up to two hit lines per row.
+/// 3+ letters ask the index for hits ranked per meeting (`meetingHits`, so every matching meeting
+/// counts however many hits another has), order them (best rank first, then newest), read those
+/// meetings and the hit segments from the store and build up to two hit lines per row.
 /// Shorter queries, or an index that is not ready, keep `Database.meetings(query:limit:)`.
 enum MeetingSearchResults {
-    /// Index hits read per search; a few meetings with many hits still leave room for the rest.
-    static let hitLimit = 300
     /// Hit lines under one row.
     static let segmentHitsPerMeeting = 2
     /// Shorter queries never ask the index (the trigram tokenizer needs 3 characters).
@@ -27,11 +26,16 @@ enum MeetingSearchResults {
         return SearchQuery.terms(trimmed)
     }
 
-    /// Runs the index search and reads what the rows need. Nil when the query is too short or
-    /// the index cannot answer (not ready, a failed query): the caller uses the old search.
+    /// Runs the index search and reads what the rows need, at most `limit` meetings. Nil when
+    /// the query is too short or the index cannot answer (not ready, a failed query): the caller
+    /// uses the old search. `@concurrent`: the grouping and the snippets run off the caller's
+    /// actor (the list calls it on every keystroke from the main actor).
+    @concurrent
     static func load(query: String, index: MeetingSearchIndex, database: Database, limit: Int) async throws -> Loaded? {
         guard let terms = indexTerms(for: query),
-              let hits = await index.search(terms: terms, all: true, limit: hitLimit) else { return nil }
+              let hits = await index.meetingHits(
+                  terms: terms, all: true, meetings: limit, segmentsPerMeeting: segmentHitsPerMeeting
+              ) else { return nil }
         let matches = group(hits)
         let fetched = try await database.meetings(ids: matches.map(\.meetingID))
         let meetings = ordered(matches, meetings: fetched, limit: limit)

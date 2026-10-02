@@ -145,6 +145,40 @@ struct MeetingSearchResultsTests {
         #expect(none.meetings.isEmpty)
     }
 
+    /// A meeting that says the word hundreds of times must not crowd out the others: every
+    /// matching meeting is a row, however many hits the busy one has.
+    @Test func aBusyMeetingLeavesRoomForEveryOtherMatch() async throws {
+        let (index, db) = try Self.fixture()
+        let busy = MeetingRecord(title: "Sprzedaż")
+        try await db.createMeeting(busy)
+        let busyLines = (0..<350).map { line in
+            MeetingSegmentRecord(meetingID: busy.id, track: .them, start: Double(line * 5), end: Double(line * 5 + 4),
+                                 text: "klient klient pyta o klienta")
+        }
+        try await db.replaceSegments(meetingID: busy.id, track: .them, with: busyLines)
+        var quiet: [MeetingRecord] = []
+        for number in 0..<3 {
+            let meeting = MeetingRecord(title: "Standup \(number)")
+            try await db.createMeeting(meeting)
+            try await db.appendSegment(MeetingSegmentRecord(
+                meetingID: meeting.id, track: .me, start: 10, end: 20,
+                text: "Długo omawialiśmy plan wdrożenia, testy, terminy i na końcu jednego klienta"
+            ))
+            quiet.append(meeting)
+        }
+
+        let loaded = try #require(try await MeetingSearchResults.load(query: "klient", index: index, database: db, limit: 200))
+        #expect(Set(loaded.meetings.map(\.id)) == Set([busy.id] + quiet.map(\.id)))
+        #expect(loaded.meetings.first?.id == busy.id)
+        #expect(loaded.lines[busy.id]?.count == MeetingSearchResults.segmentHitsPerMeeting)
+        for meeting in quiet {
+            #expect(loaded.lines[meeting.id]?.count == 1)
+        }
+        // The list limit still caps the rows.
+        let capped = try #require(try await MeetingSearchResults.load(query: "klient", index: index, database: db, limit: 2))
+        #expect(capped.meetings.count == 2)
+    }
+
     @Test func loadFallsBackForShortQueriesAndAnIndexNotReady() async throws {
         let (index, db) = try Self.fixture()
         try await db.createMeeting(MeetingRecord(title: "Oferta"))
