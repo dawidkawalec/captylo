@@ -6638,9 +6638,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Access for AI assistants (MCP)" } }
       }
     },
-    "Twój asystent AI (np. Claude Desktop, Cursor) może czytać i przeszukiwać spotkania na tym Macu. Tylko odczyt, nic nie wysyłamy.": {
+    "Twój asystent AI (np. Claude Desktop, Cursor) może czytać i przeszukiwać spotkania na tym Macu. Captylo niczego nie zmienia ani nie wysyła, ale asystent przekazuje przeczytany tekst do swojej usługi.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Your AI assistant (e.g. Claude Desktop, Cursor) can read and search the meetings on this Mac. Read-only, we send nothing anywhere." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Your AI assistant (e.g. Claude Desktop, Cursor) can read and search the meetings on this Mac. Captylo changes and sends nothing, but the assistant passes what it reads to its own service." } }
       }
     },
     "Skopiuj konfigurację": {

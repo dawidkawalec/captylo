@@ -641,7 +641,8 @@ struct MeetingDetailView: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                if proAccess.isPro, !segments.isEmpty || meeting.hasAudio {
+                if proAccess.allows(.meetingTranscriptCorrection) || proAccess.allows(.cloudMeetingTranscription),
+                   !segments.isEmpty || meeting.hasAudio {
                     transcriptMenu(meeting)
                         .disabled(busy)
                 }
@@ -660,13 +661,13 @@ struct MeetingDetailView: View {
             } label: {
                 Label("Popraw przez AI", systemImage: "wand.and.stars")
             }
-            .disabled(segments.isEmpty)
+            .disabled(segments.isEmpty || !proAccess.allows(.meetingTranscriptCorrection))
             Button {
                 transcriptRuns.start(.cloud, meetingID: id)
             } label: {
                 Label("Transkrybuj ponownie w chmurze", systemImage: "cloud")
             }
-            .disabled(!meeting.hasAudio)
+            .disabled(!meeting.hasAudio || !proAccess.allows(.cloudMeetingTranscription))
             if meeting.transcriptAIModel != nil || segments.contains(where: { $0.originalText != nil }) {
                 Divider()
                 Button {
@@ -707,7 +708,7 @@ struct MeetingDetailView: View {
         let id = meeting.id
         return MeetingAINotesView(
             meeting: meeting,
-            isPro: proAccess.isPro,
+            isPro: proAccess.allows(.meetingAINotes),
             isPending: isLive || meeting.status == .processing,
             isRunning: notesRuns.isRunning(id),
             onRegenerate: { templateID in
@@ -728,7 +729,7 @@ struct MeetingDetailView: View {
         let id = meeting.id
         return MeetingAskView(
             meeting: meeting,
-            isPro: proAccess.isPro,
+            isPro: proAccess.allows(.meetingAsk),
             isRecording: isLive || meeting.status == .recording,
             pendingQuestion: askRuns.pendingQuestion(id),
             onAsk: { question in

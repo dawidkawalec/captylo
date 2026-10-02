@@ -350,6 +350,15 @@ struct MeetingSearchIndexTests {
         }
         #expect(caughtUp.meetings == 2)
         #expect(await behind.search("harmonogram", limit: 10)?.map(\.meetingID) == [later.id])
+
+        // A rebuild cut short (no finished-build mark), even with matching counts: rebuilt.
+        try SQLiteConnection(path: url.path(percentEncoded: false)).execute("DELETE FROM meta")
+        let interrupted = MeetingSearchIndex(url: url)
+        guard case .rebuilt = await interrupted.prepare(database: db) else {
+            Issue.record("expected a rebuild when the last build never finished")
+            return
+        }
+        #expect(await MeetingSearchIndex(url: url).prepare(database: db) == .ready)
     }
 
     @Test func aCorruptFileIsRecreated() async throws {

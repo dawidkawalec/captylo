@@ -505,6 +505,16 @@ struct LibraryAskTests {
         #expect(LibraryCitation.parse("[S1 1:45]", meetings: []).isEmpty)
     }
 
+    /// "Źródła" lists only the meetings the answer cites, keeping their S numbers.
+    @Test func sourcesListOnlyTheCitedMeetings() {
+        let sources = (1...3).map { LibraryAnswer.Source(meetingID: UUID(), title: "Spotkanie \($0)", createdAt: Date()) }
+        let cited = LibraryAnswer(question: "?", answer: "Tak [S3 1:00], potem [S3 2:00] i [S1].", sources: sources)
+        #expect(cited.citedSources.map(\.number) == [1, 3])
+        #expect(cited.citedSources.map(\.source.title) == ["Spotkanie 1", "Spotkanie 3"])
+        let notFound = LibraryAnswer(question: "?", answer: "Nie znalazłem tego w spotkaniach.", sources: sources)
+        #expect(notFound.citedSources.isEmpty)
+    }
+
     /// A citation jumps to the line spoken at that second: the one spanning it, else the nearest.
     @Test func aCitedSecondFindsItsTranscriptLine() {
         let meeting = UUID()

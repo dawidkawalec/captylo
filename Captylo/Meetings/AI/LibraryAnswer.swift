@@ -31,4 +31,13 @@ struct LibraryAnswer: Sendable, Equatable, Identifiable {
     var citations: [LibraryCitation] {
         LibraryCitation.parse(answer ?? "", meetings: sources.map(\.meetingID))
     }
+
+    /// The sources the answer actually cites, with their `S` number, in number order: "Źródła"
+    /// never lists a meeting the answer did not use (e.g. under "Nie znalazłem...").
+    var citedSources: [(number: Int, source: Source)] {
+        let numbers = Set(citations.map(\.number))
+        return sources.enumerated().compactMap { offset, source in
+            numbers.contains(offset + 1) ? (offset + 1, source) : nil
+        }
+    }
 }

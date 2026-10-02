@@ -93,7 +93,10 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         guard !isReadOnly else { return .unavailable }
         let state: (opened: Bool, needsRebuild: Bool, counts: Counts?) = await onQueue {
             guard let connection = self.openIfNeeded() else { return (false, false, nil) }
-            return (true, self.needsRebuild, try? self.counts(in: connection))
+            // No `meta.meetings`: the last rebuild never finished (a crash or quit midway), and a
+            // read-only reader (MCP) would ignore the file until a full build marks it again.
+            let finished = (try? connection.integer("SELECT count(*) FROM meta WHERE key = 'meetings'")) == 1
+            return (true, self.needsRebuild || !finished, try? self.counts(in: connection))
         }
         guard state.opened else {
             setReady(false)

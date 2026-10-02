@@ -22,7 +22,7 @@ struct LibraryAnswerView: View {
             }
             if answer.hasAnswer, let markdown = answer.answer {
                 lines(markdown)
-                if !answer.sources.isEmpty {
+                if !answer.citedSources.isEmpty {
                     sources
                 }
             } else {
@@ -93,12 +93,13 @@ struct LibraryAnswerView: View {
                 .foregroundStyle(GlassColor.textSecondary)
                 .padding(.bottom, 2)
                 .accessibilityAddTraits(.isHeader)
-            ForEach(Array(answer.sources.enumerated()), id: \.offset) { offset, source in
+            ForEach(answer.citedSources, id: \.number) { cited in
+                let source = cited.source
                 Button {
                     onOpen(source.meetingID, nil)
                 } label: {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(verbatim: "S\(offset + 1)")
+                        Text(verbatim: "S\(cited.number)")
                             .font(GlassFont.ui(12, .medium).monospacedDigit())
                             .foregroundStyle(GlassColor.textTertiary)
                             .frame(minWidth: 22, alignment: .leading)
