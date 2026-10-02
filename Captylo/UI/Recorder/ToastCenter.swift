@@ -10,6 +10,16 @@ struct Toast: Sendable {
         case info
         case error
         case action(buttonTitle: String, action: @MainActor () -> Void)
+
+        /// Name for the log. The message itself never goes to the log: calendar toasts carry
+        /// the event title.
+        var logName: String {
+            switch self {
+            case .info: return "info"
+            case .error: return "error"
+            case .action: return "action"
+            }
+        }
     }
 
     let message: String
@@ -160,7 +170,7 @@ final class ToastCenter: ToastPresenting {
             guard !Task.isCancelled else { return }
             self?.fadeOutAndPresentNext()
         }
-        Log.ui.debug("toast shown: \(toast.message, privacy: .public)")
+        Log.ui.debug("toast shown (\(toast.kind.logName, privacy: .public), \(toast.message.count, privacy: .public) chars)")
     }
 
     private func fadeOutAndPresentNext() {
