@@ -47,6 +47,46 @@ struct MeetingEchoFilterTests {
         #expect(changed.first?.isEcho == true)
     }
 
+    /// Words of `text` one every 0.4 s from `start` (what a pass stores, in meeting time).
+    private func timed(_ track: MeetingTrack, _ start: Double, _ text: String) -> MeetingSegmentRecord {
+        let parts = text.split(separator: " ").map(String.init)
+        let words = parts.enumerated().map { index, word in
+            MeetingWord(text: word, start: start + Double(index) * 0.4, end: start + Double(index) * 0.4 + 0.3)
+        }
+        var record = seg(track, start, start + Double(parts.count) * 0.4, text)
+        record.words = words
+        return record
+    }
+
+    /// The owner's meeting: "Ja" said his sentence and the mic then caught hers from the speakers.
+    @Test func echoRunIsCutFromAMixedMicSegment() {
+        let them = timed(.them, 14, "Tylko musiałaby pani podesłać jakieś swoje zdjęcia.")
+        let me = timed(.me, 10, "Robiliśmy już parę rzeczy takich, one fajnie wyglądały, więc możemy pójść. Tylko musiałaby pani podesłać jakieś swoje zdjęcia.")
+        let changed = EchoFilter.mark([them, me])
+        #expect(changed.count == 1)
+        #expect(changed.first?.isEcho == false)
+        #expect(changed.first?.text == "Robiliśmy już parę rzeczy takich, one fajnie wyglądały, więc możemy pójść.")
+        #expect(changed.first?.words.count == 11)
+    }
+
+    @Test func shortRepeatOfTheOtherSideStays() {
+        let them = timed(.them, 10, "Coś niebieskiego, ale przytłumiony, przygaszony.")
+        let me = timed(.me, 11, "No właśnie przytłumiony, przygaszony, taki morski kolor.")
+        #expect(EchoFilter.mark([them, me]).isEmpty)
+    }
+
+    @Test func sameRunFarApartInTimeStays() {
+        let them = timed(.them, 100, "Tylko musiałaby pani podesłać jakieś swoje zdjęcia.")
+        let me = timed(.me, 10, "Dobra. Tylko musiałaby pani podesłać jakieś swoje zdjęcia, prawda?")
+        #expect(EchoFilter.mark([them, me]).isEmpty)
+    }
+
+    @Test func segmentsWithoutWordTimesAreOnlyFlagged() {
+        let them = seg(.them, 14, 18, "Tylko musiałaby pani podesłać jakieś swoje zdjęcia.")
+        let me = seg(.me, 10, 18, "Robiliśmy już parę rzeczy takich, one fajnie wyglądały. Tylko musiałaby pani podesłać jakieś swoje zdjęcia.")
+        #expect(EchoFilter.mark([them, me]).isEmpty)
+    }
+
     @Test func markClearsAnEchoFlagThatNoLongerHolds() {
         let them = seg(.them, 10, 14, "Wdrożenie przesuwamy na piątek.")
         var stale = seg(.me, 20, 22, "Dobra, to ja napiszę do klienta.")
