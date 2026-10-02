@@ -64,6 +64,8 @@
 	<false/>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>Captylo nagrywa dźwięk spotkania (głosy rozmówców), aby zrobić z niego transkrypt i notatki.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Captylo czyta Twój kalendarz, aby nazwać spotkanie, zapisać uczestników i przypomnieć o nagraniu.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright 2026 Dawid Kawalec</string>
 	<key>NSMicrophoneUsageDescription</key>

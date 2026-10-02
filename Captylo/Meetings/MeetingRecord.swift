@@ -31,6 +31,10 @@ struct MeetingRecord: Sendable, Equatable, Identifiable {
     var transcriptAIModel: String? = nil
     /// Why the last cloud transcript or AI fix failed (Polish); nil when it worked.
     var transcriptError: String? = nil
+    /// The calendar event this recording was linked to (`CalendarEvent.id`), nil when none.
+    var calendarEventID: String? = nil
+    /// Attendee names from the calendar event (the user left out), empty without an event.
+    var participants: [String] = []
 
     /// What the title field in the details saves: `typed` on one line and trimmed, or nil when
     /// that is empty or the title it already has (nothing to save).

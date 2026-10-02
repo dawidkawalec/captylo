@@ -55,6 +55,30 @@ struct MeetingExportTests {
         #expect(mine.lowerBound < theirs.lowerBound)
     }
 
+    @Test func participantsAppearUnderTheDateAndInTheJSON() throws {
+        var (meeting, segments) = sample()
+        meeting.participants = ["Anna Nowak", "Piotr"]
+        meeting.calendarEventID = "evt-42"
+        let md = MeetingExport.markdown(meeting, segments: segments)
+        let date = try #require(md.range(of: " · 2:05"))
+        let participants = try #require(md.range(of: "Uczestnicy: Anna Nowak, Piotr"))
+        let notes = try #require(md.range(of: "## Moje notatki"))
+        #expect(date.upperBound < participants.lowerBound)
+        #expect(participants.upperBound < notes.lowerBound)
+
+        let object = try #require(try JSONSerialization.jsonObject(with: MeetingExport.json(meeting, segments: segments)) as? [String: Any])
+        #expect(object["participants"] as? [String] == ["Anna Nowak", "Piotr"])
+        #expect(object["calendarEventID"] as? String == "evt-42")
+
+        // Without a calendar event: no line, an empty list and no id.
+        meeting.participants = []
+        meeting.calendarEventID = nil
+        #expect(!MeetingExport.markdown(meeting, segments: segments).contains("Uczestnicy"))
+        let plain = try #require(try JSONSerialization.jsonObject(with: MeetingExport.json(meeting, segments: segments)) as? [String: Any])
+        #expect((plain["participants"] as? [String])?.isEmpty == true)
+        #expect(plain["calendarEventID"] == nil)
+    }
+
     @Test func markdownSkipsEmptySections() {
         let meeting = MeetingRecord(title: "Pusta rozmowa", status: .completed, duration: 3)
         let echoOnly = [MeetingSegmentRecord(meetingID: meeting.id, track: .me, start: 0, end: 1, text: "echo", isEcho: true)]

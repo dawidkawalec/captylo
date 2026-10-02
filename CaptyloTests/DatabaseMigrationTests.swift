@@ -66,6 +66,55 @@ enum CaptyloStoreSchemaV1 {
     }
 }
 
+/// The `Meeting` row as M1 shipped it (no `calendarEventID`, no `participantsJSON`), frozen so
+/// the lightweight migration of a store with meetings can be tested. Entity name matches the
+/// app's `Meeting`; the dictation tables are today's.
+enum CaptyloStoreSchemaMeetingsM1 {
+    @Model
+    final class Meeting {
+        @Attribute(.unique) var id: UUID = UUID()
+        var createdAt: Date = Date()
+        var title: String = ""
+        var status: String = "completed"
+        var duration: Double = 0
+        var appName: String? = nil
+        var notes: String = ""
+        var noteLinesJSON: Data = Data()
+        var summary: String? = nil
+        var summaryTemplateID: String? = nil
+        var summaryModel: String? = nil
+        var summaryError: String? = nil
+        var speakerNamesJSON: Data = Data()
+        var hasAudio: Bool = true
+        var interruptionsJSON: Data = Data()
+        var transcriptModel: String? = nil
+        var transcriptAIModel: String? = nil
+        var transcriptError: String? = nil
+        var searchText: String = ""
+        var titleNotesSearchText: String = ""
+
+        init(id: UUID, createdAt: Date, title: String, duration: Double) {
+            self.id = id
+            self.createdAt = createdAt
+            self.title = title
+            self.duration = duration
+        }
+    }
+
+    static var schema: Schema { Schema([Dictation.self, UsageStat.self, Meeting.self]) }
+
+    static func container(at url: URL) throws -> ModelContainer {
+        let configuration = ModelConfiguration(
+            Store.configurationName,
+            schema: schema,
+            url: url,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
+        return try ModelContainer(for: schema, configurations: configuration)
+    }
+}
+
 @Suite(.serialized)
 struct DatabaseMigrationTests {
     private static func makeFolder() throws -> URL {
@@ -185,6 +234,43 @@ struct DatabaseMigrationTests {
         #expect(try await reopened.meeting(id: meeting.id)?.title == "Pierwsze spotkanie")
         #expect(try await reopened.segments(meetingID: meeting.id).map(\.text) == ["dzień dobry"])
         #expect(try await reopened.meetings(query: "dzien dobry", limit: 5).map(\.id) == [meeting.id])
+    }
+
+    /// A store from M1 (meetings without a calendar event or participants) opens, the old row
+    /// reads back with no participants, and a meeting with participants round-trips.
+    @Test func storeWithoutCalendarColumnsOpensAndKeepsParticipants() async throws {
+        let folder = try Self.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let url = folder.appending(path: Store.configurationName + ".store")
+        let oldID = UUID()
+        do {
+            let container = try CaptyloStoreSchemaMeetingsM1.container(at: url)
+            let context = ModelContext(container)
+            context.insert(CaptyloStoreSchemaMeetingsM1.Meeting(id: oldID, createdAt: Self.base, title: "Z M1", duration: 90))
+            try context.save()
+        }
+
+        let database = Database(modelContainer: try Store.openContainer(at: url))
+        let old = try #require(try await database.meeting(id: oldID))
+        #expect(old.title == "Z M1")
+        #expect(old.duration == 90)
+        #expect(old.calendarEventID == nil)
+        #expect(old.participants.isEmpty)
+
+        var planned = MeetingRecord(title: "Budżet Q4")
+        planned.calendarEventID = "evt-1"
+        planned.participants = ["Anna Nowak", "Piotr Kowalski"]
+        try await database.createMeeting(planned)
+        try await database.modifyMeeting(id: oldID) { $0.participants = ["Ewa"] }
+
+        let reopened = Database(modelContainer: try Store.openContainer(at: url))
+        let saved = try #require(try await reopened.meeting(id: planned.id))
+        #expect(saved.calendarEventID == "evt-1")
+        #expect(saved.participants == ["Anna Nowak", "Piotr Kowalski"])
+        #expect(try await reopened.meeting(id: oldID)?.participants == ["Ewa"])
+        let listed = try await reopened.meetings(query: "", limit: 5)
+        #expect(listed.first { $0.id == planned.id }?.participants == ["Anna Nowak", "Piotr Kowalski"])
+        #expect(listed.first { $0.id == planned.id }?.calendarEventID == "evt-1")
     }
 
     /// Rolling back to a build without meetings must not lose the history: the pre-meeting

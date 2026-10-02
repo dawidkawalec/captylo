@@ -208,6 +208,65 @@ actor ScriptedDiarizer: SpeakerDiarizing {
     }
 }
 
+/// A calendar the test fills by hand: a fixed access state, what a prompt would grant, the
+/// events every read returns, and `signalChange()` for "the calendar database changed".
+final class FakeCalendarSource: CalendarEventSource, @unchecked Sendable {
+    private struct State {
+        var access: CalendarAccess
+        var grants: CalendarAccess
+        var events: [CalendarEvent]
+        var requestCount = 0
+        var readCount = 0
+        var lastWindow: (from: Date, to: Date)?
+        var listeners: [AsyncStream<Void>.Continuation] = []
+    }
+
+    private let state: OSAllocatedUnfairLock<State>
+
+    init(access: CalendarAccess, grants: CalendarAccess, events: [CalendarEvent]) {
+        state = OSAllocatedUnfairLock(initialState: State(access: access, grants: grants, events: events))
+    }
+
+    var events: [CalendarEvent] {
+        get { state.withLock { $0.events } }
+        set { state.withLock { $0.events = newValue } }
+    }
+
+    var requestCount: Int { state.withLock { $0.requestCount } }
+    var readCount: Int { state.withLock { $0.readCount } }
+    var lastWindow: (from: Date, to: Date)? { state.withLock { $0.lastWindow } }
+
+    func access() -> CalendarAccess { state.withLock { $0.access } }
+
+    func requestAccess() async -> CalendarAccess {
+        state.withLock {
+            $0.requestCount += 1
+            $0.access = $0.grants
+            return $0.access
+        }
+    }
+
+    func events(from: Date, to: Date) async -> [CalendarEvent] {
+        state.withLock {
+            $0.readCount += 1
+            $0.lastWindow = (from, to)
+            return $0.events
+        }
+    }
+
+    var changes: AsyncStream<Void> {
+        AsyncStream { continuation in
+            state.withLock { $0.listeners.append(continuation) }
+        }
+    }
+
+    func signalChange() {
+        for listener in state.withLock({ $0.listeners }) {
+            listener.yield()
+        }
+    }
+}
+
 /// Counts VAD loads; fails the first `failures` of them.
 actor CountingDetectorLoader {
     private(set) var loads = 0

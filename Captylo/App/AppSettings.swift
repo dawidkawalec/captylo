@@ -47,6 +47,9 @@ final class AppSettings {
         case meetingsCloudTranscript = "meetings.cloudTranscript"
         case meetingsAICorrection = "meetings.aiCorrection"
         case meetingsAIModel = "meetings.aiModel"
+        case meetingsCalendar = "meetings.calendar"
+        case meetingsCalendarReminder = "meetings.calendarReminder"
+        case meetingsCalendarReminderMinutes = "meetings.calendarReminderMinutes"
     }
 
     /// Every persisted key, for tests and diagnostics.
@@ -55,6 +58,9 @@ final class AppSettings {
     nonisolated static let defaultLanguage = "pl"
     nonisolated static let defaultOnboardingStep = "welcome"
     nonisolated static let defaultDashboardRange = 14
+    /// "Przypominaj przed spotkaniem": minutes before the event (0 = "W chwili startu").
+    nonisolated static let calendarReminderMinuteOptions = [0, 1, 2, 5]
+    nonisolated static let defaultCalendarReminderMinutes = 1
 
     @ObservationIgnored private let defaults: UserDefaults
     /// Bumped by `reset()` so every observer refreshes at once.
@@ -393,6 +399,35 @@ final class AppSettings {
     /// The model the meeting AI calls use: `meetingsAIModel`, or Modele's when it is empty.
     var meetingAIModelID: String {
         meetingsAIModel.isEmpty ? aiModel : meetingsAIModel
+    }
+
+    /// "Kalendarz": name recordings after the calendar event, keep its participants, remind
+    /// before a call. Off until the user turns it on after granting access (Free).
+    var meetingsCalendar: Bool {
+        get { track(\.meetingsCalendar); return bool(.meetingsCalendar, default: false) }
+        set { withMutation(keyPath: \.meetingsCalendar) { defaults.set(newValue, forKey: Key.meetingsCalendar.rawValue) } }
+    }
+
+    /// "Przypominaj przed spotkaniem": a toast shortly before an event with a call link.
+    var meetingsCalendarReminder: Bool {
+        get { track(\.meetingsCalendarReminder); return bool(.meetingsCalendarReminder, default: true) }
+        set { withMutation(keyPath: \.meetingsCalendarReminder) { defaults.set(newValue, forKey: Key.meetingsCalendarReminder.rawValue) } }
+    }
+
+    /// Minutes before the event the reminder shows; only `calendarReminderMinuteOptions`, any
+    /// other stored value reads as the default.
+    var meetingsCalendarReminderMinutes: Int {
+        get {
+            track(\.meetingsCalendarReminderMinutes)
+            let stored = int(.meetingsCalendarReminderMinutes, default: Self.defaultCalendarReminderMinutes)
+            return Self.calendarReminderMinuteOptions.contains(stored) ? stored : Self.defaultCalendarReminderMinutes
+        }
+        set {
+            let value = Self.calendarReminderMinuteOptions.contains(newValue) ? newValue : Self.defaultCalendarReminderMinutes
+            withMutation(keyPath: \.meetingsCalendarReminderMinutes) {
+                defaults.set(value, forKey: Key.meetingsCalendarReminderMinutes.rawValue)
+            }
+        }
     }
 
     var menuBarOnly: Bool {

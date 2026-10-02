@@ -10,6 +10,10 @@ enum MeetingExport {
         var parts: [String] = ["# \(meeting.title)"]
         let date = meeting.createdAt.formatted(date: .long, time: .shortened)
         parts.append("\(date) · \(MeetingTime.clock(length(meeting, segments: segments)))")
+        if !meeting.participants.isEmpty {
+            let names = meeting.participants.joined(separator: ", ")
+            parts.append(String(localized: "Uczestnicy: \(names)"))
+        }
         let notes = meeting.notes.trimmingCharacters(in: .whitespacesAndNewlines)
         if !notes.isEmpty {
             parts.append("## \(String(localized: "Moje notatki"))\n\n\(notes)")
@@ -76,6 +80,10 @@ enum MeetingExport {
         let status: MeetingStatus
         let duration: Double
         let appName: String?
+        /// The calendar event the recording was linked to, left out when there was none.
+        let calendarEventID: String?
+        /// Attendee names from that event (empty without one).
+        let participants: [String]
         /// False once the audio was removed; `tracks` then names files that no longer exist.
         let hasAudio: Bool
         let tracks: [Track]
@@ -111,6 +119,8 @@ enum MeetingExport {
             status: meeting.status,
             duration: length(meeting, segments: segments),
             appName: meeting.appName,
+            calendarEventID: meeting.calendarEventID,
+            participants: meeting.participants,
             hasAudio: meeting.hasAudio,
             tracks: MeetingTrack.allCases.map { Document.Track(id: $0, file: $0.fileName) },
             interruptions: meeting.interruptions,

@@ -113,7 +113,39 @@ struct AppSettingsTests {
         #expect(raw.contains("meetings.cloudTranscript"))
         #expect(raw.contains("meetings.aiCorrection"))
         #expect(raw.contains("meetings.aiModel"))
-        #expect(AppSettings.keys.count == 40)
+        #expect(raw.contains("meetings.calendar"))
+        #expect(raw.contains("meetings.calendarReminder"))
+        #expect(raw.contains("meetings.calendarReminderMinutes"))
+        #expect(AppSettings.keys.count == 43)
+    }
+
+    @Test func meetingCalendarDefaultsOffWithAOneMinuteReminder() throws {
+        let settings = try makeSettings()
+        #expect(!settings.meetingsCalendar)
+        #expect(settings.meetingsCalendarReminder)
+        #expect(settings.meetingsCalendarReminderMinutes == 1)
+        #expect(AppSettings.calendarReminderMinuteOptions == [0, 1, 2, 5])
+
+        settings.meetingsCalendar = true
+        settings.meetingsCalendarReminder = false
+        settings.meetingsCalendarReminderMinutes = 5
+        let reloaded = AppSettings(defaults: try #require(UserDefaults(suiteName: Self.suiteName)))
+        #expect(reloaded.meetingsCalendar)
+        #expect(!reloaded.meetingsCalendarReminder)
+        #expect(reloaded.meetingsCalendarReminderMinutes == 5)
+
+        // Only 0, 1, 2 and 5 are offered: anything else falls back to the default.
+        settings.meetingsCalendarReminderMinutes = 0
+        #expect(settings.meetingsCalendarReminderMinutes == 0)
+        settings.meetingsCalendarReminderMinutes = 7
+        #expect(settings.meetingsCalendarReminderMinutes == 1)
+        let defaults = try #require(UserDefaults(suiteName: Self.suiteName))
+        defaults.set(-3, forKey: "meetings.calendarReminderMinutes")
+        #expect(settings.meetingsCalendarReminderMinutes == 1)
+
+        settings.reset()
+        #expect(!settings.meetingsCalendar)
+        #expect(settings.meetingsCalendarReminderMinutes == 1)
     }
 
     @Test func meetingTranscriptSettingsDefaultOffAndFollowTheDictationModel() throws {

@@ -14,6 +14,8 @@ enum Log {
     static let data = Logger(subsystem: subsystem, category: "data")
     static let ui = Logger(subsystem: subsystem, category: "ui")
     static let learning = Logger(subsystem: subsystem, category: "learning")
+    /// Calendar access and refresh counts only: never event titles or attendee names.
+    static let calendar = Logger(subsystem: subsystem, category: "calendar")
 
     /// Wrap hot-path steps (capture stop, transcribe, enhance, paste) in signpost intervals.
     static let signposter = OSSignposter(subsystem: subsystem, category: "hotpath")

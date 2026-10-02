@@ -19,6 +19,24 @@
         }
       }
     },
+    "NSCalendarsFullAccessUsageDescription": {
+      "comment": "Privacy - Calendars Full Access Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo reads your calendar to name the meeting, save its participants and remind you to record."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captylo czyta Twój kalendarz, aby nazwać spotkanie, zapisać uczestników i przypomnieć o nagraniu."
+          }
+        }
+      }
+    },
     "NSMicrophoneUsageDescription": {
       "comment": "Privacy - Microphone Usage Description",
       "extractionState": "manual",

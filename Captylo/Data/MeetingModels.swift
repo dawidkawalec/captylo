@@ -30,6 +30,9 @@ final class Meeting {
     var transcriptModel: String? = nil
     var transcriptAIModel: String? = nil
     var transcriptError: String? = nil
+    var calendarEventID: String? = nil
+    /// JSON `[String]` (attendee names from the calendar event).
+    var participantsJSON: Data = Data()
     /// Folded text of every segment that is not echo (`MeetingSearch`), for search without a join.
     var searchText: String = ""
     /// Folded title and notes (`MeetingSearch.titleNotes`), kept in step by `apply`.
@@ -59,6 +62,8 @@ final class Meeting {
         transcriptModel = record.transcriptModel
         transcriptAIModel = record.transcriptAIModel
         transcriptError = record.transcriptError
+        calendarEventID = record.calendarEventID
+        participantsJSON = record.participants.isEmpty ? Data() : Self.encode(record.participants)
         titleNotesSearchText = MeetingSearch.titleNotes(title: record.title, notes: record.notes)
     }
 
@@ -81,7 +86,9 @@ final class Meeting {
             interruptions: Self.decode([Double].self, from: interruptionsJSON) ?? [],
             transcriptModel: transcriptModel,
             transcriptAIModel: transcriptAIModel,
-            transcriptError: transcriptError
+            transcriptError: transcriptError,
+            calendarEventID: calendarEventID,
+            participants: Self.decode([String].self, from: participantsJSON) ?? []
         )
     }
 
