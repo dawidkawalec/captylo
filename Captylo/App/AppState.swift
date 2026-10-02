@@ -98,8 +98,6 @@ final class AppState {
     /// take Finder "Otwórz za pomocą" files before any view exists; the drop zone feeds it too.
     @ObservationIgnored let fileQueue: FileTranscriptionQueue
 
-    /// Ustawienia > Dane: import of the old VocaType history (dry run cached, progress, result).
-    @ObservationIgnored let legacyImport: LegacyImportModel
 
     /// Seam-typed views of the services for code that only needs the protocol.
     var coordinator: any RecorderCoordinator { dictationController }
@@ -415,17 +413,6 @@ final class AppState {
             persistsHistory: !isFallback
         ))
 
-        // The design preview and the test host run next to the real data: they never scan it.
-        let scansOldData = !overrides.isDesignPreview && !AppStateOverrides.isTestHost
-        legacyImport = LegacyImportModel(
-            sources: { scansOldData ? LegacySource.discover() : [] },
-            database: database,
-            dictionary: dictionary,
-            settings: settings,
-            stats: stats,
-            storeAvailable: !isFallback
-        )
-
         let controller = dictationController
         audioCapture.onDeviceDied = {
             Task { @MainActor in
@@ -458,8 +445,6 @@ final class AppState {
 
         // API keys: read once on the Keychain queue so the hot path hits the cache.
         keyStore.preload([KeyStore.Account.openRouter, KeyStore.Account.elevenLabs])
-        // Keys of the pre-rename build: copied off the main thread, retried until answered.
-        LegacyMigration.migrateKeysInBackground(into: keyStore)
 
         // Hotkey tap: installed now when trusted, otherwise on the Accessibility flip (gotcha 38).
         // Revoking the grant kills the tap but leaves its port behind, so a re-grant always builds

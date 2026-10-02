@@ -88,15 +88,6 @@ struct DebugCommandTests {
         #expect(DebugCommand.parse(["app", "--design-preview", "kuchnia"]) == .designPreview("kuchnia"))
     }
 
-    @Test func parsesImportLegacy() {
-        #expect(DebugCommand.parse(["app", "--import-legacy"]) == .importLegacy(dryRun: false))
-        #expect(DebugCommand.parse(["app", "--import-legacy", "--dry-run"]) == .importLegacy(dryRun: true))
-        #expect(DebugCommand.parse(["app", "-NSDocumentRevisionsDebugMode", "YES", "--import-legacy", "--dry-run"]) == .importLegacy(dryRun: true))
-        // A dry-run flag alone is not a command.
-        #expect(DebugCommand.parse(["app", "--dry-run"]) == nil)
-        #expect(DebugCommand.importLegacy(dryRun: false).isHeadless)
-    }
-
     @Test func parsesMeetingFromFiles() {
         #expect(DebugCommand.parse(["Captylo", "--meeting-from-files", "/tmp/me.wav", "/tmp/them.wav"])
                 == .meetingFromFiles(me: URL(filePath: "/tmp/me.wav"), them: URL(filePath: "/tmp/them.wav")))

@@ -25,7 +25,7 @@ Captylo is a single macOS app target plus a unit-test target. Everything is buil
 
 ```
 Captylo/
-  App/            CaptyloApp (@main), AppDelegate, LegacyMigration, AppState (composition root), AppSettings, AppPaths, Log, Permissions, LaunchAtLogin,
+  App/            CaptyloApp (@main), AppDelegate, AppState (composition root), AppSettings, AppPaths, Log, Permissions, LaunchAtLogin,
                   WindowPresenter (+ OpenWindowBridge), OldAppDetector, StatsTicker, DebugCommands (parser), DebugRunner (executor),
                   AppStateOverrides (fake-service seam), DesignPreviewTarget / DesignPreviewData / DesignPreviewRunner (--design-preview)
   Dictation/      DictationTypes, DictationEnvironment (injected services + shell hooks), DictationController (state machine: idle → recording → transcribing → enhancing → idle)
@@ -52,7 +52,7 @@ Captylo/
                   Meetings/ (MeetingsView, MeetingListView, MeetingDetailView, MeetingLiveBar, MeetingTranscriptView, MeetingNotesEditor, MeetingAINotesView, MeetingConsentCard, MeetingsEmptyState, MeetingsSettingsPanel and small helpers),
                   MenuBar/ (MenuBarMenu, MenuBarLabel), Onboarding/ (OnboardingView, OnboardingSteps, OnboardingHeader, OnboardingProgressTrack, OnboardingOrb, OnboardingBrandMark, OnboardingKeycap, OnboardingWaveform, PasteOnlyTextView)
   Resources/      Assets.xcassets (AppIcon, MenuBarIcon template, BrandSymbol, BrandWordmark, AccentColor), Fonts/ (Manrope, Inter, OFL), Sounds/, Localizable.xcstrings, InfoPlist.xcstrings
-CaptyloTests/     TextProcessorTests, HotkeyTests, StatsTests, NetworkingTests, EnhancerTests, LegacyMigrationTests, ...
+CaptyloTests/     TextProcessorTests, HotkeyTests, StatsTests, NetworkingTests, EnhancerTests, Meeting*Tests, ...
 ```
 
 Ownership rule: a module talks to another only through the protocols in `Dictation/DictationTypes.swift` and the concrete types listed in the brief section 4. `AppState` builds every service once in `init` (safe for the headless debug commands) and injects them; `startServices()` adds the launch behaviour of a GUI run (tap install on the Accessibility grant, audio and Parakeet prewarm, retention, settings observers). No singletons except `Log`. Shell hooks the controller needs (open Modele, open a Settings pane, bump stats) are closures in `DictationEnvironment`, so `Dictation/` never imports the window layer. `AppState` also owns the `FileTranscriptionQueue`: Finder "Otwórz za pomocą" files are stashed in `pendingOpenURLs` until `startServices()` has created the data directories, then fed to the queue and the main window opens on Transkrypcja pliku; the drop zone feeds the same queue.
@@ -129,26 +129,16 @@ Run `Captylo.app/Contents/MacOS/Captylo <flag>`; the app runs headless, prints J
 - `--show-widget <recording|transcribing|enhancing>` - shows the widget with fake levels and sample live text and stays up until killed (for screenshots with `screencapture -x`).
 - `--check` - prints permission states, model status, selected device, hotkey, the data paths, the active AI mode and the history row count. It reads the Keychain, so an ad-hoc Debug build can block on an ACL prompt.
 
-`CAPTYLO_DATA_DIR=<folder>` points `AppPaths` (store, dictionary, recordings) at another folder for support and for migration checks on a copy of the store; legacy migration is skipped while it is set. Settings still come from the real defaults domain.
+`CAPTYLO_DATA_DIR=<folder>` points `AppPaths` (store, dictionary, recordings) at another folder for support and for migration checks on a copy of the store. Settings still come from the real defaults domain.
 - `--reset-onboarding` - clears onboarding progress.
 - `--ax-probe [--show-text]` - hidden self-learning spike tool: once a second prints a one-line JSON when the focused text field changes (bundle id, role, subrole, length, readable, selection). Sets `AXManualAccessibility` once per frontmost app so Electron apps expose their fields. The field text (last 80 characters) is printed only with `--show-text`. Runs until killed; needs the Accessibility grant. Findings go to [docs/reference/ax-coverage.md](reference/ax-coverage.md).
 - `--open-section <pulpit|spotkania|historia|plik|slownik|modele|ustawienia>` - hidden screenshot helper: a normal GUI launch (services, tap, menu bar) that skips the onboarding and opens the main window on that section.
-- `--design-preview <target>` - hidden design helper: one screen (widget state, onboarding step, main section or `glass-gallery`) on fake services built through `AppStateOverrides` (in-memory store with sample history and three sample meetings, Pro pinned on unless `CAPTYLO_PREVIEW_FREE=1`, defaults suite `com.captylo.app.design-preview` wiped at start, temp dictionary, seeded key store, pinned Parakeet "ready" and Accessibility). No services, no hotkey tap, no menu bar item, no legacy migration, never activates the app. Prints `WINDOW_FRAME=x,y,w,h` and `WINDOW_ID=<n>` when the window is up (optional `CAPTYLO_PREVIEW_BACKDROP=white|dark|<image>` puts a backdrop window behind it) and runs until killed; unknown target = JSON error, exit 64. Driven by `scripts/snap.sh <target> <out.png>` (see dusk-glass.md).
+- `--design-preview <target>` - hidden design helper: one screen (widget state, onboarding step, main section or `glass-gallery`) on fake services built through `AppStateOverrides` (in-memory store with sample history and three sample meetings, Pro pinned on unless `CAPTYLO_PREVIEW_FREE=1`, defaults suite `com.captylo.app.design-preview` wiped at start, temp dictionary, seeded key store, pinned Parakeet "ready" and Accessibility). No services, no hotkey tap, no menu bar item, never activates the app. Prints `WINDOW_FRAME=x,y,w,h` and `WINDOW_ID=<n>` when the window is up (optional `CAPTYLO_PREVIEW_BACKDROP=white|dark|<image>` puts a backdrop window behind it) and runs until killed; unknown target = JSON error, exit 64. Driven by `scripts/snap.sh <target> <out.png>` (see dusk-glass.md).
 
-When the app is the unit-test host (`XCTestConfigurationFilePath` set) it skips `startServices()` and the onboarding, so `make test` never installs a second hotkey tap. It also skips legacy migration and builds `AppState` on `AppStateOverrides.testHost()` (in-memory store, temp dictionary, wiped `com.captylo.app.test-host` defaults suite), so a schema change can never migrate the user's store while a real Captylo is running.
+When the app is the unit-test host (`XCTestConfigurationFilePath` set) it skips `startServices()` and the onboarding, so `make test` never installs a second hotkey tap. It builds `AppState` on `AppStateOverrides.testHost()` (in-memory store, temp dictionary, wiped `com.captylo.app.test-host` defaults suite), so a schema change can never migrate the user's store while a real Captylo is running.
 
 Schema changes stay additive and optional (or defaulted), so SwiftData migrates the store in place without a `VersionedSchema`; `DatabaseMigrationTests` keeps a frozen copy of the previous schema and checks both the upgrade and a rollback to it.
 
 ## Build and install
 
 `make gen` (XcodeGen), `make build` (Debug, `.local-build/`), `make test`, `make release` (Release, ad-hoc signed, copied to `~/Downloads/Captylo.app`), `make install` (also copies to `/Applications`), `make check` (Debug binary `--check`), `make reset-tcc` (resets the `com.captylo.app` grants). The first Parakeet load of a new binary takes ~20-30 s (Core ML specialization); later loads ~0.3 s.
-
-## Legacy migration (pre-rename dev builds)
-
-Before the rename the dev builds ran as "VocaType 2" with bundle id `pl.kawalec.VocaType2`. `App/LegacyMigration.swift` runs once in `AppDelegate.init`, before `AppState` opens the SwiftData store and reads `AppSettings`, and sets `migration.vocatype2.done` in the new defaults domain:
-
-1. Settings: when the new domain holds none of the `AppSettings` keys and the old domain `pl.kawalec.VocaType2` has some, every `AppSettings` key is copied (window frames and other system keys are not).
-2. Data: when `~/Library/Application Support/Captylo` does not exist and `.../VocaType2` does, the whole folder is moved, then `VocaType.store` with its `-wal` / `-shm` is renamed to `Captylo.store` (safe because the store is not open yet). When both folders exist the old one stays untouched and a log line says so.
-3. Keychain (not in `AppDelegate.init`): reading the old items can raise an ACL prompt that blocks until answered, so `startServices()` runs this step on its own queue with the app's `KeyStore`. For `openrouter` and `elevenlabs`, an item missing in `com.captylo.app` is copied from the old service `pl.kawalec.VocaType2`; the old item is kept. It has its own flag `migration.vocatype2.keys.done`, set only when every account ended in a definite answer (found or absent); a denied prompt or locked keychain leaves it open for the next launch.
-
-Paths, defaults domains and key stores are injected; `LegacyMigrationTests` run on temp folders, throwaway suites and in-memory stores. `OldAppDetector` also lists `pl.kawalec.VocaType2` next to the old VocaType and VoiceInk ids, so a running pre-rename build triggers the "stara wersja" warning. The synthetic event marker (`0x56544332`) is a stable internal constant and did not change.

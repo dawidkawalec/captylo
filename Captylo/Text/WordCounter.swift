@@ -7,11 +7,6 @@ enum WordCounter {
         }
     }
 
-    /// The old 1.64 rule (`split(separator: " ")`), only for imported legacy rows (phase 2, Q5).
-    static func legacyCount(_ text: String) -> Int {
-        text.split(separator: " ").count
-    }
-
     private static func isWord(_ token: Substring) -> Bool {
         token.contains { $0.isLetter || $0.isNumber }
     }

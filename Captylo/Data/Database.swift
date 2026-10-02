@@ -165,37 +165,6 @@ actor Database: ModelActor {
         return fileNames
     }
 
-    // MARK: Legacy import
-
-    /// Ids the import must skip: every history row plus every `UsageStat` (a row deleted from
-    /// Historia keeps its stat, and importing it again would count its words twice).
-    func knownDictationIDs() throws -> Set<UUID> {
-        var rows = FetchDescriptor<Dictation>()
-        rows.propertiesToFetch = [\.id]
-        var stats = FetchDescriptor<UsageStat>()
-        stats.propertiesToFetch = [\.dictationID]
-        var ids = Set(try modelContext.fetch(rows).map(\.id))
-        ids.formUnion(try modelContext.fetch(stats).map(\.dictationID))
-        return ids
-    }
-
-    /// One import batch in a single save: the rows plus a `UsageStat` for each completed one.
-    func insertImported(_ records: [DictationRecord]) throws {
-        guard !records.isEmpty else { return }
-        for record in records {
-            modelContext.insert(Dictation(record))
-            if record.status == .completed {
-                modelContext.insert(UsageStat(record))
-            }
-        }
-        do {
-            try modelContext.save()
-        } catch {
-            modelContext.rollback()
-            throw error
-        }
-    }
-
     // MARK: Reads
 
     /// Every audio file name a row still points at (the orphan sweep keeps exactly these).

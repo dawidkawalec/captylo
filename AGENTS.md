@@ -2,7 +2,7 @@
 
 Minimalist macOS dictation app: hold a hotkey, speak, the text lands at the cursor. Tagline: "Mów, a tekst pojawia się tam, gdzie piszesz." Local Parakeet v3 (FluidAudio) by default, ElevenLabs Scribe as the optional cloud engine, optional OpenRouter cleanup. It also takes meeting notes on the Mac (mic + system audio, no bot, live local transcript; AI notes and speaker labels in Pro). Clean rewrite of an older VoiceInk-based app, not a fork (its behaviour is mapped in `docs/reference/port-notes/`).
 
-**Identity**: bundle `com.captylo.app`, product `Captylo.app` (executable `Captylo`), data in `~/Library/Application Support/Captylo/`, Keychain service and log subsystem `com.captylo.app`, URL scheme `captylo`, website https://captylo.com, macOS 14.4+, arm64 only. Pre-rename dev builds ("VocaType 2", `pl.kawalec.VocaType2`) are migrated once at launch by `Captylo/App/LegacyMigration.swift`.
+**Identity**: bundle `com.captylo.app`, product `Captylo.app` (executable `Captylo`), data in `~/Library/Application Support/Captylo/`, Keychain service and log subsystem `com.captylo.app`, URL scheme `captylo`, website https://captylo.com, macOS 14.4+, arm64 only.
 
 **Open source**: public repo https://github.com/dawidkawalec/captylo under GPLv3 (`LICENSE`); third-party components and their licences in `NOTICE.md`. The Captylo name, logo and icon are not licensed for forks. Everything committed is public, history included: no secrets, no personal data, no real dictations in fixtures or screenshots.
 
@@ -37,7 +37,7 @@ scripts/make-dusk-video.sh           # re-render Resources/Video/dusk-loop.mp4 (
 - [README.md](README.md) - what Captylo is, requirements, build (incl. the paste-to-an-AI-agent install prompt), privacy, licence
 - [NOTICE.md](NOTICE.md) - third-party code, models, fonts and their licences
 - [docs/pro-backend.md](docs/pro-backend.md) - plan for the Pro relay (our keys server side, licence token, fair use)
-- [docs/architecture.md](docs/architecture.md) - modules, decisions, data flow, debug CLI flags, legacy migration
+- [docs/architecture.md](docs/architecture.md) - modules, decisions, data flow, debug CLI flags
 - [docs/coding-standards.md](docs/coding-standards.md) - Swift 6 rules, UI language, naming
 - [docs/reference/port-notes/REWRITE-BRIEF.md](docs/reference/port-notes/REWRITE-BRIEF.md) - gotchas from the old app (87 numbered), formulas, API specs (historical, names and ids there are pre-rename)
 - [docs/design/dusk-glass.md](docs/design/dusk-glass.md) - Dusk Glass design language in Deep Tide (binding for all UI): Grainient background, clear glass, Manrope + Inter, Glass components, design preview targets

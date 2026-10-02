@@ -110,11 +110,6 @@ struct SettingsView: View {
                 OnboardingResetRow(settings: settings)
             }
 
-            GlassPanel(spacing: 4) {
-                sectionHeader("Dane", systemImage: "externaldrive")
-                LegacyImportRow(model: appState.legacyImport)
-            }
-
             VersionFooter()
                 .padding(.horizontal, 8)
                 .padding(.top, 4)

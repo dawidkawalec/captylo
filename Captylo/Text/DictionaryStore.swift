@@ -173,27 +173,6 @@ final class DictionaryStore {
         return added
     }
 
-    /// Import from the old app: merges words and rules, never deletes. A trigger already used by
-    /// another rule is dropped from the imported rule (the rest of the rule still comes over).
-    /// Saves once when something was added. Returns the number of new words and rules.
-    @discardableResult
-    func mergeImported(vocabulary: [String], rules: [ReplacementRule]) -> (vocabulary: Int, rules: Int) {
-        let words = mergeVocabulary(vocabulary)
-        var used = Set(data.replacements.flatMap { $0.triggers.map { $0.lowercased() } })
-        var candidates: [ReplacementRule] = []
-        for rule in rules {
-            let triggers = Self.normalizedTriggers(rule.triggers).filter { !used.contains($0.lowercased()) }
-            guard !triggers.isEmpty else { continue }
-            used.formUnion(triggers.map { $0.lowercased() })
-            candidates.append(ReplacementRule(id: rule.id, triggers: triggers, replacement: rule.replacement))
-        }
-        let added = mergeRules(candidates)
-        if words + added > 0 {
-            commit()
-        }
-        return (words, added)
-    }
-
     func exportJSON(to url: URL) throws {
         try Self.encoded(data).write(to: url, options: .atomic)
     }

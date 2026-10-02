@@ -7,7 +7,7 @@ enum AppPaths {
     static let storeFileName = "Captylo.store"
 
     /// Environment variable that points the whole data folder somewhere else (support and
-    /// migration checks on a copy of the store). Legacy migration is skipped while it is set.
+    /// migration checks on a copy of the store).
     static let dataDirectoryOverrideKey = "CAPTYLO_DATA_DIR"
 
     /// The override folder from `CAPTYLO_DATA_DIR`, nil for a normal run.

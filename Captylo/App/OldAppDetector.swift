@@ -1,16 +1,12 @@
 import AppKit
 import Observation
 
-/// Finds a running predecessor (gotcha 46): the old VocaType, its VoiceInk upstream or a dev build
-/// of this app from before the Captylo rename. They listen on Right Option too, so two apps would
+/// Finds a running VoiceInk (gotcha 46): it listens on Right Option too, so the two apps would
 /// record and paste twice. Onboarding and the main-window banner offer "Zamknij starą wersję".
 @MainActor
 @Observable
 final class OldAppDetector {
     static let bundleIdentifiers: [String] = [
-        "com.dawidkawalec.vocatype",
-        "pl.kawalec.VocaType",
-        "pl.kawalec.VocaType2",
         "com.prakashjoshipax.VoiceInk",
     ]
 

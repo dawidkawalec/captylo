@@ -35,8 +35,6 @@ final class DebugRunner: DebugCommandRunner {
             let runner = DesignPreviewRunner(appState: appState)
             designPreview = runner
             return await runner.run(target)
-        case .importLegacy(let dryRun):
-            return await importLegacy(dryRun: dryRun)
         case .axProbe(let showText):
             return await axProbe(showText: showText)
         case .watchPaste(let text):
@@ -243,56 +241,6 @@ final class DebugRunner: DebugCommandRunner {
            let text = String(data: data, encoding: .utf8) {
             print(text)
             fflush(stdout)
-        }
-    }
-
-    // MARK: --import-legacy
-
-    /// Imports into `AppPaths` (`CAPTYLO_DATA_DIR` for checks on a copy). A real run refuses while
-    /// the old app runs, and while another Captylo uses the same data folder (a running Captylo is
-    /// fine next to a `CAPTYLO_DATA_DIR` run). A dry run reads copies only and writes nothing.
-    private func importLegacy(dryRun: Bool) async -> Int32 {
-        if !dryRun {
-            if appState.storeIsFallback {
-                Self.emit(["error": LegacyImportError.storeUnavailable.errorDescription ?? ""])
-                return 1
-            }
-            if let blocking = LegacyImportGuard.blockingError(checkOtherCaptylo: AppPaths.dataDirectoryOverride == nil) {
-                Self.emit(["error": blocking.errorDescription ?? ""])
-                return 1
-            }
-        }
-        let dictionary = appState.dictionary
-        let importer = LegacyImporter(
-            sources: LegacySource.discover(),
-            database: appState.database,
-            recordingsDirectory: AppPaths.recordings,
-            mergeDictionary: { words, rules in
-                await MainActor.run { dictionary.mergeImported(vocabulary: words, rules: rules) }
-            }
-        )
-        let days = appState.settings.audioRetentionDays
-        let cutoff: Date? = days > 0 ? Date().addingTimeInterval(-Double(days) * 86_400) : nil
-        do {
-            let report = try await importer.run(dryRun: dryRun, audioCutoff: cutoff)
-            if !dryRun {
-                do {
-                    try LegacyImportMarker(importedAt: Date(), report: report).save()
-                } catch {
-                    Log.data.error("Could not save the legacy import marker: \(error.localizedDescription, privacy: .public)")
-                }
-            }
-            let data = try JSONEncoder().encode(report)
-            guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                Self.emit(["error": "report encoding failed"])
-                return 1
-            }
-            Self.emit(payload)
-            return 0
-        } catch {
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            Self.emit(["error": message])
-            return 1
         }
     }
 

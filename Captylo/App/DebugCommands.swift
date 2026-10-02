@@ -27,9 +27,6 @@ enum DebugCommand: Sendable, Equatable {
     /// The raw target is kept as typed ("" when missing) so a typo fails loudly in the runner
     /// instead of falling through to a normal GUI launch with a second hotkey tap.
     case designPreview(String)
-    /// `--import-legacy [--dry-run]`: imports the old VocaType history into the data folder
-    /// (`CAPTYLO_DATA_DIR` or the real one) and prints the report; a dry run writes nothing.
-    case importLegacy(dryRun: Bool)
     /// `--ax-probe [--show-text]` (hidden, self-learning spike): prints one JSON line whenever the
     /// focused text field changes (app, role, length, selection) until killed. The field text is
     /// printed only with `--show-text`, so a pasted probe log never carries it by accident.
@@ -44,7 +41,7 @@ enum DebugCommand: Sendable, Equatable {
     case meetingFromFiles(me: URL, them: URL)
 
     static let primaryFlags: [String] = [
-        "--transcribe", "--show-widget", "--check", "--reset-onboarding", "--open-section", "--design-preview", "--import-legacy",
+        "--transcribe", "--show-widget", "--check", "--reset-onboarding", "--open-section", "--design-preview",
         "--ax-probe", "--watch-paste", "--meeting-from-files",
     ]
 
@@ -78,8 +75,6 @@ enum DebugCommand: Sendable, Equatable {
         case "--design-preview":
             guard let raw = rest.first, !raw.hasPrefix("--") else { return .designPreview("") }
             return .designPreview(raw.lowercased())
-        case "--import-legacy":
-            return .importLegacy(dryRun: rest.contains("--dry-run"))
         case "--ax-probe":
             return .axProbe(showText: rest.contains("--show-text"))
         case "--watch-paste":

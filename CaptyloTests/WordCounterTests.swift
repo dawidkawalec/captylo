@@ -27,9 +27,4 @@ struct WordCounterTests {
     @Test func keepsHyphenatedAndSymbolTokens() {
         #expect(WordCounter.count("e-mail C++ 100%") == 3)
     }
-
-    @Test func legacyCountSplitsOnSpacesOnly() {
-        #expect(WordCounter.legacyCount("a - b") == 3)
-        #expect(WordCounter.legacyCount("jeden\ndwa") == 1)
-    }
 }

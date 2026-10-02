@@ -7,20 +7,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     override init() {
         if case .designPreview = DebugCommand.parse(CommandLine.arguments) {
-            // Fake world only: no migration, no real defaults, store, dictionary or Keychain.
+            // Fake world only: no real defaults, store, dictionary or Keychain.
             appState = DesignPreviewData.makeAppState()
         } else if AppStateOverrides.isTestHost {
             // Unit-test host: never the real store, defaults or dictionary.
             let host = AppStateOverrides.testHost()
             appState = AppState(settings: host.settings, overrides: host.overrides)
-        } else if AppPaths.dataDirectoryOverride != nil {
-            // CAPTYLO_DATA_DIR run (support, migration checks): no legacy migration, it would
-            // move the old data folder into the override.
-            appState = AppState()
         } else {
-            // Old data must be in place before AppState opens the store and reads the settings.
-            // The Keychain step can block on an ACL prompt, so it runs later from `startServices()`.
-            LegacyMigration.live().run()
             appState = AppState()
         }
         super.init()
