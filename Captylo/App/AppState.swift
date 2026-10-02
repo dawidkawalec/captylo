@@ -298,20 +298,34 @@ final class AppState {
                 return await libraryAsker.ask(question: question)
             }
         )
+        // Notes written from an older transcript would sit next to the new one (also in the
+        // export), so a transcript that changed rewrites them with the same template. Meetings
+        // without notes stay without: that is the user's "Napisz notatki".
+        let refreshNotes: @Sendable (UUID) async -> Void = { id in
+            guard await access.allows(.meetingAINotes),
+                  let meeting = try? await database.meeting(id: id), meeting.summary != nil else { return }
+            await meetingNotes.regenerate(meetingID: id, templateID: meeting.summaryTemplateID)
+        }
         meetingTranscriptRuns = MeetingTranscriptRuns { id, kind in
             switch kind {
             case .cloud:
                 guard await access.allows(.cloudMeetingTranscription) else { return }
-                // The new "Rozmówcy" lines have no speaker labels yet.
+                // The new "Rozmówcy" lines have no speaker labels yet, and like after a meeting
+                // the cloud text gets the AI fixes when they are on.
                 if await meetingCloud.run(meetingID: id) {
                     await speakerLabels.process(meetingID: id)
+                    await meetingCorrection.process(meetingID: id)
+                    await refreshNotes(id)
                 }
             case .aiFix:
                 guard await access.allows(.meetingTranscriptCorrection) else { return }
-                await meetingCorrection.run(meetingID: id)
+                if await meetingCorrection.run(meetingID: id) {
+                    await refreshNotes(id)
+                }
             case .restore:
                 do {
                     try await database.restoreOriginalTranscript(meetingID: id)
+                    await refreshNotes(id)
                 } catch {
                     Log.data.error("Meeting transcript could not be restored: \(error.localizedDescription, privacy: .public)")
                 }
