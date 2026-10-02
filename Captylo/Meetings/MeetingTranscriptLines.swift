@@ -72,6 +72,17 @@ enum MeetingTranscriptLines {
         return items
     }
 
+    /// The line that shows `segmentID` (its own, or the one it was merged into): where a search
+    /// hit jumps to. Nil for an echo segment or one not in `items`.
+    static func lineID(containing segmentID: UUID, in items: [Item]) -> UUID? {
+        for item in items {
+            if case .line(let line) = item, line.segmentIDs.contains(segmentID) {
+                return line.id
+            }
+        }
+        return nil
+    }
+
     /// Number of speaker tints besides "Ja".
     static let tintCount = 4
 

@@ -227,19 +227,43 @@ extension Database {
             }
         }
         descriptor.fetchLimit = limit
-        // The list never needs the search columns: a 2 h transcript stays on disk.
-        descriptor.propertiesToFetch = [
+        descriptor.propertiesToFetch = Self.listProperties
+        return try modelContext.fetch(descriptor).map(\.record)
+    }
+
+    /// The list never needs the search columns: a 2 h transcript stays on disk.
+    private static var listProperties: [PartialKeyPath<Meeting>] {
+        [
             \.id, \.createdAt, \.title, \.status, \.duration, \.appName, \.notes, \.noteLinesJSON,
             \.summary, \.summaryTemplateID, \.summaryModel, \.summaryError, \.speakerNamesJSON,
             \.hasAudio, \.interruptionsJSON, \.transcriptModel, \.transcriptAIModel, \.transcriptError,
             \.calendarEventID, \.participantsJSON,
         ]
-        return try modelContext.fetch(descriptor).map(\.record)
+    }
+
+    /// The meetings of a search index result, in the order of `ids`; ids the store does not have
+    /// (deleted meanwhile) are left out. Like the list, never the search columns.
+    func meetings(ids: [UUID]) throws -> [MeetingRecord] {
+        guard !ids.isEmpty else { return [] }
+        var descriptor = FetchDescriptor<Meeting>(predicate: #Predicate { ids.contains($0.id) })
+        descriptor.propertiesToFetch = Self.listProperties
+        let byID = Dictionary(try modelContext.fetch(descriptor).map { ($0.id, $0.record) },
+                              uniquingKeysWith: { first, _ in first })
+        return ids.compactMap { byID[$0] }
     }
 
     /// Sorted by `start`; at the same start the mic ("Ja") comes first.
     func segments(meetingID: UUID) throws -> [MeetingSegmentRecord] {
         try fetchSegments(meetingID: meetingID).map(\.record).sorted(by: Self.transcriptOrder)
+    }
+
+    /// The segments of search hits, from any meetings (the snippets under the list rows), in
+    /// time order; ids the store does not have are left out.
+    func segments(ids: [UUID]) throws -> [MeetingSegmentRecord] {
+        guard !ids.isEmpty else { return [] }
+        return try modelContext.fetch(FetchDescriptor<MeetingSegment>(predicate: #Predicate { ids.contains($0.id) }))
+            .map(\.record)
+            .sorted(by: Self.transcriptOrder)
     }
 
     /// Meetings created before `cutoff` that still have track files.

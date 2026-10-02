@@ -13,6 +13,10 @@ import UniformTypeIdentifiers
 /// narrow. Afterwards a `[mm:ss]` stamp (in the transcript or an AI notes citation) plays its
 /// track from a second before that moment in the player under the tabs, and a "Mówca N" chip
 /// takes a name. "Notatki AI" is `MeetingAINotesView` (Pro notes, or the Pro card in Free).
+///
+/// A search hit line clicked in the list arrives as `jump`: once this meeting and its segments
+/// are loaded on "Transkrypt", the transcript scrolls to the line holding the segment and lights
+/// it up for `highlightDuration`.
 @MainActor
 struct MeetingDetailView: View {
     enum Tab: String, CaseIterable, Sendable {
@@ -62,6 +66,17 @@ struct MeetingDetailView: View {
         let track: MeetingTrack
     }
 
+    /// What a pending jump waits for: the click itself, this meeting and its lines loaded, and
+    /// the transcript tab on screen.
+    private struct JumpKey: Equatable {
+        let jumpID: UUID?
+        let loadedMeetingID: UUID?
+        let segmentCount: Int
+        let tab: Tab
+    }
+
+    /// How long the line a search hit jumped to stays lit before it fades.
+    static let highlightDuration: Duration = .seconds(1.5)
     /// Below this width of the live area the notes go under the live transcript.
     static let liveStackWidth: CGFloat = 520
     /// Height of the notes editor under the live transcript (narrow layout).
@@ -92,8 +107,16 @@ struct MeetingDetailView: View {
     let onRenamed: (MeetingRecord) -> Void
     /// Design preview: the title opens as a field.
     let startsEditingTitle: Bool
+    /// The last search hit line clicked in the list (any meeting); acted on once.
+    let jump: MeetingTranscriptJump?
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var meeting: MeetingRecord?
+    /// The segment whose line is lit up after a jump; back to nil after `highlightDuration`.
+    @State private var highlightedSegmentID: UUID?
+    /// The jump already scrolled to, so a reload never scrolls back to it.
+    @State private var handledJumpID: UUID?
     @State private var segments: [MeetingSegmentRecord] = []
     @State private var notice: Notice?
     /// Lives as long as the details do: text typed while a meeting stops survives the switch
@@ -118,7 +141,8 @@ struct MeetingDetailView: View {
         onDeleteAudio: @escaping (UUID) -> Void,
         onOpenModels: @escaping () -> Void,
         onRenamed: @escaping (MeetingRecord) -> Void,
-        startsEditingTitle: Bool = false
+        startsEditingTitle: Bool = false,
+        jump: MeetingTranscriptJump? = nil
     ) {
         self.meetingID = meetingID
         self.reloadToken = reloadToken
@@ -135,6 +159,7 @@ struct MeetingDetailView: View {
         self.onOpenModels = onOpenModels
         self.onRenamed = onRenamed
         self.startsEditingTitle = startsEditingTitle
+        self.jump = jump
         _notesDraft = State(initialValue: MeetingNotesDraft(database: database))
     }
 
@@ -166,16 +191,22 @@ struct MeetingDetailView: View {
                         MeetingNotesEditor(draft: notesDraft) { noteTime(meeting) }
                             .padding(.bottom, 4)
                     } else {
-                        ScrollView {
-                            tabContent(meeting)
-                                .padding(.top, 6)
-                                .padding(.bottom, 18)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                tabContent(meeting)
+                                    .padding(.top, 6)
+                                    .padding(.bottom, 18)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .scrollBounceBehavior(.basedOnSize)
+                            .defaultScrollAnchor(.top)
+                            .mask(Self.edgeFade)
+                            .frame(maxHeight: .infinity)
+                            .task(id: JumpKey(jumpID: jump?.id, loadedMeetingID: self.meeting?.id,
+                                              segmentCount: segments.count, tab: tab)) {
+                                await performJump(proxy)
+                            }
                         }
-                        .scrollBounceBehavior(.basedOnSize)
-                        .defaultScrollAnchor(.top)
-                        .mask(Self.edgeFade)
-                        .frame(maxHeight: .infinity)
                     }
                     if let playback, playback.meetingID == meetingID {
                         playbackBar(playback)
@@ -200,8 +231,16 @@ struct MeetingDetailView: View {
                 notice = nil
             }
         }
+        .task(id: highlightedSegmentID) {
+            guard highlightedSegmentID != nil else { return }
+            try? await Task.sleep(for: Self.highlightDuration)
+            if !Task.isCancelled {
+                highlightedSegmentID = nil
+            }
+        }
         .onChange(of: meetingID) { _, _ in
             notice = nil
+            highlightedSegmentID = nil
             closePlayback()
         }
         .onChange(of: meeting?.hasAudio) { _, hasAudio in
@@ -230,6 +269,25 @@ struct MeetingDetailView: View {
         } catch {
             Log.data.error("Meeting fetch failed: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// Scrolls "Transkrypt" to the line of a search hit and lights it up, once per click. Waits
+    /// (the task runs again) until the jump's meeting and its segments are loaded here.
+    private func performJump(_ proxy: ScrollViewProxy) async {
+        guard let jump, jump.id != handledJumpID, jump.meetingID == meetingID, tab == .transcript,
+              let meeting, meeting.id == meetingID else { return }
+        let items = MeetingTranscriptLines.items(segments, interruptions: meeting.interruptions)
+        guard let lineID = MeetingTranscriptLines.lineID(containing: jump.segmentID, in: items) else { return }
+        // One frame for a transcript that just appeared to lay out its rows.
+        try? await Task.sleep(for: .milliseconds(60))
+        guard !Task.isCancelled else { return }
+        handledJumpID = jump.id
+        if reduceMotion {
+            proxy.scrollTo(lineID, anchor: .center)
+        } else {
+            withAnimation(GlassMotion.spring) { proxy.scrollTo(lineID, anchor: .center) }
+        }
+        highlightedSegmentID = jump.segmentID
     }
 
     /// The meeting time a new line of notes gets: the recording clock while it records, the
@@ -536,6 +594,7 @@ struct MeetingDetailView: View {
                 MeetingTranscriptView(
                     meeting: meeting,
                     segments: segments,
+                    highlightedSegmentID: highlightedSegmentID,
                     onPlay: meeting.hasAudio ? { track, start in play(track, from: start) } : nil,
                     onRename: { label, name in rename(speaker: label, to: name) }
                 )

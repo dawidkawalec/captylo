@@ -74,6 +74,35 @@ struct MeetingDatabaseTests {
         #expect(try await db.segments(meetingID: a.id).map(\.text) == ["a"])
     }
 
+    @Test func meetingsByIDComeBackInTheAskedOrder() async throws {
+        let db = try Self.db()
+        var a = Self.meeting(title: "A", createdAt: Date(timeIntervalSince1970: 100))
+        a.notes = "notatka"
+        let b = Self.meeting(title: "B", createdAt: Date(timeIntervalSince1970: 200))
+        let c = Self.meeting(title: "C", createdAt: Date(timeIntervalSince1970: 300))
+        for m in [a, b, c] { try await db.createMeeting(m) }
+        #expect(try await db.meetings(ids: [a.id, c.id]).map(\.id) == [a.id, c.id])
+        #expect(try await db.meetings(ids: [c.id, UUID(), a.id]).map(\.id) == [c.id, a.id])
+        #expect(try await db.meetings(ids: [a.id]).first?.notes == "notatka")
+        #expect(try await db.meetings(ids: []).isEmpty)
+    }
+
+    @Test func segmentsByIDAcrossMeetings() async throws {
+        let db = try Self.db()
+        let a = Self.meeting(title: "A")
+        let b = Self.meeting(title: "B")
+        try await db.createMeeting(a)
+        try await db.createMeeting(b)
+        let late = MeetingSegmentRecord(meetingID: a.id, track: .them, start: 50, end: 51, text: "późno", speaker: "1")
+        let early = MeetingSegmentRecord(meetingID: b.id, track: .me, start: 5, end: 6, text: "wcześnie")
+        let skipped = MeetingSegmentRecord(meetingID: a.id, track: .me, start: 7, end: 8, text: "pominięty")
+        for segment in [late, early, skipped] { try await db.appendSegment(segment) }
+        let read = try await db.segments(ids: [late.id, early.id, UUID()])
+        #expect(read.map(\.id) == [early.id, late.id])
+        #expect(read.last == late)
+        #expect(try await db.segments(ids: []).isEmpty)
+    }
+
     @Test func searchFindsTitleNotesAndTranscriptWithoutDiacritics() async throws {
         let db = try Self.db()
         let a = Self.meeting(title: "Budżet Q4", createdAt: Date(timeIntervalSince1970: 100))

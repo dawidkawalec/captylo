@@ -36,6 +36,10 @@
 #                             a field
 #   CAPTYLO_PREVIEW_TAB=<t>   passed through, main-spotkania: the details open on `notes`,
 #                             `transcript` (default) or `ai` ("Notatki AI")
+#   CAPTYLO_PREVIEW_QUERY=<q> passed through, main-spotkania: the search field opens with `q`
+#                             typed (`oferta`: two sample meetings with hit lines under the rows)
+#   CAPTYLO_PREVIEW_HIT=1     passed through, with CAPTYLO_PREVIEW_QUERY: the first hit line is
+#                             clicked, so the details open "Transkrypt" scrolled to that line
 #   CAPTYLO_PREVIEW_FREE=1    passed through: the Free plan instead of Pro (the Pro card in
 #                             "Notatki AI")
 #   CAPTYLO_PREVIEW_CALENDAR=1  passed through: "Kalendarz" on with three invented events

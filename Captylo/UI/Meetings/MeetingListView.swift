@@ -4,6 +4,10 @@ import SwiftUI
 /// (like the Historia day panels): title, date and app, length, and a badge while a meeting
 /// records, is being processed or was cut short ("Przerwane"). A click or the arrow keys select;
 /// the selection is the Tide fill of the Historia rows.
+///
+/// While searching, a row matched in its transcript or notes shows up to two hit lines
+/// (`MeetingSearchHitsView`) under the meta line; a click on one selects the meeting and hands
+/// the line to `onOpenHit`.
 @MainActor
 struct MeetingListView: View {
     /// Rows the list shows when it sits above the details (narrow window).
@@ -12,14 +16,30 @@ struct MeetingListView: View {
 
     /// Height of the collapsed list: `collapsedRows` rows, or fewer when there are fewer meetings.
     static func collapsedHeight(rows: Int) -> CGFloat {
-        let shown = CGFloat(min(max(rows, 1), collapsedRows))
-        return shown * MeetingListRow.height + (shown - 1) + 2 * listPadding
+        collapsedHeight(rowHeights: Array(repeating: MeetingListRow.height, count: rows))
+    }
+
+    /// Height of the collapsed list for rows of these heights (`rowHeight(hitLines:)`): the first
+    /// `collapsedRows`, at least one plain row.
+    static func collapsedHeight(rowHeights: [CGFloat]) -> CGFloat {
+        let shown = rowHeights.isEmpty ? [MeetingListRow.height] : Array(rowHeights.prefix(collapsedRows))
+        return shown.reduce(0, +) + CGFloat(shown.count - 1) + 2 * listPadding
+    }
+
+    /// A row with this many hit lines under it.
+    static func rowHeight(hitLines: Int) -> CGFloat {
+        guard hitLines > 0 else { return MeetingListRow.height }
+        return MeetingListRow.height + MeetingSearchHitsView.height(lines: hitLines) + MeetingListRow.hitsBottomPadding
     }
 
     let meetings: [MeetingRecord]
     @Binding var selection: UUID?
     /// What `MeetingRecorder` is doing, for the live badge of its meeting.
     let recorderPhase: MeetingRecorder.Phase
+    /// Search hit lines per meeting (empty when not searching).
+    var hitLines: [UUID: [MeetingSearchHitLine]] = [:]
+    /// A hit line was clicked (the meeting is already selected).
+    var onOpenHit: ((UUID, MeetingSearchHitLine) -> Void)?
 
     @FocusState private var isFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -38,9 +58,15 @@ struct MeetingListView: View {
                                 meeting: meeting,
                                 badge: MeetingListRow.Badge(meeting: meeting, phase: recorderPhase),
                                 isSelected: selection == meeting.id,
+                                hitLines: hitLines[meeting.id] ?? [],
                                 onSelect: {
                                     isFocused = true
                                     selection = meeting.id
+                                },
+                                onOpenHit: { line in
+                                    isFocused = true
+                                    selection = meeting.id
+                                    onOpenHit?(meeting.id, line)
                                 }
                             )
                             .id(meeting.id)
@@ -110,15 +136,44 @@ private struct MeetingListRow: View {
         }
     }
 
+    /// Space under the hit lines of a search row.
+    static let hitsBottomPadding: CGFloat = 8
+
     let meeting: MeetingRecord
     let badge: Badge?
     let isSelected: Bool
+    var hitLines: [MeetingSearchHitLine] = []
     let onSelect: () -> Void
+    var onOpenHit: (MeetingSearchHitLine) -> Void = { _ in }
 
     @State private var isHovered = false
 
+    /// The row's fills sit behind the title part and the hit lines alike; the hit lines are
+    /// buttons of their own next to the row's button, never inside it.
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: GlassTokens.Radius.card - 4, style: .continuous)
+        VStack(alignment: .leading, spacing: 0) {
+            header
+            if !hitLines.isEmpty {
+                MeetingSearchHitsView(lines: hitLines, onOpen: onOpenHit)
+                    .padding(.horizontal, 6)
+                    .padding(.bottom, Self.hitsBottomPadding)
+            }
+        }
+        .background {
+            if isSelected {
+                shape.fill(GlassColor.accent.opacity(0.26))
+                    .overlay { shape.strokeBorder(GlassColor.accent.opacity(0.7), lineWidth: 1) }
+            } else if isHovered {
+                shape.fill(Color.white.opacity(0.06))
+            }
+        }
+        .onHover { isHovered = $0 }
+        .animation(GlassMotion.press, value: isHovered)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var header: some View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -149,19 +204,9 @@ private struct MeetingListRow: View {
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: Self.height, maxHeight: Self.height, alignment: .leading)
-            .background {
-                if isSelected {
-                    shape.fill(GlassColor.accent.opacity(0.26))
-                        .overlay { shape.strokeBorder(GlassColor.accent.opacity(0.7), lineWidth: 1) }
-                } else if isHovered {
-                    shape.fill(Color.white.opacity(0.06))
-                }
-            }
-            .contentShape(shape)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-        .animation(GlassMotion.press, value: isHovered)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

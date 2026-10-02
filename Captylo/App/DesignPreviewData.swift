@@ -79,6 +79,20 @@ enum DesignPreviewData {
         environment["CAPTYLO_PREVIEW_TITLE_EDIT"] == "1"
     }
 
+    /// `CAPTYLO_PREVIEW_QUERY=<text>`: `main-spotkania` opens with this typed in the search field
+    /// (e.g. `oferta`: two sample meetings with hit lines). Nil when unset or blank.
+    static func meetingQuery(environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
+        guard let query = environment["CAPTYLO_PREVIEW_QUERY"],
+              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return query
+    }
+
+    /// `CAPTYLO_PREVIEW_HIT=1` (with `CAPTYLO_PREVIEW_QUERY`): the first hit line of the first
+    /// result is clicked once the search ran, so the details jump to it.
+    static func opensFirstHit(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        environment["CAPTYLO_PREVIEW_HIT"] == "1"
+    }
+
     /// `CAPTYLO_PREVIEW_AUDIO_CHECK=works|noaccess|nothing|failed`: the result the "Dostęp do
     /// dźwięku systemu" row in Ustawienia shows, as if "Sprawdź" had just run (nil: not checked).
     static func audioCheckOutcome(environment: [String: String] = ProcessInfo.processInfo.environment) -> SystemAudioCheck.Outcome? {
@@ -392,7 +406,7 @@ enum DesignPreviewData {
             (610, 619, .me, nil, "Dobrze. Kto przygotuje nowe kreacje do testu?"),
             (620.5, 630, .them, "2", "Ja przygotuję trzy warianty grafik do środy."),
             (1320, 1331, .them, "1", "Jeszcze jedno: nie wiemy, czy agencja zdąży z wideo przed Black Friday."),
-            (1333, 1340, .me, nil, "Zapytam ich jutro i dam znać na kanale zespołu."),
+            (1333, 1340, .me, nil, "Zapytam ich jutro o ofertę na wideo i dam znać na kanale zespołu."),
             (2700, 2710, .them, "2", "To wszystko z mojej strony. Podeślę podsumowanie liczb po spotkaniu."),
             (2712, 2716, .me, nil, "Dzięki, do usłyszenia."),
         ]
@@ -420,7 +434,7 @@ enum DesignPreviewData {
             (5, 14, .me, nil, "Dzień dobry, dziękuję za czas. Chciałbym omówić plan wdrożenia na listopad."),
             (15.5, 27, .them, nil, "Dzień dobry. Najważniejsze jest dla nas szkolenie zespołu przed startem."),
             (600, 610, .me, nil, "Proponuję dwa krótkie szkolenia online i jedno spotkanie na miejscu."),
-            (611, 622, .them, nil, "Brzmi dobrze. Potrzebujemy też dostępu testowego dla pięciu osób."),
+            (611, 622, .them, nil, "Brzmi dobrze. Wyślijcie nam ofertę na szkolenia i dostęp testowy dla pięciu osób."),
             (1840, 1850, .me, nil, "Wracam, połączenie na chwilę się zerwało. Na czym skończyliśmy?"),
             (1851, 1860, .them, nil, "Na dostępach testowych. Prześlę listę osób do piątku."),
         ]

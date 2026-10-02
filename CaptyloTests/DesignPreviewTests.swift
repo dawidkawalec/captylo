@@ -99,6 +99,27 @@ struct DesignPreviewTests {
         }
     }
 
+    /// `CAPTYLO_PREVIEW_QUERY=oferta`: the preview's search finds two sample meetings with hit lines.
+    @Test func previewSearchFindsTheSampleOffers() async throws {
+        #expect(DesignPreviewData.meetingQuery(environment: ["CAPTYLO_PREVIEW_QUERY": "oferta"]) == "oferta")
+        #expect(DesignPreviewData.meetingQuery(environment: ["CAPTYLO_PREVIEW_QUERY": "  "]) == nil)
+        #expect(DesignPreviewData.meetingQuery(environment: [:]) == nil)
+        #expect(DesignPreviewData.opensFirstHit(environment: ["CAPTYLO_PREVIEW_HIT": "1"]))
+        #expect(!DesignPreviewData.opensFirstHit(environment: [:]))
+
+        let index = MeetingSearchIndex(url: nil)
+        let database = Database(modelContainer: try Store.makeInMemoryContainer(), searchIndex: index)
+        for (meeting, segments) in DesignPreviewData.sampleMeetings(now: Date()) {
+            try await database.createMeeting(meeting)
+            for segment in segments {
+                try await database.appendSegment(segment)
+            }
+        }
+        let loaded = try #require(try await MeetingSearchResults.load(query: "oferta", index: index, database: database, limit: 200))
+        #expect(loaded.meetings.count == 2)
+        #expect(loaded.meetings.allSatisfy { loaded.lines[$0.id]?.isEmpty == false })
+    }
+
     /// `CAPTYLO_PREVIEW_LIVE=1`: a meeting recording right now, newer than every sample meeting,
     /// so the preview opens on it.
     @Test func sampleLiveMeetingIsRecordingNow() throws {

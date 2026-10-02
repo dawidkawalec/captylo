@@ -6338,6 +6338,31 @@
         "en": { "stringUnit": { "state": "translated", "value": "%lld people" } }
       }
     },
+    "1 spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "1 meeting" } }
+      }
+    },
+    "%lld spotkania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld meetings" } }
+      }
+    },
+    "%lld spotkań": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld meetings" } }
+      }
+    },
+    "Pokaż w transkrypcie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show in the transcript" } }
+      }
+    },
+    "Pokaż notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show the notes" } }
+      }
+    },
     "Nagraj": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Record" } }

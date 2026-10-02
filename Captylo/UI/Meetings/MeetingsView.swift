@@ -17,6 +17,12 @@ import SwiftUI
 /// with "Otwórz Modele" when the speech model is missing.
 /// While the live meeting is selected the list steps aside, so the live transcript and the notes
 /// have room even in the default 920 x 640 window; a header button brings it back.
+///
+/// A search of 3+ characters asks the search index first (`MeetingSearchResults`): Polish case
+/// forms match, rows come best match first, and each row shows where it matched (up to two hit
+/// lines); a click on a hit line opens "Transkrypt" at that moment (or "Notatki"). Shorter
+/// queries, or an index still being built, use the store's plain `contains` search. While
+/// searching, the number of meetings found sits under the field.
 @MainActor
 struct MeetingsView: View {
     /// Below this content width the list sits above the details.
@@ -41,6 +47,10 @@ struct MeetingsView: View {
 
     @State private var query = ""
     @State private var meetings: [MeetingRecord] = []
+    /// Search hit lines per meeting of the last index search (empty otherwise).
+    @State private var hitLines: [UUID: [MeetingSearchHitLine]] = [:]
+    /// The last hit line clicked: the details jump to it.
+    @State private var jump: MeetingTranscriptJump?
     @State private var loaded = false
     @State private var selectedID: UUID?
     @State private var tab: MeetingDetailView.Tab = .transcript
@@ -73,6 +83,10 @@ struct MeetingsView: View {
                 // `CAPTYLO_PREVIEW_TAB`: the design preview opens the details on another tab.
                 if appState.isDesignPreview, let previewTab = DesignPreviewData.meetingTab() {
                     tab = previewTab
+                }
+                // `CAPTYLO_PREVIEW_QUERY`: the preview opens with this search typed.
+                if appState.isDesignPreview, let previewQuery = DesignPreviewData.meetingQuery() {
+                    query = previewQuery
                 }
             }
             .onChange(of: recorder.currentMeetingID) { _, id in
@@ -170,9 +184,18 @@ struct MeetingsView: View {
     // MARK: Header
 
     private func header(_ recorder: MeetingRecorder) -> some View {
-        HStack(spacing: 10) {
-            ToolSearchField("Szukaj w spotkaniach", text: $query)
-                .frame(maxWidth: 360)
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                ToolSearchField("Szukaj w spotkaniach", text: $query)
+                    .frame(maxWidth: 360)
+                if isSearching, !meetings.isEmpty {
+                    Text(verbatim: MeetingSearchResults.countText(meetings.count))
+                        .font(GlassFont.caption.monospacedDigit())
+                        .foregroundStyle(GlassColor.textSecondary)
+                        .padding(.leading, 4)
+                        .accessibilityAddTraits(.updatesFrequently)
+                }
+            }
             Spacer(minLength: 10)
             if isLiveSelected(recorder) {
                 ToolIconButton(
@@ -185,6 +208,11 @@ struct MeetingsView: View {
             }
             MeetingRecordButton(isRecording: recorder.isRecording, action: recordAction(recorder))
         }
+    }
+
+    /// Something is typed in the search field (spaces alone are not a search).
+    private var isSearching: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// The meeting on screen is the one being recorded or finished.
@@ -261,7 +289,9 @@ struct MeetingsView: View {
             if showsList {
                 list(recorder)
                     .frame(width: stacked ? nil : Self.listWidth)
-                    .frame(height: stacked ? MeetingListView.collapsedHeight(rows: meetings.count) : nil)
+                    .frame(height: stacked ? MeetingListView.collapsedHeight(rowHeights: meetings.map {
+                        MeetingListView.rowHeight(hitLines: hitLines[$0.id]?.count ?? 0)
+                    }) : nil)
             }
             detail(recorder)
         }
@@ -274,7 +304,26 @@ struct MeetingsView: View {
     }
 
     private func list(_ recorder: MeetingRecorder) -> some View {
-        MeetingListView(meetings: meetings, selection: $selectedID, recorderPhase: recorder.phase)
+        MeetingListView(
+            meetings: meetings,
+            selection: $selectedID,
+            recorderPhase: recorder.phase,
+            hitLines: hitLines,
+            onOpenHit: { meetingID, line in openHit(line, of: meetingID) }
+        )
+    }
+
+    /// A hit line was clicked (its meeting is selected): "Transkrypt" at that segment, or
+    /// "Notatki" for a match in the notes.
+    private func openHit(_ line: MeetingSearchHitLine, of meetingID: UUID) {
+        selectedID = meetingID
+        switch line.source {
+        case .segment(let segmentID, _):
+            tab = .transcript
+            jump = MeetingTranscriptJump(meetingID: meetingID, segmentID: segmentID)
+        case .notes:
+            tab = .notes
+        }
     }
 
     @ViewBuilder
@@ -299,7 +348,8 @@ struct MeetingsView: View {
                         meetings[index] = saved
                     }
                 },
-                startsEditingTitle: appState.isDesignPreview && DesignPreviewData.editsMeetingTitle()
+                startsEditingTitle: appState.isDesignPreview && DesignPreviewData.editsMeetingTitle(),
+                jump: jump
             )
         } else {
             GlassPanel(alignment: .center) {
@@ -342,17 +392,34 @@ struct MeetingsView: View {
 
     // MARK: Data
 
+    /// The index search when it can answer (`MeetingSearchResults.load`), else the store's
+    /// `contains` search; no hit lines then.
     private func reload() async {
         let database = appState.database
+        let index = appState.meetingSearchIndex
         let query = self.query
         do {
-            let fetched = try await database.meetings(query: query, limit: Self.listLimit)
+            let fetched: [MeetingRecord]
+            let lines: [UUID: [MeetingSearchHitLine]]
+            if let loaded = try await MeetingSearchResults.load(query: query, index: index, database: database, limit: Self.listLimit) {
+                fetched = loaded.meetings
+                lines = loaded.lines
+            } else {
+                fetched = try await database.meetings(query: query, limit: Self.listLimit)
+                lines = [:]
+            }
             guard !Task.isCancelled else { return }
             meetings = fetched
+            hitLines = lines
             if selectedID == nil || !fetched.contains(where: { $0.id == selectedID }) {
                 selectedID = fetched.first?.id
             }
             listVersion += 1
+            // `CAPTYLO_PREVIEW_HIT`: the preview clicks the first hit line once.
+            if appState.isDesignPreview, jump == nil, DesignPreviewData.opensFirstHit(),
+               let first = fetched.first, let line = lines[first.id]?.first {
+                openHit(line, of: first.id)
+            }
         } catch {
             Log.data.error("Meetings fetch failed: \(error.localizedDescription, privacy: .public)")
         }

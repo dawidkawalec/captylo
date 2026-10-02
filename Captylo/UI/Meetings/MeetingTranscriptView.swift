@@ -9,6 +9,10 @@ import SwiftUI
 ///
 /// With `onPlay` the stamps are buttons that play the line's track from that moment (no audio:
 /// plain text). With `onRename` a click on a "Mówca N" chip opens a field for the speaker's name.
+///
+/// Every line carries its id (`MeetingTranscriptLines.Line.id`) for a `ScrollViewReader`, and
+/// the line holding `highlightedSegmentID` (a search hit the details jumped to) gets a Tide
+/// background that fades when the id goes back to nil.
 @MainActor
 struct MeetingTranscriptView: View {
     let meeting: MeetingRecord
@@ -16,10 +20,14 @@ struct MeetingTranscriptView: View {
     /// The grey "w trakcie" line per track while this meeting records.
     var partials: [MeetingTrack: String] = [:]
     var isLive = false
+    /// The segment a search hit jumped to: its line is lit up.
+    var highlightedSegmentID: UUID?
     /// Play `track` from this meeting time (the line's start).
     var onPlay: ((MeetingTrack, Double) -> Void)?
     /// Store this name for the speaker label ("2"); an empty name brings "Mówca 2" back.
     var onRename: ((String, String) -> Void)?
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let items = MeetingTranscriptLines.items(segments, interruptions: meeting.interruptions)
@@ -34,10 +42,20 @@ struct MeetingTranscriptView: View {
                 ForEach(items) { item in
                     switch item {
                     case .line(let line):
+                        let isHighlighted = highlightedSegmentID.map(line.segmentIDs.contains) ?? false
                         row(start: line.start, stampWidth: stampWidth, track: line.track, speaker: line.speaker) {
                             Text(verbatim: line.text)
                                 .foregroundStyle(GlassColor.textPrimary)
                         }
+                        .background {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(GlassColor.accent.opacity(isHighlighted ? 0.24 : 0))
+                                .padding(.horizontal, -8)
+                                .padding(.vertical, -6)
+                                .animation(reduceMotion ? nil : .easeOut(duration: isHighlighted ? 0.2 : 0.6),
+                                           value: isHighlighted)
+                        }
+                        .id(line.id)
                     case .gap(let at):
                         gapRow(at: at, stampWidth: stampWidth)
                     }
@@ -111,7 +129,8 @@ struct MeetingTranscriptView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Room for "[12:34]", or "[1:02:03]" once the meeting passes an hour.
+    /// Room for "[1:23]", "[12:34]" once the meeting passes ten minutes, or "[1:02:03]" once it
+    /// passes an hour (plus the play glyph the stamp button keeps room for), so a stamp never wraps.
     private static func stampWidth(items: [MeetingTranscriptLines.Item], duration: Double) -> CGFloat {
         let latest = items.reduce(duration) { latest, item in
             switch item {
@@ -119,7 +138,8 @@ struct MeetingTranscriptView: View {
             case .gap(let at): return max(latest, at)
             }
         }
-        return latest >= 3600 ? 66 : 50
+        if latest >= 3600 { return 76 }
+        return latest >= 600 ? 60 : 50
     }
 }
 

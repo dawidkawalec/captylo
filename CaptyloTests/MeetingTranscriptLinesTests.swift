@@ -84,4 +84,18 @@ struct MeetingTranscriptLinesTests {
         #expect(MeetingTranscriptLines.tintSlot(track: .them, speaker: "\(count + 1)") == 0)
         #expect(MeetingTranscriptLines.tintSlot(track: .them, speaker: "Anna") != nil)
     }
+
+    /// A search hit jumps to the line that holds its segment, also when it was merged into it.
+    @Test func findsTheLineThatHoldsASegment() {
+        let first = segment(.me, 0, 3, "Zaczynamy.")
+        let merged = segment(.me, 4, 6, "Najpierw budżet.")
+        let other = segment(.them, 10, 12, "Dobrze.")
+        let echo = segment(.me, 10, 12, "Dobrze.", echo: true)
+        let items = MeetingTranscriptLines.items([first, merged, other, echo], interruptions: [8])
+        #expect(MeetingTranscriptLines.lineID(containing: merged.id, in: items) == first.id)
+        #expect(MeetingTranscriptLines.lineID(containing: first.id, in: items) == first.id)
+        #expect(MeetingTranscriptLines.lineID(containing: other.id, in: items) == other.id)
+        #expect(MeetingTranscriptLines.lineID(containing: echo.id, in: items) == nil)
+        #expect(MeetingTranscriptLines.lineID(containing: UUID(), in: items) == nil)
+    }
 }
