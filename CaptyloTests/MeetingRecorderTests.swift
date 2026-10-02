@@ -569,4 +569,97 @@ struct MeetingRecorderTests {
         #expect(MeetingRecorder.defaultTitle(appName: "Zoom", date: date).hasPrefix("Spotkanie w Zoom, "))
         #expect(MeetingRecorder.defaultTitle(appName: nil, date: date).hasPrefix("Spotkanie, "))
     }
+
+    // MARK: Calendar
+
+    private func event(_ id: String, title: String, participants: [String] = ["Anna Kowalska", "Piotr Nowak"], callApp: String? = "Meet") -> CalendarEvent {
+        let start = Date().addingTimeInterval(-5 * 60)
+        return CalendarEvent(
+            id: id, title: title, start: start, end: start.addingTimeInterval(30 * 60),
+            isAllDay: false, calendarTitle: "Praca", participants: participants, callApp: callApp
+        )
+    }
+
+    /// "Nagraj spotkanie" during a calendar event: the row is named after the event at once and
+    /// keeps its id and participants; the event's call service stands in for the app name.
+    @Test func aStartDuringACalendarEventTakesItsTitleParticipantsAndApp() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        let budget = event("ev-1", title: "Budżet Q4")
+        env.currentEvent = { budget }
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start()
+        let id = try #require(recorder.currentMeetingID)
+        let meeting = try #require(try await db.meeting(id: id))
+        #expect(meeting.title == "Budżet Q4")
+        #expect(meeting.calendarEventID == "ev-1")
+        #expect(meeting.participants == ["Anna Kowalska", "Piotr Nowak"])
+        #expect(meeting.appName == "Meet")
+        await recorder.stop()
+    }
+
+    /// The detector knows which app holds the mic: that name wins over the event's link.
+    @Test func theDetectedAppNameWinsOverTheEventsCallService() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        let budget = event("ev-1", title: "Budżet Q4")
+        env.currentEvent = { budget }
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start(appName: "Zoom")
+        let id = try #require(recorder.currentMeetingID)
+        let meeting = try #require(try await db.meeting(id: id))
+        #expect(meeting.appName == "Zoom")
+        #expect(meeting.title == "Budżet Q4")
+        #expect(meeting.calendarEventID == "ev-1")
+        await recorder.stop()
+    }
+
+    /// An explicit title (tests, a future "Nagraj" with a name) is not a calendar start.
+    @Test func anExplicitTitleLeavesTheCalendarAlone() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        let budget = event("ev-1", title: "Budżet Q4")
+        env.currentEvent = { budget }
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start(title: "Własny tytuł")
+        let id = try #require(recorder.currentMeetingID)
+        let meeting = try #require(try await db.meeting(id: id))
+        #expect(meeting.title == "Własny tytuł")
+        #expect(meeting.calendarEventID == nil)
+        #expect(meeting.participants.isEmpty)
+        #expect(meeting.appName == nil)
+        await recorder.stop()
+    }
+
+    /// The detector's offer and the upcoming strip pass the event they showed: it wins over
+    /// whatever the calendar matches at the moment of the start.
+    @Test func anExplicitEventWinsOverTheCalendarMatch() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        let budget = event("ev-1", title: "Budżet Q4")
+        env.currentEvent = { budget }
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start(event: event("ev-2", title: "Daily zespołu", participants: ["Ola"], callApp: nil))
+        let id = try #require(recorder.currentMeetingID)
+        let meeting = try #require(try await db.meeting(id: id))
+        #expect(meeting.title == "Daily zespołu")
+        #expect(meeting.calendarEventID == "ev-2")
+        #expect(meeting.participants == ["Ola"])
+        #expect(meeting.appName == nil)
+        await recorder.stop()
+    }
+
+    @Test func withoutAnEventTheDefaultTitleNamesTheApp() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        var env = environment(mic: FakeAudioSource(), system: FakeAudioSource(), spy: MuteSpy(), db: db)
+        env.currentEvent = { nil }
+        let recorder = MeetingRecorder(environment: env)
+        await recorder.start(appName: "Zoom")
+        let id = try #require(recorder.currentMeetingID)
+        let meeting = try #require(try await db.meeting(id: id))
+        #expect(meeting.title.hasPrefix("Spotkanie w Zoom, "))
+        #expect(meeting.calendarEventID == nil)
+        #expect(meeting.participants.isEmpty)
+        await recorder.stop()
+    }
 }

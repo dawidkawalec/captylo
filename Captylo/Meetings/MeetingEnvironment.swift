@@ -20,4 +20,8 @@ struct MeetingEnvironment: Sendable {
     /// True when the speech model is on disk. Read by `start`: without it every pass fails and
     /// the meeting would record audio with no transcript, so it does not start at all.
     var speechModelReady: @Sendable () -> Bool = { true }
+    /// The calendar event a recording starting now belongs to (`MeetingCalendar.currentEvent()`),
+    /// nil while the calendar is off. Read on the main actor at `start` when no title and no
+    /// event were given: the row takes the event's title, id and participants.
+    var currentEvent: @MainActor @Sendable () -> CalendarEvent? = { nil }
 }

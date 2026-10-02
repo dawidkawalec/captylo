@@ -307,7 +307,8 @@ struct MeetingTranscriptImprovementTests {
 
     private static func correctionFixture() async throws -> (Database, UUID) {
         let database = try database()
-        let meeting = MeetingRecord(title: "Oferta", speakerNames: ["1": "Anna"])
+        var meeting = MeetingRecord(title: "Oferta", speakerNames: ["1": "Anna"])
+        meeting.participants = ["Piotr Nowak", "Anna"]
         try await database.createMeeting(meeting)
         try await database.appendSegment(MeetingSegmentRecord(meetingID: meeting.id, track: .me, start: 0, end: 1.5, text: "dam znaciannie"))
         try await database.appendSegment(MeetingSegmentRecord(meetingID: meeting.id, track: .them, start: 2, end: 3.5, text: "wyśle oferte jutro", speaker: "1"))
@@ -336,7 +337,8 @@ struct MeetingTranscriptImprovementTests {
         #expect(await processor.run(meetingID: id))
 
         let prompt = seen.withLock { $0 }
-        #expect(prompt.contains("Captylo, Anna"))
+        // Dictionary, then the names typed on the meeting, then the calendar's participants, once each.
+        #expect(prompt.contains("Słownik (pisownia nazw i terminów): Captylo, Anna, Piotr Nowak\n"))
         #expect(!prompt.contains("3|"))
         let segments = try await database.segments(meetingID: id)
         #expect(segments.filter { !$0.isEcho }.map(\.text) == ["Dam znać Annie.", "Wyślę ofertę jutro."])

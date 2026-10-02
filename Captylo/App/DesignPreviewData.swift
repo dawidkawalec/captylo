@@ -43,6 +43,7 @@ enum DesignPreviewData {
             pinnedModelStatus: .ready,
             pinnedAccessibilityTrust: true,
             pinnedPro: !showsFreePlan(),
+            calendarEvents: [],
             isDesignPreview: true
         )
         return AppState(settings: settings, overrides: overrides)
@@ -338,6 +339,9 @@ enum DesignPreviewData {
 
     private static func sampleBudgetMeeting(createdAt: Date) -> (meeting: MeetingRecord, segments: [MeetingSegmentRecord]) {
         var meeting = MeetingRecord(createdAt: createdAt, title: "Budżet marketingu Q4", status: .completed, duration: 2832, appName: "Zoom")
+        // Started during its calendar event: the title and the participants came from there.
+        meeting.calendarEventID = "preview-budget-q4"
+        meeting.participants = ["Anna Kowalska", "Piotr Nowak", "Marta Wiśniewska"]
         meeting.noteLines = [
             MeetingNoteLine(text: "wrzesień: 32 tys., ponad połowa na wyszukiwarkę", at: 20),
             MeetingNoteLine(text: "test LinkedIn, 2 grupy, max 5 tys.", at: 118),

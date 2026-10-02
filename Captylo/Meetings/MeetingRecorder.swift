@@ -180,7 +180,15 @@ final class MeetingRecorder {
 
     // MARK: Start
 
-    func start(title: String? = nil, appName: String? = nil) async {
+    /// - Parameters:
+    ///   - title: an explicit title. Without it the calendar event names the row, and without an
+    ///     event the default "Spotkanie w Zoom, 30 września 14:00".
+    ///   - appName: the app in the call ("Zoom", from the detector). Without it the event's
+    ///     call service ("Meet") stands in.
+    ///   - event: the calendar event this recording is for (the detector's offer, the upcoming
+    ///     strip). When nil and `title` is nil, `env.currentEvent()` picks the event matching
+    ///     now. The row keeps the event's id and participants.
+    func start(title: String? = nil, appName: String? = nil, event: CalendarEvent? = nil) async {
         guard phase == .idle, !isStarting else { return }
         guard env.speechModelReady() else {
             refuseWithoutSpeechModel()
@@ -193,7 +201,15 @@ final class MeetingRecorder {
 
         let now = Date()
         let clockStart = MeetingTrackFeed.now()
-        let record = MeetingRecord(createdAt: now, title: title ?? Self.defaultTitle(appName: appName, date: now), appName: appName)
+        let event = event ?? (title == nil ? env.currentEvent() : nil)
+        let appName = appName ?? event?.callApp
+        let eventTitle = event.flatMap { $0.title.isEmpty ? nil : $0.title }
+        var record = MeetingRecord(createdAt: now, title: title ?? eventTitle ?? Self.defaultTitle(appName: appName, date: now), appName: appName)
+        if let event {
+            record.calendarEventID = event.id
+            record.participants = event.participants
+            Log.calendar.info("Meeting linked to a calendar event with \(event.participants.count, privacy: .public) participant(s)")
+        }
         do {
             try await env.database.createMeeting(record)
         } catch {

@@ -6318,6 +6318,26 @@
         "en": { "stringUnit": { "state": "translated", "value": "Looks like a meeting in %@. Record notes?" } }
       }
     },
+    "Wygląda na spotkanie „%@” w %@. Nagrać notatki?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Looks like the meeting “%1$@” in %2$@. Record notes?" } }
+      }
+    },
+    "1 osoba": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "1 person" } }
+      }
+    },
+    "%lld osoby": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld people" } }
+      }
+    },
+    "%lld osób": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld people" } }
+      }
+    },
     "Nagraj": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Record" } }

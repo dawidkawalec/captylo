@@ -94,6 +94,8 @@ final class DetectionWorld {
     var now: Double = 0
     var enabled = true
     var openedMeetings = 0
+    /// The calendar event matching "now", as `MeetingCalendar.currentEvent()` would answer.
+    var event: CalendarEvent?
     /// The `keeping` set of every scan.
     var scans: [Set<String>] = []
 }
@@ -174,6 +176,7 @@ struct MeetingDetectorFlowTests {
                 return world.apps
             },
             clock: { world.now },
+            currentEvent: { world.event },
             stopDelay: stopDelay
         )
         return Rig(world: world, toasts: toasts, recorder: recorder, detector: detector, database: database)
@@ -396,6 +399,33 @@ struct MeetingDetectorFlowTests {
         #expect(rig.toasts.shown.last?.message == stopPrompt("Chrome"))
         await waitUntil { rig.recorder.phase == .idle }
         #expect(rig.recorder.phase == .idle)
+    }
+
+    /// A call that starts during a calendar event: the offer names the event, and "Nagraj"
+    /// links the recording to it (title, id, participants) under the detected app's name.
+    @Test func aCallDuringACalendarEventNamesItAndLinksTheRecording() async throws {
+        let rig = try rig()
+        let start = Date().addingTimeInterval(-3 * 60)
+        rig.world.event = CalendarEvent(
+            id: "ev-7", title: "Budżet Q4", start: start, end: start.addingTimeInterval(30 * 60),
+            isAllDay: false, calendarTitle: "Praca", participants: ["Anna Kowalska", "Piotr Nowak"], callApp: "Meet"
+        )
+        await poll(rig, [zoom], at: 0)
+        await poll(rig, [zoom], at: 6)
+        let prompt = try #require(rig.toasts.shown.last)
+        #expect(prompt.message == String(localized: "Wygląda na spotkanie „Budżet Q4” w Zoom. Nagrać notatki?"))
+        #expect(prompt.button == String(localized: "Nagraj"))
+        // The event is the one shown, even when the calendar matches another by the click.
+        rig.world.event = nil
+        prompt.action?()
+        await waitUntil { rig.recorder.isRecording }
+        let id = try #require(rig.recorder.currentMeetingID)
+        let meeting = try #require(try await rig.database.meeting(id: id))
+        #expect(meeting.title == "Budżet Q4")
+        #expect(meeting.calendarEventID == "ev-7")
+        #expect(meeting.participants == ["Anna Kowalska", "Piotr Nowak"])
+        #expect(meeting.appName == "Zoom")
+        await rig.recorder.stop()
     }
 
     @Test func micUseAgainDuringTheCountdownKeepsRecording() async throws {

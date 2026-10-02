@@ -20,6 +20,9 @@ struct AppStateOverrides {
     var pinnedAccessibilityTrust: Bool?
     /// Pro status shown regardless of the dev switch (design preview, tests).
     var pinnedPro: Bool?
+    /// Calendar events served with full access instead of EventKit (`FixedCalendarSource`): the
+    /// design preview and the test host never open the user's calendar.
+    var calendarEvents: [CalendarEvent]?
     /// True for `--design-preview`: code that would touch the system (the hotkey tap) stays off.
     var isDesignPreview = false
 
@@ -52,7 +55,8 @@ struct AppStateOverrides {
         let overrides = AppStateOverrides(
             modelContainer: container,
             dictionaryURL: dictionaryURL,
-            systemMuteDefaults: defaults
+            systemMuteDefaults: defaults,
+            calendarEvents: []
         )
         return (AppSettings(defaults: defaults), overrides)
     }

@@ -89,11 +89,20 @@ struct MeetingCorrectionProcessor: MeetingPostProcessing {
     let database: Database
     let corrector: MeetingTranscriptCorrector
     let isEnabled: @Sendable () async -> Bool
-    /// Dictionary terms; the speaker names typed on the meeting are added to them.
+    /// Dictionary terms; the speaker names typed on the meeting and the calendar's participants
+    /// are added to them.
     let vocabulary: @Sendable () async -> [String]
 
     /// Prefix of the meeting's `transcriptError` when the AI fix failed.
     static var errorPrefix: String { String(localized: "Poprawki AI: ") }
+
+    /// Dictionary terms, then the speaker names typed on the meeting, then the participants from
+    /// the calendar event, each once: the names the AI should spell right.
+    static func glossary(vocabulary: [String], meeting: MeetingRecord) -> [String] {
+        var seen = Set<String>()
+        return (vocabulary + meeting.speakerNames.values.sorted() + meeting.participants)
+            .filter { seen.insert($0).inserted }
+    }
 
     func process(meetingID: UUID) async {
         guard await isEnabled() else { return }
@@ -112,7 +121,7 @@ struct MeetingCorrectionProcessor: MeetingPostProcessing {
             Log.data.error("Meeting transcript fix could not read the meeting: \(error.localizedDescription, privacy: .public)")
             return false
         }
-        let glossary = await vocabulary() + meeting.speakerNames.values.sorted()
+        let glossary = Self.glossary(vocabulary: await vocabulary(), meeting: meeting)
         let prefix = Self.errorPrefix
         do {
             let (changes, model) = try await corrector.correct(meeting: meeting, segments: segments, glossary: glossary)

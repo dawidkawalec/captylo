@@ -74,6 +74,10 @@ final class AppState {
     /// "Wykrywaj spotkania": asks to record when a call starts and to stop when it ends.
     /// Polls only after `startServices()` (never in the design preview or the test host).
     @ObservationIgnored let meetingDetector: MeetingDetector
+    /// "Kalendarz": the event a recording belongs to (title, participants) and the upcoming
+    /// ones. Itself `@Observable`. Refreshes only after `startServices()`; the design preview
+    /// and the test host get a fixed list instead of EventKit (`AppStateOverrides.calendarEvents`).
+    @ObservationIgnored let meetingCalendar: MeetingCalendar
 
     // Output and UI
     @ObservationIgnored let textOutput: TextOutput
@@ -268,6 +272,15 @@ final class AppState {
             folder: { AppPaths.meetingFolder($0) }
         )
         self.meetingRetention = meetingRetention
+        // The calendar: never EventKit for the design preview or the test host.
+        let calendarSource: any CalendarEventSource
+        if let events = overrides.calendarEvents {
+            calendarSource = FixedCalendarSource(events: events)
+        } else {
+            calendarSource = EventKitSource()
+        }
+        let meetingCalendar = MeetingCalendar(source: calendarSource, isOn: { settings.meetingsCalendar })
+        self.meetingCalendar = meetingCalendar
         let mute = systemMute
         meetingRecorder = MeetingRecorder(environment: MeetingEnvironment(
             makeMic: { MeetingMicCapture() },
@@ -283,7 +296,8 @@ final class AppState {
             setMuteSuppressed: { mute.isSuppressed = $0 },
             postProcessors: [meetingCloud, speakerLabels, meetingCorrection, meetingNotes, meetingRetention],
             outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() },
-            speechModelReady: { ParakeetEngine.isDownloaded }
+            speechModelReady: { ParakeetEngine.isDownloaded },
+            currentEvent: { meetingCalendar.currentEvent() }
         ))
 
         // Output and UI
@@ -328,7 +342,8 @@ final class AppState {
             recorder: meetingRecorder,
             toasts: toasts,
             isEnabled: { settings.meetingsAutoDetect },
-            openMeetings: { presenter.openMain(section: .spotkania) }
+            openMeetings: { presenter.openMain(section: .spotkania) },
+            currentEvent: { meetingCalendar.currentEvent() }
         )
 
         // Hotkeys: the tap comes first, the controller resolves through the relay.
@@ -507,6 +522,8 @@ final class AppState {
         // Always polling: it reads "Wykrywaj spotkania" every time and idles while it is off,
         // so switching it on in Ustawienia works without a relaunch.
         meetingDetector.start()
+        // Same for "Kalendarz": every refresh reads the switch and idles (no EventKit read) while off.
+        meetingCalendar.start()
         observeSettings()
 
         if storeIsFallback {
@@ -522,6 +539,7 @@ final class AppState {
     /// that still records gets its track files finalized; the next launch marks it interrupted.
     func stopServices() {
         meetingDetector.stop()
+        meetingCalendar.stop()
         meetingRecorder.abortForTermination()
         systemMute.restore()
         dictationController.abortForTermination()

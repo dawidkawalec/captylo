@@ -417,10 +417,16 @@ struct MeetingDetailView: View {
                 }
                 .id(meeting.id)
                 HStack(spacing: 8) {
-                    Text(verbatim: metaText(meeting))
-                        .font(GlassFont.caption.monospacedDigit())
-                        .foregroundStyle(GlassColor.textSecondary)
-                        .lineLimit(1)
+                    HStack(spacing: 0) {
+                        Text(verbatim: metaText(meeting))
+                        if !meeting.participants.isEmpty {
+                            Text(verbatim: " · ")
+                            MeetingParticipantsLabel(participants: meeting.participants)
+                        }
+                    }
+                    .font(GlassFont.caption.monospacedDigit())
+                    .foregroundStyle(GlassColor.textSecondary)
+                    .lineLimit(1)
                     if meeting.status == .interrupted, !isLive {
                         GlassBadge("Przerwane", systemImage: "exclamationmark.triangle", tone: .warning)
                             .help(Text("Nagrywanie przerwało się w trakcie. Wypowiedzi zapisane do tej chwili zostały."))
@@ -432,8 +438,9 @@ struct MeetingDetailView: View {
         }
     }
 
-    /// "30 września, 14:00 · 47:12 · Zoom". A meeting cut short never stored its length: the
-    /// end of its last saved segment stands in for it.
+    /// "30 września, 14:00 · 47:12 · Zoom" (the header adds "· 3 osoby" after it when the
+    /// calendar gave participants). A meeting cut short never stored its length: the end of its
+    /// last saved segment stands in for it.
     private func metaText(_ meeting: MeetingRecord) -> String {
         var parts = [MeetingDateText.long(meeting.createdAt)]
         let length = meeting.duration > 0 ? meeting.duration : (segments.map(\.end).max() ?? 0)

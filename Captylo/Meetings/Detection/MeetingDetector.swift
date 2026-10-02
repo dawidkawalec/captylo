@@ -14,8 +14,10 @@ import Foundation
 ///
 /// - A call starts while no meeting records: "Wygląda na spotkanie w Zoom. Nagrać notatki?"
 ///   with "Nagraj", which opens Spotkania (the live bar must be on screen) and starts the
-///   recorder. A call that starts while the last meeting is still finishing (back-to-back
-///   calls) is asked about as soon as the recorder is idle, if it still runs.
+///   recorder. With a calendar event matching now the offer names it ("Wygląda na spotkanie
+///   „Budżet Q4” w Zoom...") and "Nagraj" links the recording to that event. A call that
+///   starts while the last meeting is still finishing (back-to-back calls) is asked about as
+///   soon as the recorder is idle, if it still runs.
 /// - A call that held the mic during this recording ends: "Spotkanie w Zoom zakończone? Kończę
 ///   notatki za 15 s." with "Nagrywaj dalej"; the recorder stops after `stopDelay` unless the
 ///   button was pressed or the app took the mic again. No prompt while another call of the same
@@ -48,6 +50,7 @@ final class MeetingDetector {
     private let openMeetings: @MainActor () -> Void
     private let scan: Scan
     private let clock: @MainActor () -> Double
+    private let currentEvent: @MainActor () -> CalendarEvent?
     private let stopDelay: Duration
     private let freshTracker: DetectionTracker
 
@@ -64,6 +67,8 @@ final class MeetingDetector {
     ///   - openMeetings: brings the main window forward on Spotkania before a detected meeting starts.
     ///   - scan: nil reads Core Audio and the browsers' window titles off the main actor.
     ///   - clock: seconds on a monotonic clock.
+    ///   - currentEvent: the calendar event matching now (`MeetingCalendar.currentEvent()`),
+    ///     the same closure the recorder gets; nil without the calendar.
     init(
         recorder: MeetingRecorder,
         toasts: any ToastPresenting,
@@ -71,6 +76,7 @@ final class MeetingDetector {
         openMeetings: @escaping @MainActor () -> Void,
         scan: Scan? = nil,
         clock: @escaping @MainActor () -> Double = { ProcessInfo.processInfo.systemUptime },
+        currentEvent: @escaping @MainActor () -> CalendarEvent? = { nil },
         tracker: DetectionTracker = DetectionTracker(),
         stopDelay: Duration = MeetingDetector.stopDelay
     ) {
@@ -80,6 +86,7 @@ final class MeetingDetector {
         self.openMeetings = openMeetings
         self.scan = scan ?? { keeping in await MeetingDetector.liveScan(keeping: keeping) }
         self.clock = clock
+        self.currentEvent = currentEvent
         self.stopDelay = stopDelay
         freshTracker = tracker
         self.tracker = tracker
@@ -148,12 +155,17 @@ final class MeetingDetector {
             return
         }
         guard recorder.phase == .idle, !recorder.isStarting else { return }
-        Log.audio.info("Call detected in \(app.name, privacy: .public)")
-        toasts.showAction(
-            message: String(localized: "Wygląda na spotkanie w \(app.name). Nagrać notatki?"),
-            buttonTitle: String(localized: "Nagraj")
-        ) { [weak self] in
-            self?.record(app)
+        // The event shown is the one "Nagraj" links, even when the calendar matches another by then.
+        let event = currentEvent()
+        Log.audio.info("Call detected in \(app.name, privacy: .public)\(event == nil ? "" : ", a calendar event matches", privacy: .public)")
+        let message: String
+        if let event, !event.title.isEmpty {
+            message = String(localized: "Wygląda na spotkanie „\(event.title)” w \(app.name). Nagrać notatki?")
+        } else {
+            message = String(localized: "Wygląda na spotkanie w \(app.name). Nagrać notatki?")
+        }
+        toasts.showAction(message: message, buttonTitle: String(localized: "Nagraj")) { [weak self] in
+            self?.record(app, event: event)
         }
     }
 
@@ -170,12 +182,12 @@ final class MeetingDetector {
         }
     }
 
-    private func record(_ app: MeetingApp) {
+    private func record(_ app: MeetingApp, event: CalendarEvent?) {
         guard recorder.phase == .idle, !recorder.isStarting else { return }
         // Spotkania first: a meeting never records without its live bar on screen.
         openMeetings()
         let recorder = self.recorder
-        Task { await recorder.start(appName: app.name) }
+        Task { await recorder.start(appName: app.name, event: event) }
     }
 
     private func offerToStop(_ app: MeetingApp) {

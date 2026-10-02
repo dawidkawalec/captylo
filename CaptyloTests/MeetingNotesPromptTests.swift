@@ -51,6 +51,22 @@ struct MeetingNotesPromptTests {
         #expect(!user.contains("echo"))
     }
 
+    /// The participants from the calendar go after the title, so the notes spell the names
+    /// right; a meeting without them has no such line.
+    @Test func userMessageListsTheParticipantsAfterTheTitle() {
+        let id = UUID()
+        var meeting = MeetingRecord(id: id, title: "Budżet Q4")
+        meeting.participants = ["Anna Kowalska", "Piotr Nowak"]
+        let segments = [MeetingSegmentRecord(meetingID: id, track: .me, start: 1, end: 2, text: "Zaczynamy.")]
+        let user = MeetingNotesPrompt.user(meeting: meeting, segments: segments)
+        #expect(user.hasPrefix("Tytuł: Budżet Q4\nUczestnicy: Anna Kowalska, Piotr Nowak\n<user_notes>"))
+
+        meeting.participants = []
+        let alone = MeetingNotesPrompt.user(meeting: meeting, segments: segments)
+        #expect(alone.hasPrefix("Tytuł: Budżet Q4\n<user_notes>"))
+        #expect(!alone.contains("Uczestnicy"))
+    }
+
     /// The prompt is Polish whatever the UI language: labels never go through the string catalog.
     @Test func promptLabelsDoNotDependOnTheUILanguage() {
         let id = UUID()
