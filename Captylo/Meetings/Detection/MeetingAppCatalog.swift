@@ -8,13 +8,17 @@ import Foundation
 /// (Arc's helpers are lower case). Names are product names and never translated.
 enum MeetingAppCatalog {
     private struct Entry {
+        /// Bundle IDs of the app itself (lower case); a quit of one of these means the app is gone.
+        let mainIDs: [String]
+        /// `mainIDs` plus the prefixes of helper processes with a bundle ID of their own.
         let prefixes: [String]
         let app: MeetingApp
         /// Browsers: the app whose window titles tell a call from any other mic use.
         let windowOwner: String?
 
-        init(_ name: String, _ prefixes: [String], browser windowOwner: String? = nil) {
-            self.prefixes = prefixes.map { $0.lowercased() }
+        init(_ name: String, _ mainIDs: [String], helpers: [String] = [], browser windowOwner: String? = nil) {
+            self.mainIDs = mainIDs.map { $0.lowercased() }
+            prefixes = self.mainIDs + helpers.map { $0.lowercased() }
             app = MeetingApp(name: name, isBrowser: windowOwner != nil)
             self.windowOwner = windowOwner
         }
@@ -30,7 +34,7 @@ enum MeetingAppCatalog {
         Entry("Around", ["co.teamport.around"]),
         Entry("Tuple", ["app.tuple.app"]),
         Entry("Chrome", ["com.google.Chrome"], browser: "com.google.Chrome"),
-        Entry("Safari", ["com.apple.Safari", "com.apple.WebKit"], browser: "com.apple.Safari"),
+        Entry("Safari", ["com.apple.Safari"], helpers: ["com.apple.WebKit"], browser: "com.apple.Safari"),
         Entry("Arc", ["company.thebrowser.Browser"], browser: "company.thebrowser.Browser"),
         Entry("Edge", ["com.microsoft.edgemac"], browser: "com.microsoft.edgemac"),
         Entry("Brave", ["com.brave.Browser"], browser: "com.brave.Browser"),
@@ -43,6 +47,14 @@ enum MeetingAppCatalog {
 
     static func app(forBundleID id: String) -> MeetingApp? {
         entry(forBundleID: id)?.app
+    }
+
+    /// True for the bundle ID of a call app or browser itself, never for one of its helpers
+    /// (`com.google.Chrome.helper.renderer` quits with every closed tab, Teams and WebKit
+    /// helpers come and go during a call).
+    static func isMainApp(bundleID id: String) -> Bool {
+        let id = id.lowercased()
+        return entries.contains { $0.mainIDs.contains(id) }
     }
 
     /// Bundle ID of the browser whose windows to read for a process of it (Safari for the

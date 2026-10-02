@@ -7,12 +7,14 @@ import Foundation
 ///
 /// Every `pollInterval` it reads which processes hold the mic (Core Audio, no permission), maps
 /// them through `MeetingAppCatalog` and feeds `DetectionTracker`. A browser only counts when one
-/// of its windows names a call service ("Meet", "Teams", ...), read through the Accessibility
-/// grant Captylo already has for the hotkey; without the grant browsers are skipped. Once a
-/// browser is in a call it keeps counting without the title, so leaving the Meet tab mid-call
-/// does not end the call; a browser that holds the mic for `browserIdleAfter` without any call
-/// window is dropped (the user left Meet, another tab uses the mic). Window titles are only
-/// compared, never logged or kept.
+/// of its windows or tabs names a call service ("Meet", "Teams", ...), read through the
+/// Accessibility grant Captylo already has for the hotkey (`BrowserCallWindows`); without the
+/// grant browsers are skipped. Once a browser is in a call it keeps counting without the title,
+/// so leaving the Meet tab mid-call does not end the call; a browser that holds the mic for
+/// `browserIdleAfter` while its tab strip shows no call tab is dropped (the user left Meet,
+/// another tab uses the mic). A browser whose tabs cannot be read (one tab per window, Arc's
+/// sidebar) keeps counting until it releases the mic. Titles are only compared, never logged
+/// or kept.
 ///
 /// - A call starts while no meeting records: "Wygląda na spotkanie w Zoom. Nagrać notatki?"
 ///   with "Nagraj", which opens Spotkania (the live bar must be on screen) and starts the
@@ -38,7 +40,8 @@ final class MeetingDetector {
 
     nonisolated static let pollInterval: Duration = .seconds(2)
     nonisolated static let stopDelay: Duration = .seconds(15)
-    /// A browser in a call that holds the mic this long without a call window stops counting.
+    /// A browser in a call that holds the mic this long without a call window or tab stops
+    /// counting.
     nonisolated static let browserIdleAfter: Double = 30
     /// The recording's calendar event over for this long: the call ends after `overrunEndAfter`
     /// without the mic instead of the tracker's 45 s.
@@ -163,10 +166,14 @@ final class MeetingDetector {
         reset()
     }
 
-    /// A process terminated: when it is a call app, its call ends at the next poll without the
-    /// 45 s wait (the observer's body; tests call it directly).
+    /// A process terminated: when it is a call app itself, its call ends at the next poll without
+    /// the 45 s wait (the observer's body; tests call it directly). Helpers (a Chrome renderer
+    /// quits with every closed tab, Teams and WebKit helpers come and go during a call) are not
+    /// the app and change nothing.
     func appDidQuit(bundleID: String) {
-        guard let app = MeetingAppCatalog.app(forBundleID: bundleID) else { return }
+        guard MeetingAppCatalog.isMainApp(bundleID: bundleID),
+              let app = MeetingAppCatalog.app(forBundleID: bundleID)
+        else { return }
         quitSincePoll.insert(app.name)
     }
 
@@ -215,7 +222,7 @@ final class MeetingDetector {
     }
 
     /// The scan's apps without the browsers that held the mic for `browserIdleAfter` with no
-    /// call window: the user left the call, something else in the browser uses the mic.
+    /// call window or tab: the user left the call, something else in the browser uses the mic.
     private func dropIdleBrowsers(_ scan: CallScan, at now: Double) -> [MeetingApp] {
         let idle = scan.browsersWithoutCallWindow.intersection(inCall)
         browserWithoutCallSince = browserWithoutCallSince.filter { idle.contains($0.key) }
@@ -361,14 +368,14 @@ final class MeetingDetector {
         await Task.detached(priority: .utility) { appsInCalls(keeping: keeping) }.value
     }
 
-    /// Known call apps holding the mic, and browsers holding it with a call window (or already in
-    /// a call, `keeping`; those report whether a call window is still there). Captylo itself
-    /// never counts.
+    /// Known call apps holding the mic, and browsers holding it with a call window or tab (or
+    /// already in a call, `keeping`; those report when their tabs show no call any more).
+    /// Captylo itself never counts.
     nonisolated static func appsInCalls(keeping: Set<String>) -> CallScan {
         let own = ProcessInfo.processInfo.processIdentifier
         let canReadTitles = AXIsProcessTrusted()
         var scan = CallScan(apps: [])
-        var windowChecks: [String: Bool] = [:]
+        var windowChecks: [String: BrowserCallWindows.Check] = [:]
         for process in CoreAudioProcesses.usingInput() where process.pid != own {
             guard let app = MeetingAppCatalog.app(forBundleID: process.bundleID), !scan.apps.contains(app) else { continue }
             if app.isBrowser {
@@ -379,42 +386,15 @@ final class MeetingDetector {
                     continue
                 }
                 let owner = MeetingAppCatalog.windowOwner(forBundleID: process.bundleID) ?? process.bundleID
-                let hasCall = windowChecks[owner] ?? hasCallWindow(owner: owner, fallbackPID: process.pid)
-                windowChecks[owner] = hasCall
-                guard hasCall || kept else { continue }
-                if !hasCall {
+                let check = windowChecks[owner] ?? BrowserCallWindows.check(owner: owner, fallbackPID: process.pid)
+                windowChecks[owner] = check
+                guard check == .call || kept else { continue }
+                if check == .noCall {
                     scan.browsersWithoutCallWindow.insert(app.name)
                 }
             }
             scan.apps.append(app)
         }
         return scan
-    }
-
-    /// True when a window of the browser `owner` (or of `fallbackPID` when it does not run under
-    /// that bundle ID) has a call service in its title.
-    private nonisolated static func hasCallWindow(owner: String, fallbackPID: pid_t) -> Bool {
-        var pids = NSRunningApplication.runningApplications(withBundleIdentifier: owner).map(\.processIdentifier)
-        if pids.isEmpty {
-            pids = [fallbackPID]
-        }
-        return pids.contains { pid in
-            windowTitles(pid: pid).contains(where: MeetingAppCatalog.isCallTitle)
-        }
-    }
-
-    private nonisolated static func windowTitles(pid: pid_t) -> [String] {
-        let app = AXUIElementCreateApplication(pid)
-        // A busy browser must not hold the scan for the default ~6 s.
-        AXUIElementSetMessagingTimeout(app, AXText.messagingTimeout)
-        var windows: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windows) == .success,
-              let list = windows as? [AXUIElement]
-        else { return [] }
-        return list.compactMap { window in
-            var title: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &title) == .success else { return nil }
-            return title as? String
-        }
     }
 }

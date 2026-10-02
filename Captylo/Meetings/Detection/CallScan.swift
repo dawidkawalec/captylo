@@ -6,7 +6,8 @@ struct CallScan: Sendable, Equatable {
     /// a call (`keeping`); one entry per app.
     var apps: [MeetingApp]
     /// Browsers among `apps` that count only because they are already in a call: they hold the
-    /// mic, but none of their windows names a call service in this poll. `MeetingDetector` drops
-    /// a browser that stays like this for `browserIdleAfter`. Empty when titles cannot be read.
+    /// mic, but none of their windows or tabs names a call service in this poll
+    /// (`BrowserCallWindows.Check.noCall`). `MeetingDetector` drops a browser that stays like
+    /// this for `browserIdleAfter`. A browser whose tabs cannot be read is never listed here.
     var browsersWithoutCallWindow: Set<String> = []
 }

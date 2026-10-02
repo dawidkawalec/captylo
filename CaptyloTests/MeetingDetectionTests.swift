@@ -22,6 +22,30 @@ struct MeetingDetectionTests {
         #expect(MeetingAppCatalog.app(forBundleID: "company.thebrowser.browser.helper")?.isBrowser == true)
     }
 
+    /// Helpers (renderers, GPU, networking) quit all the time during a call: only the app's own
+    /// bundle ID means the app is gone.
+    @Test func onlyTheAppItselfCountsAsAMainApp() {
+        #expect(MeetingAppCatalog.isMainApp(bundleID: "us.zoom.xos"))
+        #expect(MeetingAppCatalog.isMainApp(bundleID: "com.microsoft.teams2"))
+        #expect(MeetingAppCatalog.isMainApp(bundleID: "com.microsoft.teams"))
+        #expect(MeetingAppCatalog.isMainApp(bundleID: "com.google.Chrome"))
+        #expect(MeetingAppCatalog.isMainApp(bundleID: "com.apple.Safari"))
+        #expect(MeetingAppCatalog.isMainApp(bundleID: "COMPANY.THEBROWSER.BROWSER"))
+        #expect(!MeetingAppCatalog.isMainApp(bundleID: "com.google.Chrome.helper.renderer"))
+        #expect(!MeetingAppCatalog.isMainApp(bundleID: "com.microsoft.teams2.helper"))
+        #expect(!MeetingAppCatalog.isMainApp(bundleID: "company.thebrowser.browser.helper"))
+        #expect(!MeetingAppCatalog.isMainApp(bundleID: "com.apple.WebKit.Networking"))
+        #expect(!MeetingAppCatalog.isMainApp(bundleID: "com.apple.WebKit"))
+        #expect(!MeetingAppCatalog.isMainApp(bundleID: "com.spotify.client"))
+        #expect(!MeetingAppCatalog.isMainApp(bundleID: ""))
+    }
+
+    /// A process that is not there has no windows and no tabs: nothing is known, the browser
+    /// keeps counting.
+    @Test func noWindowsToReadMeansNothingIsKnown() {
+        #expect(BrowserCallWindows.check(owner: "com.captylo.no-such-browser", fallbackPID: pid_t.max) == .unknown)
+    }
+
     @Test func browserWindowsAreReadFromTheBrowserItself() {
         #expect(MeetingAppCatalog.windowOwner(forBundleID: "com.google.Chrome.helper") == "com.google.Chrome")
         #expect(MeetingAppCatalog.windowOwner(forBundleID: "com.apple.WebKit.GPU") == "com.apple.Safari")
@@ -526,8 +550,49 @@ struct MeetingDetectorFlowTests {
         #expect(rig.recorder.isRecording)
     }
 
-    /// The user left Meet but another tab keeps the mic: after 30 s without any call window
-    /// the browser no longer counts, and the usual 45 s end the call.
+    /// A browser renderer quits whenever a tab closes: the call in another tab goes on, the
+    /// browser stays kept. Only the browser itself quitting ends the call.
+    @Test func aHelperQuitDuringABrowserCallChangesNothing() async throws {
+        let rig = try rig()
+        try await recordChromeCall(rig)
+        await poll(rig, [chrome], at: 10)
+        rig.detector.appDidQuit(bundleID: "com.google.Chrome.helper.renderer")
+        rig.detector.appDidQuit(bundleID: "com.google.Chrome.helper")
+        await poll(rig, [chrome], at: 12)
+        #expect(rig.world.scans.last == ["Chrome"])
+        await poll(rig, [chrome], at: 14)
+        #expect(rig.toasts.shown.count == 1)
+        #expect(!rig.detector.isStopPending)
+        rig.detector.appDidQuit(bundleID: "com.google.Chrome")
+        await poll(rig, [], at: 16)
+        #expect(rig.toasts.shown.last?.message == stopPrompt("Chrome"))
+        await waitUntil { rig.recorder.phase == .idle }
+        #expect(rig.recorder.phase == .idle)
+    }
+
+    /// Teams and Safari helpers come and go during a call too.
+    @Test func aHelperQuitDuringANativeCallChangesNothing() async throws {
+        let teams = MeetingApp(name: "Teams", isBrowser: false)
+        let rig = try rig()
+        await poll(rig, [teams], at: 0)
+        await poll(rig, [teams], at: 6)
+        let prompt = try #require(rig.toasts.shown.last)
+        prompt.action?()
+        await waitUntil { rig.recorder.isRecording }
+        await poll(rig, [teams], at: 10)
+        rig.detector.appDidQuit(bundleID: "com.microsoft.teams2.helper")
+        rig.detector.appDidQuit(bundleID: "com.apple.WebKit.Networking")
+        await poll(rig, [teams], at: 12)
+        await poll(rig, [teams], at: 14)
+        #expect(rig.toasts.shown.count == 1)
+        #expect(!rig.detector.isStopPending)
+        #expect(rig.recorder.isRecording)
+        await rig.recorder.stop()
+    }
+
+    /// The user left Meet but another tab keeps the mic: after 30 s with no call window and no
+    /// call tab (the tab strip was read) the browser no longer counts, and the usual 45 s end
+    /// the call.
     @Test func aBrowserHoldingTheMicWithoutACallWindowIsDroppedAfterThirtySeconds() async throws {
         let rig = try rig()
         try await recordChromeCall(rig)
