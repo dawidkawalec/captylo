@@ -2,7 +2,8 @@ import SwiftUI
 
 /// "Spotkania" in Ustawienia, right after "Nagrywanie": meeting detection, the consent reminder,
 /// the calendar ("Kalendarz" and "Przypominaj przed spotkaniem", Free), how long the track files
-/// stay ("Zachowuj nagrania spotkań"; transcripts and notes always stay), the system audio check
+/// stay ("Zachowuj nagrania spotkań"; transcripts and notes always stay), the system audio check,
+/// "Redukcja echa (eksperymentalna)" (voice processing on the mic, read at the next meeting start)
 /// and, in debug builds only, "Tryb Pro (dev)", which stands in for a licence until accounts exist.
 @MainActor
 struct MeetingsSettingsPanel: View {
@@ -71,6 +72,12 @@ struct MeetingsSettingsPanel: View {
             SystemAudioCheckRow(
                 recorder: appState.meetingRecorder,
                 isDesignPreview: appState.isDesignPreview
+            )
+            GlassToggleRow(
+                "Redukcja echa (eksperymentalna)",
+                subtitle: "Próbuje usunąć z Twojego mikrofonu to, co słychać z głośników. Zmiana działa od następnego spotkania; z niektórymi słuchawkami Bluetooth się nie włącza.",
+                systemImage: "waveform.badge.minus",
+                isOn: $settings.meetingsVoiceProcessing
             )
             #if DEBUG
             GlassRowSeparator()

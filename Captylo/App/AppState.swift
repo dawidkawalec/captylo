@@ -295,7 +295,7 @@ final class AppState {
         self.meetingCalendar = meetingCalendar
         let mute = systemMute
         meetingRecorder = MeetingRecorder(environment: MeetingEnvironment(
-            makeMic: { MeetingMicCapture() },
+            makeMic: { MeetingMicCapture(voiceProcessing: settings.meetingsVoiceProcessing) },
             makeSystem: { SystemAudioTap() },
             makeTranscriber: { id, language, save in
                 MeetingTranscriber(meetingID: id, language: language, engine: engine,

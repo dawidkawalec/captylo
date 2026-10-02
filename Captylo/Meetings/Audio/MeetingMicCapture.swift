@@ -14,9 +14,17 @@ import os
 /// delivered as silence (`TrackTimeline`, host times of the tap buffers): every 2 s while no
 /// input exists, and the rest before the first buffer of the new engine. "Ja" stays in step
 /// with "Rozmówcy" and `me.caf` keeps the meeting's length.
+///
+/// `voiceProcessing` ("Redukcja echa (eksperymentalna)") asks the input node for Apple's voice
+/// processing before the tap goes in: the native format changes with it and the pipeline adapts.
+/// An input that refuses it (some Bluetooth outputs, error -10875), at `setVoiceProcessingEnabled`
+/// or at `start`, gets the plain engine; `isVoiceProcessingActive` says what runs.
 final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
     static let tapBufferSize: AVAudioFrameCount = 4_096
     static let retryDelay: DispatchTimeInterval = .seconds(2)
+
+    /// The switch as read when the meeting started.
+    let voiceProcessingWanted: Bool
 
     /// State shared with the tap thread; replaced only under the lock.
     private struct Hot {
@@ -32,6 +40,8 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
     private let delivery = DispatchQueue(label: "com.captylo.app.meeting.mic", qos: .userInitiated)
     private let hot = OSAllocatedUnfairLock(uncheckedState: Hot())
     private let levelLock = OSAllocatedUnfairLock<Float>(initialState: 0)
+    /// What the current engine runs; `.off` between sessions.
+    private let voiceProcessing = OSAllocatedUnfairLock<VoiceProcessingSetup.Outcome>(initialState: .off)
 
     // Touched only on `control`.
     private var engine: AVAudioEngine?
@@ -41,8 +51,17 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
     private var session = 0
     /// Bumped by every engine build, never reset, so no two taps ever share a number.
     private var builds = 0
+    /// The outcome the log last reported this session, so a rebuild repeats nothing.
+    private var loggedVoiceProcessing: VoiceProcessingSetup.Outcome?
 
     var level: Float { levelLock.withLock { $0 } }
+
+    /// True while the running engine has voice processing on.
+    var isVoiceProcessingActive: Bool { voiceProcessing.withLock { $0.isActive } }
+
+    init(voiceProcessing: Bool = false) {
+        voiceProcessingWanted = voiceProcessing
+    }
 
     deinit {
         if let configObserver {
@@ -82,6 +101,7 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
                 return active
             }
             teardownLocked()
+            loggedVoiceProcessing = nil
             return active
         }
         levelLock.withLock { $0 = 0 }
@@ -92,10 +112,39 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
 
     // MARK: Control queue
 
-    /// A fresh engine on the current default input, with tap, pipeline and change observer.
+    /// A fresh engine on the current default input, with voice processing when wanted and the
+    /// input takes it, else the plain engine; then the log line, once per outcome.
     private func buildLocked() throws {
+        do {
+            try buildEngineLocked(voiceProcessing: voiceProcessingWanted)
+        } catch {
+            // Enabled fine, but the engine would not start with it (some Bluetooth outputs
+            // fail only here): the plain engine instead of no mic at all.
+            guard voiceProcessing.withLock({ $0.isActive }) else { throw error }
+            teardownLocked()
+            voiceProcessing.withLock { $0 = .unavailable(error.localizedDescription) }
+            try buildEngineLocked(voiceProcessing: false)
+        }
+        let outcome = voiceProcessing.withLock { $0 }
+        if let message = VoiceProcessingSetup.logMessage(outcome, after: loggedVoiceProcessing) {
+            loggedVoiceProcessing = outcome
+            Log.audio.info("\(message, privacy: .public)")
+        }
+    }
+
+    /// The engine itself, with tap, pipeline and change observer. `voiceProcessing` is asked
+    /// for before the format is read, because it changes the format.
+    private func buildEngineLocked(voiceProcessing wanted: Bool) throws {
         let engine = AVAudioEngine()
         let input = engine.inputNode
+        let outcome = VoiceProcessingSetup.apply(wanted: wanted) {
+            try input.setVoiceProcessingEnabled(true)
+            // Never lower the call's own volume: the user is still listening to it.
+            input.voiceProcessingOtherAudioDuckingConfiguration = .init(enableAdvancedDucking: false, duckingLevel: .min)
+        }
+        if wanted {
+            voiceProcessing.withLock { $0 = outcome }
+        }
         let native = input.inputFormat(forBus: 0)
         guard native.sampleRate > 0, native.channelCount > 0,
               let pipeline = AudioConversionPipeline(native: native, target: AudioCapture.targetFormat) else {
@@ -138,6 +187,8 @@ final class MeetingMicCapture: MeetingAudioSource, @unchecked Sendable {
         engine = nil
         nativeFormat = nil
         hot.withLockUnchecked { $0.pipeline = nil }
+        // Keep an `unavailable` verdict for the rebuild path's log; `on` dies with its engine.
+        voiceProcessing.withLock { if $0.isActive { $0 = .off } }
     }
 
     private func handleConfigurationChange() {

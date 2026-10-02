@@ -6418,6 +6418,16 @@
         "en": { "stringUnit": { "state": "translated", "value": "Meeting speech detection: ready" } }
       }
     },
+    "Redukcja echa (eksperymentalna)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Echo reduction (experimental)" } }
+      }
+    },
+    "Próbuje usunąć z Twojego mikrofonu to, co słychać z głośników. Zmiana działa od następnego spotkania; z niektórymi słuchawkami Bluetooth się nie włącza.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tries to remove what the speakers play from your microphone. The change applies from the next meeting; it does not turn on with some Bluetooth headphones." } }
+      }
+    },
     "Wykrywanie mowy do spotkań: pobieram...": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Meeting speech detection: downloading..." } }

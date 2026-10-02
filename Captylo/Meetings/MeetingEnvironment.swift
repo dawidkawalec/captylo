@@ -2,7 +2,9 @@ import Foundation
 
 /// Everything `MeetingRecorder` touches outside itself, so tests run on fakes.
 struct MeetingEnvironment: Sendable {
-    var makeMic: @Sendable () -> any MeetingAudioSource
+    /// Called on the main actor at `start`, so it can read the settings of the moment (the
+    /// echo reduction switch applies to the next meeting, not a running one).
+    var makeMic: @MainActor @Sendable () -> any MeetingAudioSource
     var makeSystem: @Sendable () -> any MeetingAudioSource
     var makeTranscriber: @Sendable (_ meetingID: UUID, _ language: String?, _ save: @escaping @Sendable (MeetingSegmentRecord) async -> Void) -> MeetingTranscriber
     var database: Database

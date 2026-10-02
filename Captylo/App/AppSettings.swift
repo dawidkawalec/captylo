@@ -50,6 +50,7 @@ final class AppSettings {
         case meetingsCalendar = "meetings.calendar"
         case meetingsCalendarReminder = "meetings.calendarReminder"
         case meetingsCalendarReminderMinutes = "meetings.calendarReminderMinutes"
+        case meetingsVoiceProcessing = "meetings.voiceProcessing"
     }
 
     /// Every persisted key, for tests and diagnostics.
@@ -428,6 +429,14 @@ final class AppSettings {
                 defaults.set(value, forKey: Key.meetingsCalendarReminderMinutes.rawValue)
             }
         }
+    }
+
+    /// "Redukcja echa (eksperymentalna)": Apple's voice processing on the meeting mic (echo
+    /// cancellation, noise suppression). Read when a meeting starts, so a change applies to
+    /// the next one.
+    var meetingsVoiceProcessing: Bool {
+        get { track(\.meetingsVoiceProcessing); return bool(.meetingsVoiceProcessing, default: false) }
+        set { withMutation(keyPath: \.meetingsVoiceProcessing) { defaults.set(newValue, forKey: Key.meetingsVoiceProcessing.rawValue) } }
     }
 
     var menuBarOnly: Bool {

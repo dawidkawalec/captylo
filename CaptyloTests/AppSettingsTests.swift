@@ -116,7 +116,18 @@ struct AppSettingsTests {
         #expect(raw.contains("meetings.calendar"))
         #expect(raw.contains("meetings.calendarReminder"))
         #expect(raw.contains("meetings.calendarReminderMinutes"))
-        #expect(AppSettings.keys.count == 43)
+        #expect(raw.contains("meetings.voiceProcessing"))
+        #expect(AppSettings.keys.count == 44)
+    }
+
+    @Test func meetingVoiceProcessingDefaultsOff() throws {
+        let settings = try makeSettings()
+        #expect(!settings.meetingsVoiceProcessing)
+        settings.meetingsVoiceProcessing = true
+        let reloaded = AppSettings(defaults: try #require(UserDefaults(suiteName: Self.suiteName)))
+        #expect(reloaded.meetingsVoiceProcessing)
+        settings.reset()
+        #expect(!settings.meetingsVoiceProcessing)
     }
 
     @Test func meetingCalendarDefaultsOffWithAOneMinuteReminder() throws {
