@@ -17,9 +17,28 @@ enum LibraryAskRetrieval {
     /// Newest meetings read for the notes-only fallback (those without AI notes are skipped).
     static let notesOnlyScan = 50
 
+    /// Lines from the end of a meeting picked by date with no hit (the wrap-up: decisions and
+    /// next steps), sent next to its AI notes.
+    static let closingLines = 12
+
+    /// Folded words that make a question about time ("ostatnio", "w zeszłym tygodniu",
+    /// "wczoraj"): the meetings are then picked by date (`period`), not only by topic. They are
+    /// never search terms.
+    static let timeWords: Set<String> = [
+        // Polish
+        "ostatnio", "niedawno", "ostatni", "ostatnia", "ostatnie", "ostatnim", "ostatniej",
+        "ostatnich", "ostatniego", "zeszly", "zeszla", "zeszle", "zeszlym", "zeszlej", "zeszlego",
+        "poprzedni", "poprzednia", "poprzednie", "poprzednim", "poprzedniej", "poprzedniego",
+        "tydzien", "tygodnia", "tygodniu", "miesiac", "miesiaca", "miesiacu", "wczoraj",
+        "przedwczoraj", "dzisiaj", "dzis", "dzisiejsze", "dzisiejszym", "dzisiejszej",
+        // English
+        "recent", "recently", "lately", "latest", "last", "previous", "past", "week", "month",
+        "yesterday", "today",
+    ]
+
     /// Folded (`MeetingSearch.fold`) question words that say nothing about the topic: Polish
-    /// function and question words, the verbs of "what did X say", time words (the prompt has
-    /// the dates) and English basics. Words under 3 letters never reach the index anyway.
+    /// function and question words, the verbs of "what did X say" and English basics (time
+    /// words are `timeWords`). Words under 3 letters never reach the index anyway.
     static let stopwords: Set<String> = [
         // Polish
         "i", "a", "o", "w", "z", "na", "do", "ze", "sie", "jak", "co", "czy", "to", "ten", "ta",
@@ -30,24 +49,99 @@ enum LibraryAskRetrieval {
         "nasze", "tam", "tu", "juz", "jeszcze", "tez", "tylko", "wszystkie", "wszystko",
         "mowil", "mowila", "mowili", "mowilismy", "mowiles", "powiedzial", "powiedziala",
         "powiedzieli", "rozmawialismy", "spotkanie", "spotkania", "spotkaniu", "spotkaniach",
-        "ostatnio", "ostatni", "ostatnie", "ostatnim", "ostatniej", "zeszlym", "zeszlej",
-        "tygodniu", "miesiacu", "wczoraj", "dzisiaj", "dzis",
+        "biezacym", "biezacy",
         // English
         "the", "and", "or", "of", "to", "in", "on", "at", "for", "with", "about", "what",
         "who", "whom", "when", "where", "which", "how", "why", "did", "does", "do", "is", "are",
         "was", "were", "we", "our", "my", "me", "you", "it", "that", "this", "these", "those",
-        "any", "last", "week", "month", "yesterday", "today", "said", "say", "says", "talk",
-        "talked", "meeting", "meetings", "have", "has", "had", "there", "from",
+        "any", "said", "say", "says", "talk", "talked", "meeting", "meetings", "have", "has",
+        "had", "there", "from",
     ]
 
-    /// The question's search terms (`SearchQuery.terms`) without stopwords; nil when nothing is
-    /// left to look for.
-    static func terms(_ question: String) -> [String]? {
-        let words = MeetingSearch.fold(question)
+    /// The folded words of `question`.
+    private static func words(_ question: String) -> [String] {
+        MeetingSearch.fold(question)
             .split { !$0.isLetter && !$0.isNumber }
             .map(String.init)
-            .filter { !stopwords.contains($0) }
+    }
+
+    /// The question's search terms (`SearchQuery.terms`) without stopwords and time words; nil
+    /// when nothing is left to look for.
+    static func terms(_ question: String) -> [String]? {
+        let words = words(question).filter { !stopwords.contains($0) && !timeWords.contains($0) }
         return SearchQuery.terms(words.joined(separator: " "))
+    }
+
+    /// The question is about time: its meetings are picked by date.
+    static func isAboutTime(_ question: String) -> Bool {
+        words(question).contains { timeWords.contains($0) }
+    }
+
+    /// The period a question names: "dziś", "wczoraj", "przedwczoraj" (that day), "w tym
+    /// tygodniu" / "miesiącu" (the calendar week or month of `now`), "w zeszłym" / "poprzednim"
+    /// (the one before), "w ostatnim tygodniu" / "miesiącu" (the last 7 / 30 days up to `now`).
+    /// Nil for "ostatnio" and other questions without one: the newest meetings.
+    static func period(_ question: String, now: Date, calendar: Calendar) -> DateInterval? {
+        let words = Set(words(question))
+        func day(_ offset: Int) -> DateInterval? {
+            calendar.date(byAdding: .day, value: offset, to: now).flatMap { calendar.dateInterval(of: .day, for: $0) }
+        }
+        if !words.isDisjoint(with: ["dzis", "dzisiaj", "dzisiejsze", "dzisiejszym", "dzisiejszej", "today"]) {
+            return day(0)
+        }
+        if words.contains("przedwczoraj") { return day(-2) }
+        if !words.isDisjoint(with: ["wczoraj", "yesterday"]) { return day(-1) }
+
+        let unit: Calendar.Component
+        let rollingDays: Int
+        if !words.isDisjoint(with: ["tydzien", "tygodnia", "tygodniu", "week"]) {
+            unit = .weekOfYear
+            rollingDays = 7
+        } else if !words.isDisjoint(with: ["miesiac", "miesiaca", "miesiacu", "month"]) {
+            unit = .month
+            rollingDays = 30
+        } else {
+            return nil
+        }
+        let previous: Set<String> = [
+            "zeszly", "zeszla", "zeszle", "zeszlym", "zeszlej", "zeszlego", "poprzedni", "poprzednia",
+            "poprzednie", "poprzednim", "poprzedniej", "poprzedniego", "last", "previous",
+        ]
+        let rolling: Set<String> = ["ostatni", "ostatnia", "ostatnie", "ostatnim", "ostatniej", "ostatnich", "ostatniego", "past"]
+        if !words.isDisjoint(with: previous) {
+            return calendar.date(byAdding: unit, value: -1, to: now).flatMap { calendar.dateInterval(of: unit, for: $0) }
+        }
+        if !words.isDisjoint(with: rolling) {
+            return calendar.date(byAdding: .day, value: -rollingDays, to: now).map { DateInterval(start: $0, end: now) }
+        }
+        return calendar.dateInterval(of: unit, for: now)
+    }
+
+    /// Weeks from Monday, the user's time zone: what "w tym tygodniu" means in Polish.
+    static var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.firstWeekday = 2
+        calendar.minimumDaysInFirstWeek = 4
+        calendar.timeZone = .current
+        return calendar
+    }
+
+    /// For a question picked by date: the meetings with hits, newest first, then (when `fill`)
+    /// the newest of the rest, `limit` in all. `meetings` is newest first.
+    static func pickByDate(_ meetings: [MeetingRecord], hits: Set<UUID>, fill: Bool, limit: Int) -> [MeetingRecord] {
+        let withHits = meetings.filter { hits.contains($0.id) }
+        let rest = fill ? meetings.filter { !hits.contains($0.id) } : []
+        return Array((withHits + rest).prefix(max(limit, 0)))
+    }
+
+    /// The last `count` spoken lines (echo left out) as one run in time order; empty when there
+    /// are none.
+    static func closing(_ segments: [MeetingSegmentRecord], count: Int) -> [[MeetingSegmentRecord]] {
+        let spoken = segments
+            .filter { !$0.isEcho }
+            .sorted { $0.start != $1.start ? $0.start < $1.start : $0.id.uuidString < $1.id.uuidString }
+        let tail = Array(spoken.suffix(max(count, 0)))
+        return tail.isEmpty ? [] : [tail]
     }
 
     /// The `limit` meetings whose hits add up best (the sum of their ranks, lower is better, so

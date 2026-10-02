@@ -8,4 +8,7 @@ struct LibraryAskContext: Sendable, Equatable {
     /// The search index was still being built: the newest meetings' AI notes only, and the
     /// answer says so.
     var notesOnly: Bool
+    /// Picked by date (a question about time, or one with no topic words left): the AI notes go
+    /// longer (`notesOnlyPrefix`), with no index line in the answer.
+    var byDate = false
 }

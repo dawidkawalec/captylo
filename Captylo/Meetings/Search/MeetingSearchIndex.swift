@@ -169,15 +169,20 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
     /// ranks best, each with at most `segmentsPerMeeting` segment hits (its best ones) plus its
     /// title and notes hits, meetings in the order of their best hit. A meeting that says a word
     /// hundreds of times never crowds out the others, as a flat `limit` over entries would. Nil
-    /// when not ready or the query fails.
-    func meetingHits(terms: [String], all: Bool, meetings: Int, segmentsPerMeeting: Int) async -> [SearchHit]? {
+    /// when not ready or the query fails. `within` limits the hits to those meetings (nil: all).
+    func meetingHits(
+        terms: [String], all: Bool, meetings: Int, segmentsPerMeeting: Int, within: [UUID]? = nil
+    ) async -> [SearchHit]? {
         guard !terms.isEmpty, meetings > 0, isReady else { return nil }
+        if let within, within.isEmpty { return [] }
         let match = SearchQuery.match(terms, all: all)
         let perMeeting = max(segmentsPerMeeting, 0)
+        // A JSON array of the ids, read with `json_each` (one bound parameter for any count).
+        let only = within.map { "[" + $0.map { "\"\($0.uuidString)\"" }.joined(separator: ",") + "]" }
         return await onQueue {
             guard let connection = self.openIfNeeded() else { return nil }
             do {
-                return try self.meetingHits(match: match, meetings: meetings, perMeeting: perMeeting, in: connection)
+                return try self.meetingHits(match: match, meetings: meetings, perMeeting: perMeeting, only: only, in: connection)
             } catch let failure as SQLiteConnection.Failure {
                 Log.data.error("Search index query failed: SQLite \(failure.code, privacy: .public)")
                 return nil
@@ -441,12 +446,16 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
 
     /// Every match is scored once (`scored`), the meetings are ranked by their best entry
     /// (`best`, cut to `meetings`), and each meeting keeps its best `perMeeting` segment hits
-    /// (title and notes are one row each).
-    private func meetingHits(match: String, meetings: Int, perMeeting: Int, in connection: SQLiteConnection) throws -> [SearchHit] {
+    /// (title and notes are one row each). `only`: a JSON array of meeting ids to keep, nil
+    /// (left unbound, so NULL) keeps all.
+    private func meetingHits(
+        match: String, meetings: Int, perMeeting: Int, only: String?, in connection: SQLiteConnection
+    ) throws -> [SearchHit] {
         let statement = try connection.statement("""
             WITH scored AS MATERIALIZED (
                 SELECT meeting, segment, kind, start, track, \(Self.score) AS score
                 FROM entries WHERE entries MATCH ?1
+                AND (?4 IS NULL OR meeting IN (SELECT value FROM json_each(?4)))
             ),
             best AS (
                 SELECT meeting, min(score) AS best FROM scored GROUP BY meeting ORDER BY best, meeting LIMIT ?2
@@ -464,6 +473,9 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         try statement.bind(1, match)
         try statement.bind(2, Int64(meetings))
         try statement.bind(3, Int64(perMeeting))
+        if let only {
+            try statement.bind(4, only)
+        }
         return try read(statement)
     }
 

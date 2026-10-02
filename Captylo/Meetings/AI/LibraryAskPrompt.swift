@@ -29,7 +29,7 @@ enum LibraryAskPrompt {
     /// Today's date, every source as "S1: Tytuł, data, uczestnicy: ..." with its notes and
     /// excerpts, then the question.
     static func user(context: LibraryAskContext, question: String, now: Date) -> String {
-        let notesLimit = context.notesOnly ? LibraryAskRetrieval.notesOnlyPrefix : LibraryAskRetrieval.notesPrefix
+        let notesLimit = context.notesOnly || context.byDate ? LibraryAskRetrieval.notesOnlyPrefix : LibraryAskRetrieval.notesPrefix
         let meetings = context.sources.enumerated().map { offset, source in
             block(source, number: offset + 1, notesLimit: notesLimit)
         }

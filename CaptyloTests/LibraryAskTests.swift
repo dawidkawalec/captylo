@@ -51,6 +51,58 @@ struct LibraryAskTests {
         #expect(LibraryAskRetrieval.terms("  ") == nil)
         #expect(LibraryAskRetrieval.stopwords.contains("ze"))
         #expect(LibraryAskRetrieval.stopwords.contains("ktora"))
+        // Time words are never search terms; they make the question one about time.
+        #expect(LibraryAskRetrieval.terms("Co było w zeszłym tygodniu?") == nil)
+        #expect(LibraryAskRetrieval.terms("Co ustaliliśmy w tym tygodniu?") == ["ustali"])
+        #expect(LibraryAskRetrieval.isAboutTime("Co było ostatnio?"))
+        #expect(LibraryAskRetrieval.isAboutTime("What did we discuss last week?"))
+        #expect(!LibraryAskRetrieval.isAboutTime("Kiedy wyślemy ofertę dla klienta?"))
+    }
+
+    private static var utc: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.firstWeekday = 2
+        calendar.minimumDaysInFirstWeek = 4
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }
+
+    /// Friday 2 October 2026, weeks from Monday.
+    @Test func aQuestionAboutTimeNamesItsPeriod() throws {
+        let now = try Self.date("2026-10-02T12:00:00Z")
+        func period(_ question: String) -> [String]? {
+            LibraryAskRetrieval.period(question, now: now, calendar: Self.utc).map {
+                [ISO8601DateFormatter().string(from: $0.start), ISO8601DateFormatter().string(from: $0.end)]
+            }
+        }
+        #expect(period("Co było dzisiaj?") == ["2026-10-02T00:00:00Z", "2026-10-03T00:00:00Z"])
+        #expect(period("Co było wczoraj?") == ["2026-10-01T00:00:00Z", "2026-10-02T00:00:00Z"])
+        #expect(period("A przedwczoraj?") == ["2026-09-30T00:00:00Z", "2026-10-01T00:00:00Z"])
+        #expect(period("Co ustaliliśmy w tym tygodniu?") == ["2026-09-28T00:00:00Z", "2026-10-05T00:00:00Z"])
+        #expect(period("Co było w zeszłym tygodniu?") == ["2026-09-21T00:00:00Z", "2026-09-28T00:00:00Z"])
+        #expect(period("What did we discuss last week?") == ["2026-09-21T00:00:00Z", "2026-09-28T00:00:00Z"])
+        #expect(period("Co mówiliśmy w ostatnim tygodniu?") == ["2026-09-25T12:00:00Z", "2026-10-02T12:00:00Z"])
+        #expect(period("Budżet w zeszłym miesiącu?") == ["2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z"])
+        #expect(period("Budżet w tym miesiącu?") == ["2026-10-01T00:00:00Z", "2026-11-01T00:00:00Z"])
+        #expect(period("Co było ostatnio?") == nil)
+        #expect(period("Jaki jest budżet?") == nil)
+    }
+
+    @Test func meetingsPickedByDateTakeHitsFirstAndTheirClosingLines() {
+        let base = Date(timeIntervalSince1970: 1_800_000_000)
+        let meetings = (0..<5).map { MeetingRecord(createdAt: base.addingTimeInterval(Double(-$0) * 3600), title: "M\($0)") }
+        let hits: Set<UUID> = [meetings[3].id, meetings[1].id]
+        #expect(LibraryAskRetrieval.pickByDate(meetings, hits: hits, fill: true, limit: 3).map(\.title) == ["M1", "M3", "M0"])
+        #expect(LibraryAskRetrieval.pickByDate(meetings, hits: hits, fill: false, limit: 8).map(\.title) == ["M1", "M3"])
+
+        let id = UUID()
+        var segments = (0..<20).map {
+            MeetingSegmentRecord(meetingID: id, track: .them, start: Double($0) * 10, end: Double($0) * 10 + 8, text: "linia \($0)")
+        }
+        segments.append(MeetingSegmentRecord(meetingID: id, track: .me, start: 195, end: 196, text: "echo", isEcho: true))
+        let closing = LibraryAskRetrieval.closing(segments.shuffled(), count: 3)
+        #expect(closing.map { $0.map(\.text) } == [["linia 17", "linia 18", "linia 19"]])
+        #expect(LibraryAskRetrieval.closing([], count: 3).isEmpty)
     }
 
     // MARK: Selection
@@ -146,7 +198,8 @@ struct LibraryAskTests {
             session: StubURLProtocol.makeSession(),
             key: { key },
             model: { Self.model },
-            now: { now }
+            now: { now },
+            calendar: Self.utc
         )
         return (asker, baseURL)
     }
@@ -204,9 +257,9 @@ struct LibraryAskTests {
 
     @Test func noHitAnswersWithoutCallingTheAI() async throws {
         let fixture = try Self.fixture()
-        try await Self.addMeeting(fixture, title: "Budżet", at: Date(), lines: ["Mamy dwadzieścia tysięcy na reklamy."])
+        try await Self.addMeeting(fixture, title: "Budżet", at: Self.date("2026-09-10T09:00:00Z"), lines: ["Mamy dwadzieścia tysięcy na reklamy."])
         let calls = OSAllocatedUnfairLock(initialState: 0)
-        let (asker, baseURL) = Self.asker(fixture) { _ in
+        let (asker, baseURL) = Self.asker(fixture, now: try Self.date("2026-10-02T12:00:00Z")) { _ in
             calls.withLock { $0 += 1 }
             return .json(Self.chat("x"))
         }
@@ -218,9 +271,10 @@ struct LibraryAskTests {
         #expect(answer.model == nil)
         #expect(answer.error == nil)
         #expect(!answer.notesOnly)
-        // Only stopwords: nothing to look for either.
-        let empty = try #require(await asker.ask(question: "Co to jest?"))
+        // A period with no meeting in it: nothing to answer from either.
+        let empty = try #require(await asker.ask(question: "Co było przedwczoraj?"))
         #expect(empty.answer == LibraryAsker.noHitsAnswer)
+        #expect(empty.sources.isEmpty)
         #expect(calls.withLock { $0 } == 0)
         #expect(await asker.ask(question: "   ") == nil)
     }
@@ -259,6 +313,59 @@ struct LibraryAskTests {
         #expect(user.contains("Notatki spotkania 9 [0:10]"))
         #expect(!user.contains("Bez notatek AI"))
         #expect(!user.contains("<excerpts>"))
+    }
+
+    /// Friday 2 October 2026. A question about time is answered from the meetings of its period
+    /// (or the newest), never "not found" just because it has no topic words.
+    @Test func aQuestionAboutTimeAnswersFromTheMeetingsOfItsPeriod() async throws {
+        let fixture = try Self.fixture()
+        try await Self.addMeeting(fixture, title: "Stare", at: Self.date("2026-09-10T09:00:00Z"),
+                                  lines: ["Termin ustalimy później."], summary: "Notatki starego")
+        try await Self.addMeeting(fixture, title: "Zeszły poniedziałek", at: Self.date("2026-09-22T09:00:00Z"),
+                                  lines: ["Dzień dobry.", "Przesuwamy termin na piątek."], summary: "Notatki z 22 września")
+        try await Self.addMeeting(fixture, title: "Zeszły czwartek", at: Self.date("2026-09-25T09:00:00Z"),
+                                  lines: (0..<20).map { "Linia \($0)." })
+        try await Self.addMeeting(fixture, title: "Ten tydzień", at: Self.date("2026-09-30T09:00:00Z"),
+                                  lines: ["Pogoda.", "Ustaliliśmy budżet.", "Koniec."], summary: "Notatki z 30 września")
+        try await Self.addMeeting(fixture, title: "Dzisiaj", at: Self.date("2026-10-02T09:00:00Z"), lines: ["Cześć."])
+
+        let seen = OSAllocatedUnfairLock(initialState: [Data]())
+        let (asker, baseURL) = Self.asker(fixture, now: try Self.date("2026-10-02T12:00:00Z")) { request in
+            let data = Self.rawBody(of: request)
+            seen.withLock { $0.append(data) }
+            return .json(Self.chat("- Termin na piątek [S2 0:10]"))
+        }
+        defer { StubURLProtocol.unregister(baseURL) }
+
+        // Only stopwords and time words: last week's meetings, newest first, with their AI notes
+        // or closing lines.
+        let lastWeek = try #require(await asker.ask(question: "Co było w zeszłym tygodniu?"))
+        #expect(lastWeek.answer == "- Termin na piątek [S2 0:10]")
+        #expect(!lastWeek.notesOnly)
+        #expect(lastWeek.sources.map(\.title) == ["Zeszły czwartek", "Zeszły poniedziałek"])
+        let body = try #require(seen.withLock { $0.last })
+        let user = try #require(Self.messages(body).last)
+        #expect(user.contains("S1: Zeszły czwartek"))
+        #expect(user.contains("Linia 19.") && user.contains("Linia 8.") && !user.contains("Linia 7."))
+        #expect(user.contains("S2: Zeszły poniedziałek"))
+        #expect(user.contains("<ai_notes>\nNotatki z 22 września\n</ai_notes>"))
+        #expect(!user.contains("Stare") && !user.contains("Ten tydzień"))
+
+        // A topic in a period: its matching meetings first, then the rest of the period.
+        let context = try await asker.context(question: "Co ustaliliśmy w tym tygodniu?")
+        #expect(context.byDate)
+        #expect(context.sources.map(\.meeting.title) == ["Ten tydzień", "Dzisiaj"])
+        #expect(context.sources[0].excerpts.map { $0.map(\.text) } == [["Pogoda.", "Ustaliliśmy budżet.", "Koniec."]])
+        #expect(context.sources[1].excerpts.map { $0.map(\.text) } == [["Cześć."]])
+
+        // "Ostatnio" with a topic: only the meetings that match, newest first, from any date.
+        let recent = try await asker.context(question: "Co ostatnio mówiliśmy o terminie?")
+        #expect(recent.sources.map(\.meeting.title) == ["Zeszły poniedziałek", "Stare"])
+
+        // No topic and no period: the newest meetings.
+        let general = try await asker.context(question: "O czym rozmawialiśmy?")
+        #expect(general.sources.map(\.meeting.title) == ["Dzisiaj", "Ten tydzień", "Zeszły czwartek", "Zeszły poniedziałek", "Stare"])
+        #expect(seen.withLock { $0.count } == 1)
     }
 
     // MARK: Prompt

@@ -150,6 +150,14 @@ struct MeetingSearchIndexTests {
         let first = try #require(await index.meetingHits(terms: ["klien"], all: true, meetings: 1, segmentsPerMeeting: 2))
         #expect(Set(first.map(\.meetingID)) == [busy.id])
         #expect(await index.meetingHits(terms: [], all: true, meetings: 10, segmentsPerMeeting: 2) == nil)
+
+        // Limited to some meetings (a period of "Zapytaj wszystkie").
+        let within = try #require(await index.meetingHits(terms: ["klien"], all: true, meetings: 1, segmentsPerMeeting: 2, within: [quiet.id]))
+        #expect(within.map(\.meetingID) == [quiet.id])
+        #expect(await index.meetingHits(terms: ["klien"], all: true, meetings: 10, segmentsPerMeeting: 2, within: []) == [])
+        // The unbound filter of a cached statement is NULL again: all meetings.
+        let again = try #require(await index.meetingHits(terms: ["klien"], all: true, meetings: 10, segmentsPerMeeting: 2))
+        #expect(Set(again.map(\.meetingID)) == [busy.id, quiet.id])
     }
 
     // MARK: Sync with the store

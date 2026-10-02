@@ -241,6 +241,21 @@ extension Database {
         ]
     }
 
+    /// Meetings created in `period` (start included, end not), newest first, like the list
+    /// without the search columns.
+    func meetings(createdIn period: DateInterval, limit: Int) throws -> [MeetingRecord] {
+        guard limit > 0 else { return [] }
+        let start = period.start
+        let end = period.end
+        var descriptor = FetchDescriptor<Meeting>(
+            predicate: #Predicate { $0.createdAt >= start && $0.createdAt < end },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse), SortDescriptor(\.id)]
+        )
+        descriptor.fetchLimit = limit
+        descriptor.propertiesToFetch = Self.listProperties
+        return try modelContext.fetch(descriptor).map(\.record)
+    }
+
     /// The meetings of a search index result, in the order of `ids`; ids the store does not have
     /// (deleted meanwhile) are left out. Like the list, never the search columns.
     func meetings(ids: [UUID]) throws -> [MeetingRecord] {
