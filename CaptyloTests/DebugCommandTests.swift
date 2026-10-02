@@ -108,6 +108,36 @@ struct DebugCommandTests {
         #expect(!them.path.contains("~"))
     }
 
+    @Test func parsesCompareModels() {
+        let audio = URL(filePath: "/tmp/sample.wav")
+        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav"])
+                == .compareModels(url: audio, reference: nil, language: nil))
+        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--reference", "/tmp/ref.txt", "--language", "pl"])
+                == .compareModels(url: audio, reference: URL(filePath: "/tmp/ref.txt"), language: "pl"))
+        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--language", "en"])
+                == .compareModels(url: audio, reference: nil, language: "en"))
+        #expect(DebugCommand.compareModels(url: audio, reference: nil, language: nil).isHeadless)
+    }
+
+    @Test func compareModelsRejectsMissingValues() {
+        #expect(DebugCommand.parse(["Captylo", "--compare-models"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--compare-models", "--language", "pl"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--reference"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--reference", "--language", "pl"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--language"]) == nil)
+    }
+
+    @Test func compareModelsExpandsTilde() {
+        guard case .compareModels(let url, let reference, _) = DebugCommand.parse(["app", "--compare-models", "~/sample.m4a", "--reference", "~/sample.txt"]) else {
+            Issue.record("expected compareModels")
+            return
+        }
+        #expect(url.lastPathComponent == "sample.m4a")
+        #expect(reference?.lastPathComponent == "sample.txt")
+        #expect(!url.path.contains("~"))
+        #expect(reference.map { !$0.path.contains("~") } == true)
+    }
+
     @Test func ignoresUnknownArgumentsAndPlainLaunches() {
         #expect(DebugCommand.parse(["app"]) == nil)
         #expect(DebugCommand.parse([]) == nil)

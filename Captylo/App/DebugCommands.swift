@@ -39,10 +39,15 @@ enum DebugCommand: Sendable, Equatable {
     /// instead of live capture (no mic, no system audio tap, in-memory store). `me` stands for the
     /// mic track and `them` for the system track; both start at meeting time 0.
     case meetingFromFiles(me: URL, them: URL)
+    /// `--compare-models <audio file> [--reference <txt file>] [--language pl]`: transcribes the file
+    /// with Parakeet v3 and Parakeet Ultra one after the other (`ModelComparison`) and prints both
+    /// texts with timings, peak memory and, with a reference transcript, the word error rate.
+    /// `language` is the raw flag value like `--transcribe` (nil = the app setting).
+    case compareModels(url: URL, reference: URL?, language: String?)
 
     static let primaryFlags: [String] = [
         "--transcribe", "--show-widget", "--check", "--reset-onboarding", "--open-section", "--design-preview",
-        "--ax-probe", "--watch-paste", "--meeting-from-files",
+        "--ax-probe", "--watch-paste", "--meeting-from-files", "--compare-models",
     ]
 
     /// Headless commands never start the services; all but `--open-section` go to `DebugRunner`.
@@ -112,6 +117,27 @@ enum DebugCommand: Sendable, Equatable {
             let paths = rest.prefix(2)
             guard paths.count == 2, paths.allSatisfy({ !$0.isEmpty && !$0.hasPrefix("--") }) else { return nil }
             return .meetingFromFiles(me: fileURL(paths[paths.startIndex]), them: fileURL(paths[paths.startIndex + 1]))
+        case "--compare-models":
+            guard let path = rest.first, !path.hasPrefix("--"), !path.isEmpty else { return nil }
+            var reference: URL?
+            var language: String?
+            var index = 1
+            while index < rest.count {
+                switch rest[index] {
+                case "--reference":
+                    guard index + 1 < rest.count, !rest[index + 1].hasPrefix("--") else { return nil }
+                    reference = fileURL(rest[index + 1])
+                    index += 1
+                case "--language":
+                    guard index + 1 < rest.count, !rest[index + 1].hasPrefix("--") else { return nil }
+                    language = rest[index + 1]
+                    index += 1
+                default:
+                    break
+                }
+                index += 1
+            }
+            return .compareModels(url: fileURL(path), reference: reference, language: language)
         default:
             return nil
         }

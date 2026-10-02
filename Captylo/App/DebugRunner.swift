@@ -41,6 +41,57 @@ final class DebugRunner: DebugCommandRunner {
             return await watchPaste(text)
         case .meetingFromFiles(let me, let them):
             return await meetingFromFiles(me: me, them: them)
+        case .compareModels(let url, let reference, let language):
+            return await compareModels(url: url, reference: reference, language: language)
+        }
+    }
+
+    // MARK: --compare-models
+
+    /// Parakeet v3 against Parakeet Ultra on one file (`ModelComparison`): both transcripts, load
+    /// and run time, real-time factor, peak memory and the word error rate against `--reference`.
+    /// The language flag maps like `--transcribe` (nil = the app setting, "auto" = no hint).
+    private func compareModels(url: URL, reference: URL?, language: String?) async -> Int32 {
+        do {
+            let referenceText = try reference.map { try String(contentsOf: $0, encoding: .utf8) }
+            let languageCode = language.map { TranscriptionLanguages.engineCode(for: $0) } ?? appState.settings.transcriptionLanguage
+            let report = try await ModelComparison.run(file: url, reference: referenceText, language: languageCode)
+            let models = report.models.map { model -> [String: Any] in
+                var payload: [String: Any] = [
+                    "model": model.model,
+                    "text": model.text,
+                    "loadMs": model.loadMs,
+                    "ms": model.ms,
+                    "rtf": Self.decimal(model.rtf, places: 3),
+                    "peakMemoryMB": model.peakMemoryMB,
+                    "memoryDeltaMB": model.memoryDeltaMB,
+                    "wer": NSNull(),
+                ]
+                if let wer = model.wer {
+                    payload["wer"] = [
+                        "percent": Self.decimal(wer.percent, places: 1),
+                        "substitutions": wer.substitutions,
+                        "deletions": wer.deletions,
+                        "insertions": wer.insertions,
+                        "words": wer.words,
+                    ]
+                }
+                return payload
+            }
+            Self.emit([
+                "ok": true,
+                "file": report.file.path(percentEncoded: false),
+                "durationSeconds": Self.seconds(report.durationSeconds),
+                "language": Self.orNull(report.language),
+                "reference": report.hasReference,
+                "models": models,
+                "peakMemoryMB": report.peakMemoryMB,
+            ])
+            return 0
+        } catch {
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            Self.emit(["ok": false, "error": message])
+            return 1
         }
     }
 
@@ -122,6 +173,7 @@ final class DebugRunner: DebugCommandRunner {
                 "speakerTurns": Self.orNull(turns?.count),
                 "voices": Self.orNull(turns.map { Set($0.map(\.speaker)).count }),
                 "ms": Int((ContinuousClock.now - started) / .milliseconds(1)),
+                "peakMemoryMB": PeakMemory.peakMB(),
             ])
             return 0
         } catch {
@@ -134,7 +186,13 @@ final class DebugRunner: DebugCommandRunner {
     /// Seconds rounded to hundredths for readable JSON. A `Decimal`, because `JSONSerialization`
     /// prints a rounded `Double` with its binary tail (5.31 as 5.3099999999999996).
     private static func seconds(_ value: Double) -> Decimal {
-        Decimal(Int((value * 100).rounded())) / 100
+        decimal(value, places: 2)
+    }
+
+    /// A `Double` rounded to `places` decimals as a `Decimal`, so JSON shows 0.123, not 0.12299999.
+    private static func decimal(_ value: Double, places: Int) -> Decimal {
+        let scale = pow(10.0, Double(places))
+        return Decimal(Int((value * scale).rounded())) / Decimal(Int(scale))
     }
 
     // MARK: --watch-paste
