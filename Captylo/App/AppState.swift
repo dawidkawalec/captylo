@@ -562,6 +562,8 @@ final class AppState {
         // Same for "Kalendarz": every refresh reads the switch and idles (no EventKit read) while off.
         meetingCalendar.start()
         // And the reminder: it reads both switches on every check.
+        // Each prompt knows about the other: one meeting never gets two "Nagrać?" toasts.
+        meetingDetector.recentReminder = { [weak self] in self?.calendarReminder.lastReminderAt }
         calendarReminder.start()
         observeSettings()
 

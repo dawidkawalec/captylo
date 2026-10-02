@@ -471,6 +471,28 @@ struct MeetingDetectorFlowTests {
 
     /// A call that starts during a calendar event: the offer names the event, and "Nagraj"
     /// links the recording to it (title, id, participants) under the detected app's name.
+    /// The reminder asked a minute ago and the user joined the call: no second "Nagrać?" toast
+    /// for the same event; a call without a matching event is offered as usual.
+    @Test func aCallRightAfterACalendarReminderGetsNoSecondOffer() async throws {
+        let rig = try rig()
+        let start = Date().addingTimeInterval(-40)
+        rig.world.event = CalendarEvent(
+            id: "ev-8", title: "Budżet Q4", start: start, end: start.addingTimeInterval(30 * 60),
+            isAllDay: false, calendarTitle: "Praca", participants: [], callApp: "Meet"
+        )
+        rig.detector.recentReminder = { Date().addingTimeInterval(-60) }
+        await poll(rig, [zoom], at: 0)
+        await poll(rig, [zoom], at: 6)
+        #expect(rig.toasts.shown.isEmpty)
+        #expect(rig.detector.lastOfferAt == nil)
+
+        rig.world.event = nil
+        await poll(rig, [], at: 60)
+        await poll(rig, [zoom], at: 70)
+        await poll(rig, [zoom], at: 76)
+        #expect(rig.toasts.shown.last?.message == recordPrompt("Zoom"))
+    }
+
     @Test func aCallDuringACalendarEventNamesItAndLinksTheRecording() async throws {
         let rig = try rig()
         let start = Date().addingTimeInterval(-3 * 60)

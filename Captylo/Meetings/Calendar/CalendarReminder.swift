@@ -41,6 +41,9 @@ final class CalendarReminder {
 
     /// Occurrences shown (or silenced by a detector offer) since launch.
     private var reminded: Set<Occurrence> = []
+    /// When the last reminder toast was shown; `MeetingDetector` skips its own offer for a call
+    /// that starts right after it, so one meeting never gets two "Nagrać?" toasts.
+    private(set) var lastReminderAt: Date?
     private var loop: Task<Void, Never>?
 
     /// - Parameters:
@@ -114,6 +117,7 @@ final class CalendarReminder {
     // MARK: Toast
 
     private func show(_ event: CalendarEvent, at: Date) {
+        lastReminderAt = at
         Log.calendar.info("Calendar reminder \(Self.minutesLeft(until: event.start, now: at), privacy: .public) min before an event")
         toasts.showAction(message: Self.message(for: event, now: at), buttonTitle: String(localized: "Nagraj")) { [weak self] in
             self?.record(event)

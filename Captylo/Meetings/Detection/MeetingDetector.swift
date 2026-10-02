@@ -79,6 +79,12 @@ final class MeetingDetector {
     /// When the last "Nagrać notatki?" offer was shown; `CalendarReminder` stays quiet about an
     /// event right after it, so one call never gets two offers at once.
     private(set) var lastOfferAt: Date?
+    /// When `CalendarReminder` last asked (`lastReminderAt`); a call that starts within
+    /// `reminderQuiet` of it while that event still matches gets no second offer. Set by
+    /// `AppState` once both exist.
+    var recentReminder: @MainActor () -> Date? = { nil }
+    /// Seconds after a calendar reminder during which the detector keeps quiet about the event.
+    nonisolated static let reminderQuiet: TimeInterval = 2 * 60
     /// Apps whose call started and has not ended.
     private var inCall: Set<String> = []
     private var link: Link?
@@ -260,6 +266,12 @@ final class MeetingDetector {
         // The event shown is the one "Nagraj" links, even when the calendar matches another by then.
         let event = currentEvent()
         Log.audio.info("Call detected in \(app.name, privacy: .public)\(event == nil ? "" : ", a calendar event matches", privacy: .public)")
+        // The reminder already asked about this event: the user answered (or chose not to), and
+        // the call is linked to a recording they start anyway (`linkCalls`).
+        if event != nil, let remindedAt = recentReminder(), abs(Date().timeIntervalSince(remindedAt)) < Self.reminderQuiet {
+            Log.audio.info("Call offer skipped: the calendar reminder asked just now")
+            return
+        }
         let message: String
         if let event, !event.title.isEmpty {
             message = String(localized: "Wygląda na spotkanie „\(event.title)” w \(app.name). Nagrać notatki?")
