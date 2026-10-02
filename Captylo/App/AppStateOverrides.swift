@@ -47,16 +47,34 @@ struct AppStateOverrides {
     /// and a throwaway defaults suite instead.
     @MainActor
     static func testHost() -> (settings: AppSettings, overrides: AppStateOverrides) {
-        let defaults = UserDefaults(suiteName: testHostSuiteName) ?? .standard
-        defaults.removePersistentDomain(forName: testHostSuiteName)
+        isolated(suiteName: testHostSuiteName, folderPrefix: "captylo-test-host")
+    }
+
+    /// Defaults suite of the `--mcp` process's own app state, wiped at every launch.
+    static let mcpServerSuiteName = "com.captylo.app.mcp-server"
+
+    /// The `--mcp` process (`MCPServer`) runs next to a running Captylo: its app state must never
+    /// open the real store read-write (a schema change would migrate it under the app), the real
+    /// index, dictionary or defaults. Same isolation as the test host; the server itself reads the
+    /// library through `MeetingLibraryReader` (read-only) and the setting from `.standard`.
+    @MainActor
+    static func mcpServer() -> (settings: AppSettings, overrides: AppStateOverrides) {
+        isolated(suiteName: mcpServerSuiteName, folderPrefix: "captylo-mcp-server")
+    }
+
+    /// An in-memory store (and so an in-memory index), a temp dictionary and a wiped defaults suite.
+    @MainActor
+    private static func isolated(suiteName: String, folderPrefix: String) -> (settings: AppSettings, overrides: AppStateOverrides) {
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        defaults.removePersistentDomain(forName: suiteName)
         let container: ModelContainer
         do {
             container = try Store.makeInMemoryContainer()
         } catch {
-            fatalError("Test host: in-memory store failed: \(error)")
+            fatalError("In-memory store failed: \(error)")
         }
         let dictionaryURL = FileManager.default.temporaryDirectory
-            .appending(path: "captylo-test-host-\(ProcessInfo.processInfo.processIdentifier)", directoryHint: .isDirectory)
+            .appending(path: "\(folderPrefix)-\(ProcessInfo.processInfo.processIdentifier)", directoryHint: .isDirectory)
             .appending(path: "dictionary.json")
         let overrides = AppStateOverrides(
             modelContainer: container,

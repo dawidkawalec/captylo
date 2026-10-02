@@ -124,6 +124,11 @@ struct DebugCommandTests {
         #expect(DebugCommand.rebuildSearchIndex.isHeadless)
     }
 
+    @Test func parsesMCP() {
+        #expect(DebugCommand.parse(["/Applications/Captylo.app/Contents/MacOS/Captylo", "--mcp"]) == .mcp)
+        #expect(DebugCommand.mcp.isHeadless)
+    }
+
     @Test func compareModelsRejectsMissingValues() {
         #expect(DebugCommand.parse(["Captylo", "--compare-models"]) == nil)
         #expect(DebugCommand.parse(["Captylo", "--compare-models", "--language", "pl"]) == nil)

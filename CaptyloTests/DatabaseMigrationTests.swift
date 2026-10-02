@@ -394,4 +394,42 @@ struct DatabaseMigrationTests {
         let context = ModelContext(old)
         #expect(try context.fetchCount(FetchDescriptor<CaptyloStoreSchemaV1.Dictation>()) == 3)
     }
+
+    /// The MCP server opens the store read-only from a second process: a store of another
+    /// schema (the app not updated yet, or already newer) fails to open there and is never
+    /// migrated by it. The app itself still migrates it afterwards.
+    @Test func readOnlyOpenNeverMigratesTheStore() async throws {
+        let folder = try Self.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let url = folder.appending(path: Store.configurationName + ".store")
+        let oldID = UUID()
+        do {
+            let container = try CaptyloStoreSchemaMeetingsM2.container(at: url)
+            let context = ModelContext(container)
+            context.insert(CaptyloStoreSchemaMeetingsM2.Meeting(id: oldID, createdAt: Self.base, title: "Z M2", duration: 60))
+            try context.save()
+        }
+
+        #expect(throws: (any Error).self) {
+            _ = try Store.openReadOnlyContainer(at: url)
+        }
+        let columns = try SQLiteConnection(path: url.path(percentEncoded: false), readOnly: true)
+        #expect(try columns.integer("SELECT count(*) FROM pragma_table_info('ZMEETING') WHERE name = 'ZQUESTIONSJSON'") == 0)
+
+        let database = Database(modelContainer: try Store.openContainer(at: url))
+        #expect(try await database.meeting(id: oldID)?.title == "Z M2")
+        // Once the app migrated it, the read-only open works and reads the same rows.
+        let reader = Database(modelContainer: try Store.openReadOnlyContainer(at: url))
+        #expect(try await reader.meeting(id: oldID)?.title == "Z M2")
+    }
+
+    /// A missing store is never created by the read-only open (nor its folder).
+    @Test func readOnlyOpenOfAMissingStoreThrowsAndCreatesNothing() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appending(path: "CaptyloMigration-missing-\(UUID().uuidString)", directoryHint: .isDirectory)
+        #expect(throws: (any Error).self) {
+            _ = try Store.openReadOnlyContainer(at: folder.appending(path: Store.configurationName + ".store"))
+        }
+        #expect(!FileManager.default.fileExists(atPath: folder.path(percentEncoded: false)))
+    }
 }

@@ -5,10 +5,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let appState: AppState
     private var debugRunner: DebugRunner?
 
+    /// `--mcp`: the read-only MCP server process, started by the user's AI assistant.
+    let isMCPServer: Bool
+
     override init() {
-        if case .designPreview = DebugCommand.parse(CommandLine.arguments) {
+        let command = DebugCommand.parse(CommandLine.arguments)
+        isMCPServer = command == .mcp
+        if case .designPreview = command {
             // Fake world only: no real defaults, store, dictionary or Keychain.
             appState = DesignPreviewData.makeAppState()
+        } else if isMCPServer {
+            // stdout carries JSON-RPC only from here on (everything else goes to stderr), and the
+            // app state never opens the real store read-write: the server reads it read-only.
+            _ = MCPStandardIO.shared
+            let isolated = AppStateOverrides.mcpServer()
+            appState = AppState(settings: isolated.settings, overrides: isolated.overrides)
         } else if AppStateOverrides.isTestHost {
             // Unit-test host: never the real store, defaults or dictionary.
             let host = AppStateOverrides.testHost()
@@ -19,9 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         super.init()
     }
 
-    /// The menu bar item would drive the fake services of a design preview: leave it out there.
+    /// The menu bar item would drive the fake services of a design preview: leave it out there,
+    /// and in the MCP server process (a second Captylo icon for as long as the assistant runs).
     var showsMenuBarExtra: Bool {
-        !appState.isDesignPreview
+        !appState.isDesignPreview && !isMCPServer
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {

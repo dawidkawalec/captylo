@@ -6632,6 +6632,71 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Open “%1$@”, %2$@" } }
       }
+    },
+    "Dostęp dla asystentów AI (MCP)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Access for AI assistants (MCP)" } }
+      }
+    },
+    "Twój asystent AI (np. Claude Desktop, Cursor) może czytać i przeszukiwać spotkania na tym Macu. Tylko odczyt, nic nie wysyłamy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your AI assistant (e.g. Claude Desktop, Cursor) can read and search the meetings on this Mac. Read-only, we send nothing anywhere." } }
+      }
+    },
+    "Skopiuj konfigurację": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy configuration" } }
+      }
+    },
+    "Wklej ją w ustawieniach MCP asystenta (w Claude Desktop: Ustawienia > Developer > Edit Config) i uruchom go ponownie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Paste it into the assistant's MCP settings (in Claude Desktop: Settings > Developer > Edit Config) and restart it." } }
+      }
+    },
+    "Włącz dostęp w Captylo: Ustawienia > Spotkania > Dostęp dla asystentów AI (MCP).": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Turn on access in Captylo: Settings > Meetings > Access for AI assistants (MCP)." } }
+      }
+    },
+    "Nie mogę odczytać spotkań Captylo. Uruchom Captylo na tym Macu (po aktualizacji raz wystarczy) i spróbuj ponownie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Can't read the Captylo meetings. Open Captylo on this Mac (once is enough after an update) and try again." } }
+      }
+    },
+    "Brak spotkań.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No meetings." } }
+      }
+    },
+    "Nic nie znalazłem w spotkaniach.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing found in the meetings." } }
+      }
+    },
+    "Nie ma spotkania o tym id.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "There is no meeting with this id." } }
+      }
+    },
+    "Nieprawidłowa data w „since”. Podaj datę jak 2026-10-01 albo datę z godziną w ISO 8601.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Invalid date in “since”. Give a date like 2026-10-01 or an ISO 8601 date and time." } }
+      }
+    },
+    "Podaj id spotkania z list_meetings albo search_meetings.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Give a meeting id from list_meetings or search_meetings." } }
+      }
+    },
+    "Podaj, czego szukać (query).": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Say what to look for (query)." } }
+      }
+    },
+    "nagrywa się teraz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "recording now" } }
+      }
     }
   },
   "version": "1.0"

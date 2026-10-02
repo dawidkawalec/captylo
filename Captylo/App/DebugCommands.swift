@@ -47,10 +47,15 @@ enum DebugCommand: Sendable, Equatable {
     /// `--rebuild-search-index`: empties the meeting search index and fills it again from the
     /// store at `AppPaths` (point `CAPTYLO_DATA_DIR` at a copy), then prints meetings, rows and ms.
     case rebuildSearchIndex
+    /// `--mcp`: the read-only MCP server over stdin/stdout (`MCPServer`), started by the user's
+    /// AI assistant from the config "Skopiuj konfigurację" copies. Never shows UI or starts
+    /// services; the app state is built on in-memory overrides (`AppStateOverrides.mcpServer()`)
+    /// and the library is read from `AppPaths` read-only. Runs until stdin closes.
+    case mcp
 
     static let primaryFlags: [String] = [
         "--transcribe", "--show-widget", "--check", "--reset-onboarding", "--open-section", "--design-preview",
-        "--ax-probe", "--watch-paste", "--meeting-from-files", "--compare-models", "--rebuild-search-index",
+        "--ax-probe", "--watch-paste", "--meeting-from-files", "--compare-models", "--rebuild-search-index", "--mcp",
     ]
 
     /// Headless commands never start the services; all but `--open-section` go to `DebugRunner`.
@@ -70,6 +75,8 @@ enum DebugCommand: Sendable, Equatable {
             return .check
         case "--rebuild-search-index":
             return .rebuildSearchIndex
+        case "--mcp":
+            return .mcp
         case "--reset-onboarding":
             return .resetOnboarding
         case "--show-widget":

@@ -7,8 +7,10 @@ enum MeetingExport {
     static let formatID = "captylo.meeting.v1"
 
     /// Title, date and length, the user's notes, the AI notes, the answered "Zapytaj" questions
-    /// (each a "###" heading over its answer) and the transcript (echo left out).
-    static func markdown(_ meeting: MeetingRecord, segments: [MeetingSegmentRecord]) -> String {
+    /// (each a "###" heading over its answer) and the transcript (echo left out). Without
+    /// `includeTranscript` (the MCP `get_meeting` with `transcript: false`) the segments only
+    /// count for the length.
+    static func markdown(_ meeting: MeetingRecord, segments: [MeetingSegmentRecord], includeTranscript: Bool = true) -> String {
         var parts: [String] = ["# \(meeting.title)"]
         let date = meeting.createdAt.formatted(date: .long, time: .shortened)
         parts.append("\(date) · \(MeetingTime.clock(length(meeting, segments: segments)))")
@@ -32,7 +34,7 @@ enum MeetingExport {
         if !answered.isEmpty {
             parts.append("## \(String(localized: "Pytania"))\n\n" + answered.joined(separator: "\n\n"))
         }
-        let lines = segments.filter { !$0.isEcho }.sorted { $0.start < $1.start }.map {
+        let lines = segments.filter { includeTranscript && !$0.isEcho }.sorted { $0.start < $1.start }.map {
             "**\(MeetingTime.stamp($0.start)) \(meeting.label(for: $0)):** \($0.text)"
         }
         if !lines.isEmpty {

@@ -51,6 +51,7 @@ final class AppSettings {
         case meetingsCalendarReminder = "meetings.calendarReminder"
         case meetingsCalendarReminderMinutes = "meetings.calendarReminderMinutes"
         case meetingsVoiceProcessing = "meetings.voiceProcessing"
+        case meetingsMCP = "meetings.mcp"
     }
 
     /// Every persisted key, for tests and diagnostics.
@@ -437,6 +438,14 @@ final class AppSettings {
     var meetingsVoiceProcessing: Bool {
         get { track(\.meetingsVoiceProcessing); return bool(.meetingsVoiceProcessing, default: false) }
         set { withMutation(keyPath: \.meetingsVoiceProcessing) { defaults.set(newValue, forKey: Key.meetingsVoiceProcessing.rawValue) } }
+    }
+
+    /// "Dostęp dla asystentów AI (MCP)": the `--mcp` process (`MCPServer`, started by the user's
+    /// AI assistant) lists and serves its read-only tools only while this is on. That process
+    /// reads it straight from the app's defaults domain at every call (`MCPServer.settingIsOn`).
+    var meetingsMCP: Bool {
+        get { track(\.meetingsMCP); return bool(.meetingsMCP, default: false) }
+        set { withMutation(keyPath: \.meetingsMCP) { defaults.set(newValue, forKey: Key.meetingsMCP.rawValue) } }
     }
 
     var menuBarOnly: Bool {

@@ -45,6 +45,23 @@ enum Store {
         return try ModelContainer(for: schema, configurations: configuration)
     }
 
+    /// Opens the on-disk store at `url` read-only: the MCP server (`MeetingLibraryReader`), a
+    /// second process next to a running Captylo. Never creates the file or its folder, never
+    /// saves, never migrates: a store of another schema version fails to open instead.
+    static func openReadOnlyContainer(at url: URL) throws -> ModelContainer {
+        guard FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) else {
+            throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: url.path(percentEncoded: false)])
+        }
+        let configuration = ModelConfiguration(
+            configurationName,
+            schema: schema,
+            url: url,
+            allowsSave: false,
+            cloudKitDatabase: .none
+        )
+        return try ModelContainer(for: schema, configurations: configuration)
+    }
+
     /// Fresh in-memory container (fallback and tests).
     static func makeInMemoryContainer() throws -> ModelContainer {
         let configuration = ModelConfiguration(

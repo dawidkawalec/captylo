@@ -52,6 +52,11 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
 
     /// The file, or nil for an in-memory index (tests, design preview, test host).
     let url: URL?
+    /// The MCP server's view of the app's index file (`MeetingLibraryReader`): opened with
+    /// `SQLITE_OPEN_READONLY`, never created, recreated, rebuilt or written to; it answers only
+    /// while the file has this version and a finished full build (the `meetings` mark in `meta`,
+    /// which a rebuild clears first and sets last). Otherwise search returns nil (the fallback).
+    let isReadOnly: Bool
 
     private let queue = DispatchQueue(label: "com.captylo.app.search-index", qos: .utility)
     private let readyFlag: OSAllocatedUnfairLock<Bool>
@@ -64,10 +69,12 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
 
     /// Nothing is opened here: the file is opened on the index queue by the first call that needs it.
     /// An in-memory index starts empty and ready (its store starts empty too); a file index is
-    /// ready once `prepare(database:)` or `rebuild(from:)` has checked it against the store.
-    init(url: URL?) {
+    /// ready once `prepare(database:)` or `rebuild(from:)` has checked it against the store; a
+    /// read-only one checks the file at every search instead.
+    init(url: URL?, readOnly: Bool = false) {
         self.url = url
-        readyFlag = OSAllocatedUnfairLock(initialState: url == nil)
+        isReadOnly = readOnly && url != nil
+        readyFlag = OSAllocatedUnfairLock(initialState: url == nil || isReadOnly)
     }
 
     /// True when search answers from the index; false while it is checked or rebuilt (the caller
@@ -83,6 +90,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
     /// lost writes). Runs on the index queue and the database queue, never on the caller's thread.
     @discardableResult
     func prepare(database: Database) async -> Preparation {
+        guard !isReadOnly else { return .unavailable }
         let state: (opened: Bool, needsRebuild: Bool, counts: Counts?) = await onQueue {
             guard let connection = self.openIfNeeded() else { return (false, false, nil) }
             return (true, self.needsRebuild, try? self.counts(in: connection))
@@ -110,6 +118,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
     /// queues after it.
     @discardableResult
     func rebuild(from database: Database) async throws -> Rebuild {
+        guard !isReadOnly else { throw Failure.unavailable }
         let started = ContinuousClock.now
         setReady(false)
         try await withConnection { connection in
@@ -152,7 +161,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         guard !terms.isEmpty, limit > 0, isReady else { return nil }
         let match = SearchQuery.match(terms, all: all)
         return await onQueue {
-            guard let connection = self.openIfNeeded() else { return nil }
+            guard let connection = self.openIfNeeded(), self.canAnswer(connection) else { return nil }
             do {
                 return try self.hits(match: match, limit: limit, in: connection)
             } catch let failure as SQLiteConnection.Failure {
@@ -180,7 +189,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         // A JSON array of the ids, read with `json_each` (one bound parameter for any count).
         let only = within.map { "[" + $0.map { "\"\($0.uuidString)\"" }.joined(separator: ",") + "]" }
         return await onQueue {
-            guard let connection = self.openIfNeeded() else { return nil }
+            guard let connection = self.openIfNeeded(), self.canAnswer(connection) else { return nil }
             do {
                 return try self.meetingHits(match: match, meetings: meetings, perMeeting: perMeeting, only: only, in: connection)
             } catch let failure as SQLiteConnection.Failure {
@@ -258,6 +267,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
 
     /// Queues one write transaction; a failure is logged, never thrown back to the store path.
     private func write(_ body: @escaping @Sendable (SQLiteConnection) throws -> Void) {
+        guard !isReadOnly else { return }
         queue.async {
             guard let connection = self.openIfNeeded() else { return }
             do {
@@ -287,6 +297,10 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
             } catch {
                 Log.data.error("In-memory search index failed: \(error.localizedDescription, privacy: .public)")
             }
+            return connection
+        }
+        if isReadOnly {
+            connection = openReadOnly(url)
             return connection
         }
         do {
@@ -319,6 +333,33 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
             needsRebuild = true
         }
         return file
+    }
+
+    /// The app's file as it is, for reading only: nil when it is missing, cannot be opened or
+    /// has another version (nothing is created, checked, repaired or dropped here).
+    private func openReadOnly(_ url: URL) -> SQLiteConnection? {
+        let path = url.path(percentEncoded: false)
+        guard FileManager.default.fileExists(atPath: path) else { return nil }
+        do {
+            let file = try SQLiteConnection(path: path, readOnly: true)
+            guard try file.integer("PRAGMA user_version") == Self.version else {
+                Log.data.notice("Read-only search index has another version, not used")
+                return nil
+            }
+            return file
+        } catch let failure as SQLiteConnection.Failure {
+            Log.data.error("Read-only search index could not be opened: SQLite \(failure.code, privacy: .public)")
+            return nil
+        } catch {
+            return nil
+        }
+    }
+
+    /// A read-only index answers only after a finished full build (`meta.meetings` is set last
+    /// by `rebuild`, after it emptied the table); the app's own index always answers.
+    private func canAnswer(_ connection: SQLiteConnection) -> Bool {
+        guard isReadOnly else { return true }
+        return (try? connection.integer("SELECT count(*) FROM meta WHERE key = 'meetings'")) == 1
     }
 
     private static func createSchema(_ connection: SQLiteConnection) throws {

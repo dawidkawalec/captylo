@@ -1,0 +1,305 @@
+import Foundation
+
+/// The read-only tools of the MCP server (`MCPServer`): their definitions for `tools/list`
+/// (JSON Schema inputs, English descriptions for the assistant's model) and the handlers for
+/// `tools/call`, which answer in Markdown text. Nothing here writes to the store, calls an AI
+/// model or reaches the network.
+///
+/// - `list_meetings`: newest first, one line per meeting with date, title, length, app and id;
+///   optional text filter (the index first, so Polish word forms match, then the store's
+///   `contains`), start date and limit.
+/// - `get_meeting`: `MeetingExport.markdown` of one meeting (participants, notes, AI notes, the
+///   "Pytania" answers and, unless `transcript` is false, the transcript).
+/// - `search_meetings`: the Spotkania search (`MeetingSearchResults`): per meeting up to two
+///   lines "[12:34] Anna: ...snippet...", or the store's `contains` search with the first
+///   matching line when the index cannot answer.
+struct MCPTools: Sendable {
+    /// What a tool call answers: Markdown text, and whether it is an error the model should read
+    /// (a bad argument, an unknown meeting) rather than a protocol failure.
+    struct Result: Sendable, Equatable {
+        var text: String
+        var isError = false
+    }
+
+    /// Calls the server answers with a JSON-RPC error instead of a result.
+    enum Failure: Error, Equatable {
+        case unknownTool(String)
+    }
+
+    static let names = ["list_meetings", "get_meeting", "search_meetings"]
+    static let defaultListLimit = 20
+    static let maxListLimit = 50
+    static let defaultSearchLimit = 10
+    static let maxSearchLimit = 30
+    /// Meetings the index search of `list_meetings` reads before the date filter and the limit.
+    private static let listSearchCandidates = 200
+
+    let library: MeetingLibraryReader
+    /// Dates in the answers and a `since` given as a bare day are in this time zone.
+    var timeZone: TimeZone = .current
+
+    /// `tools/list` entries, in the order of `names`.
+    var definitions: [JSONValue] {
+        [
+            Self.tool(
+                "list_meetings",
+                title: "List meetings",
+                description: """
+                    List the meetings recorded with Captylo on this Mac, newest first: date and time, \
+                    title, length, the call app and the meeting id. Optionally only meetings whose title, \
+                    notes or transcript contain the query, or that started on or after a date.
+                    """,
+                properties: [
+                    "query": .object([
+                        "type": .string("string"),
+                        "description": .string("Words to look for in the title, notes and transcript (any Polish word form)."),
+                    ]),
+                    "since": .object([
+                        "type": .string("string"),
+                        "description": .string("ISO 8601 date (2026-10-01) or date and time; only meetings that started then or later."),
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(Self.maxListLimit),
+                        "default": .int(Self.defaultListLimit),
+                    ]),
+                ],
+                required: []
+            ),
+            Self.tool(
+                "get_meeting",
+                title: "Get a meeting",
+                description: """
+                    One meeting as Markdown: title, date and length, participants, the user's notes, \
+                    the AI notes, answered questions and the transcript with [mm:ss] times and speakers.
+                    """,
+                properties: [
+                    "id": .object([
+                        "type": .string("string"),
+                        "description": .string("The meeting id from list_meetings or search_meetings."),
+                    ]),
+                    "transcript": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include the transcript (default true). False for the notes only."),
+                        "default": .bool(true),
+                    ]),
+                ],
+                required: ["id"]
+            ),
+            Self.tool(
+                "search_meetings",
+                title: "Search meetings",
+                description: """
+                    Full-text search over every meeting's title, notes and transcript (Polish word forms \
+                    and missing diacritics match). Best meetings first, each with up to two matching \
+                    transcript lines: [mm:ss] speaker and the text around the match, plus the meeting id \
+                    for get_meeting.
+                    """,
+                properties: [
+                    "query": .object([
+                        "type": .string("string"),
+                        "description": .string("Words to find, e.g. \"budżet kampanii\"."),
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Most meetings to return."),
+                        "minimum": .int(1),
+                        "maximum": .int(Self.maxSearchLimit),
+                        "default": .int(Self.defaultSearchLimit),
+                    ]),
+                ],
+                required: ["query"]
+            ),
+        ]
+    }
+
+    /// Runs one tool. Throws `Failure.unknownTool` for a name not in `names` and
+    /// `MeetingLibraryReader.Failure` when the store cannot be read.
+    func call(name: String, arguments: JSONValue?) async throws -> Result {
+        let arguments = arguments ?? .object([:])
+        switch name {
+        case "list_meetings":
+            return try await listMeetings(arguments)
+        case "get_meeting":
+            return try await getMeeting(arguments)
+        case "search_meetings":
+            return try await searchMeetings(arguments)
+        default:
+            throw Failure.unknownTool(name)
+        }
+    }
+
+    // MARK: Tools
+
+    private func listMeetings(_ arguments: JSONValue) async throws -> Result {
+        let limit = Self.clamped(arguments["limit"]?.intValue, default: Self.defaultListLimit, max: Self.maxListLimit)
+        var since: Date?
+        if let raw = arguments["since"]?.stringValue, !raw.trimmingCharacters(in: .whitespaces).isEmpty {
+            guard let date = parseDate(raw) else {
+                return Result(text: String(localized: "Nieprawidłowa data w „since”. Podaj datę jak 2026-10-01 albo datę z godziną w ISO 8601."), isError: true)
+            }
+            since = date
+        }
+        let query = arguments["query"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let opened = try await library.library()
+        var meetings: [MeetingRecord]
+        if !query.isEmpty, let index = opened.index,
+           let found = try await MeetingSearchResults.load(
+               query: query, index: index, database: opened.database, limit: Self.listSearchCandidates
+           ) {
+            meetings = found.meetings.sorted { $0.createdAt > $1.createdAt }
+        } else {
+            // Newest first, so the meetings since a date are always the first ones.
+            meetings = try await opened.database.meetings(query: query, limit: since == nil ? limit : Self.listSearchCandidates)
+        }
+        if let since {
+            meetings = meetings.filter { $0.createdAt >= since }
+        }
+        let lines = meetings.prefix(limit).map { meeting in
+            var parts = [dateText(meeting.createdAt), Self.oneLine(meeting.title), MeetingTime.clock(meeting.duration)]
+            if let app = meeting.appName, !app.isEmpty {
+                parts.append(app)
+            }
+            if meeting.status == .recording {
+                parts.append(String(localized: "nagrywa się teraz"))
+            }
+            parts.append("id: \(meeting.id.uuidString)")
+            return "- " + parts.joined(separator: " · ")
+        }
+        guard !lines.isEmpty else { return Result(text: String(localized: "Brak spotkań.")) }
+        return Result(text: lines.joined(separator: "\n"))
+    }
+
+    private func getMeeting(_ arguments: JSONValue) async throws -> Result {
+        guard let raw = arguments["id"]?.stringValue,
+              let id = UUID(uuidString: raw.trimmingCharacters(in: .whitespaces)) else {
+            return Result(text: String(localized: "Podaj id spotkania z list_meetings albo search_meetings."), isError: true)
+        }
+        let opened = try await library.library()
+        guard let meeting = try await opened.database.meeting(id: id) else {
+            return Result(text: String(localized: "Nie ma spotkania o tym id."), isError: true)
+        }
+        let segments = try await opened.database.segments(meetingID: id)
+        let transcript = arguments["transcript"]?.boolValue ?? true
+        return Result(text: MeetingExport.markdown(meeting, segments: segments, includeTranscript: transcript))
+    }
+
+    private func searchMeetings(_ arguments: JSONValue) async throws -> Result {
+        let query = arguments["query"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !query.isEmpty else {
+            return Result(text: String(localized: "Podaj, czego szukać (query)."), isError: true)
+        }
+        let limit = Self.clamped(arguments["limit"]?.intValue, default: Self.defaultSearchLimit, max: Self.maxSearchLimit)
+        let opened = try await library.library()
+        let rows: [(meeting: MeetingRecord, lines: [MeetingSearchHitLine])]
+        if let index = opened.index,
+           let found = try await MeetingSearchResults.load(query: query, index: index, database: opened.database, limit: limit) {
+            rows = found.meetings.map { ($0, found.lines[$0.id] ?? []) }
+        } else {
+            rows = try await storeSearch(query, limit: limit, database: opened.database)
+        }
+        let lines = rows.flatMap { row -> [String] in
+            let head = "- \(Self.oneLine(row.meeting.title)) (\(dateText(row.meeting.createdAt)))"
+            let tail = "· id: \(row.meeting.id.uuidString)"
+            guard !row.lines.isEmpty else { return ["\(head) \(tail)"] }
+            return row.lines.map { line in
+                switch line.source {
+                case .segment(_, let start):
+                    return "\(head) \(MeetingTime.stamp(start)) \(line.label): \(line.snippet.text) \(tail)"
+                case .notes:
+                    return "\(head) \(line.label): \(line.snippet.text) \(tail)"
+                }
+            }
+        }
+        guard !lines.isEmpty else { return Result(text: String(localized: "Nic nie znalazłem w spotkaniach.")) }
+        return Result(text: lines.joined(separator: "\n"))
+    }
+
+    /// The store's `contains` search (short queries, no index): newest first, each meeting with
+    /// its first transcript line that contains the folded query, if any.
+    private func storeSearch(
+        _ query: String, limit: Int, database: Database
+    ) async throws -> [(meeting: MeetingRecord, lines: [MeetingSearchHitLine])] {
+        let folded = MeetingSearch.fold(query)
+        var rows: [(meeting: MeetingRecord, lines: [MeetingSearchHitLine])] = []
+        for meeting in try await database.meetings(query: query, limit: limit) {
+            let segments = try await database.segments(meetingID: meeting.id)
+            let first = segments.first { !$0.isEcho && MeetingSearch.fold($0.text).contains(folded) }
+            let lines = first.map { segment in
+                [MeetingSearchHitLine(
+                    source: .segment(segment.id, start: segment.start),
+                    label: meeting.label(for: segment),
+                    snippet: MeetingSearchSnippet.make(segment.text, terms: [folded])
+                )]
+            } ?? []
+            rows.append((meeting, lines))
+        }
+        return rows
+    }
+
+    // MARK: Helpers
+
+    private static func tool(
+        _ name: String, title: String, description: String, properties: [String: JSONValue], required: [String]
+    ) -> JSONValue {
+        var schema: [String: JSONValue] = [
+            "type": .string("object"),
+            "properties": .object(properties),
+            "additionalProperties": .bool(false),
+        ]
+        if !required.isEmpty {
+            schema["required"] = .array(required.map { .string($0) })
+        }
+        return .object([
+            "name": .string(name),
+            "title": .string(title),
+            "description": .string(description),
+            "inputSchema": .object(schema),
+            "annotations": .object([
+                "readOnlyHint": .bool(true),
+                "destructiveHint": .bool(false),
+                "idempotentHint": .bool(true),
+                "openWorldHint": .bool(false),
+            ]),
+        ])
+    }
+
+    private static func clamped(_ value: Int?, default fallback: Int, max upper: Int) -> Int {
+        min(max(value ?? fallback, 1), upper)
+    }
+
+    /// A title on one line (a line break would start a new list item).
+    private static func oneLine(_ text: String) -> String {
+        text.components(separatedBy: .newlines).joined(separator: " ")
+    }
+
+    /// "2026-10-02 14:00" in `timeZone`.
+    private func dateText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+
+    /// "2026-10-01" (the start of that day in `timeZone`) or an ISO 8601 date and time, with or
+    /// without fractional seconds.
+    private func parseDate(_ raw: String) -> Date? {
+        let text = raw.trimmingCharacters(in: .whitespaces)
+        let day = DateFormatter()
+        day.locale = Locale(identifier: "en_US_POSIX")
+        day.timeZone = timeZone
+        day.dateFormat = "yyyy-MM-dd"
+        day.isLenient = false
+        if text.count == 10, let date = day.date(from: text) {
+            return date
+        }
+        let full = ISO8601DateFormatter()
+        if let date = full.date(from: text) {
+            return date
+        }
+        full.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return full.date(from: text)
+    }
+}

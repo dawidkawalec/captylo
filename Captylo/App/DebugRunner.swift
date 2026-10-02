@@ -45,7 +45,25 @@ final class DebugRunner: DebugCommandRunner {
             return await compareModels(url: url, reference: reference, language: language)
         case .rebuildSearchIndex:
             return await rebuildSearchIndex()
+        case .mcp:
+            return await serveMCP()
         }
+    }
+
+    // MARK: --mcp
+
+    /// The read-only MCP server on the claimed stdin/stdout (`MCPStandardIO`) over the library
+    /// at `AppPaths` (read-only). Returns when the client closes stdin. Never prints anything
+    /// else: `emit` would break the protocol.
+    private func serveMCP() async -> Int32 {
+        let io = MCPStandardIO.shared
+        let reader = MeetingLibraryReader(storeURL: AppPaths.store, indexURL: AppPaths.searchIndex)
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        let server = MCPServer(input: io.input, output: io.write, tools: MCPTools(library: reader), version: version)
+        Log.app.notice("MCP server started")
+        await server.run()
+        Log.app.notice("MCP server stopped: input closed")
+        return 0
     }
 
     // MARK: --rebuild-search-index
