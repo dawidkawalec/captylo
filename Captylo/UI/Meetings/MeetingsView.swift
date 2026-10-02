@@ -5,7 +5,8 @@ import SwiftUI
 /// four rows). Before the first meeting only `MeetingsEmptyState` shows. The list reloads from
 /// the `Database` actor whenever the search, the recorder's phase, the last finished meeting, a
 /// finished post-processing (speaker labels, AI notes) or a delete changes, or AI notes written
-/// again arrive; a reload keeps the selection, or selects the newest meeting. A title renamed in
+/// again arrive; a reload keeps the selection (without a search also a meeting older than the
+/// newest `listLimit`, `MeetingListSelection`), or selects the newest meeting. A title renamed in
 /// the details updates its row in place.
 ///
 /// With "Kalendarz" on, the "Nadchodzące" strip (`UpcomingMeetingsStrip`) sits under the header
@@ -47,6 +48,8 @@ struct MeetingsView: View {
         let askRuns: Int
         /// A transcript action finished (cloud again, AI fix, restore): new lines on a row.
         let transcriptRuns: Int
+        /// A citation selected a meeting the list did not show: the reload lists it.
+        let citationOpens: Int
     }
 
     @Environment(AppState.self) private var appState
@@ -74,6 +77,8 @@ struct MeetingsView: View {
     @State private var showsLibraryAsk = false
     /// The design preview opened the panel once (`CAPTYLO_PREVIEW_ASK_ALL`).
     @State private var previewOpenedLibraryAsk = false
+    /// Bumped when a citation selects a meeting missing from the list (`ReloadKey.citationOpens`).
+    @State private var citationOpens = 0
 
     var body: some View {
         let recorder = appState.meetingRecorder
@@ -86,7 +91,8 @@ struct MeetingsView: View {
                 deletions: deletions,
                 notesRuns: appState.meetingNotesRuns.finishedCount,
                 askRuns: appState.meetingAskRuns.finishedCount,
-                transcriptRuns: appState.meetingTranscriptRuns.finishedCount
+                transcriptRuns: appState.meetingTranscriptRuns.finishedCount,
+                citationOpens: citationOpens
             )) {
                 await reload()
             }
@@ -255,12 +261,15 @@ struct MeetingsView: View {
     }
 
     /// A citation or a source in the "Zapytaj wszystkie spotkania" panel: the panel closes, the
-    /// meeting is selected (the search is cleared when it hides that meeting) and "Transkrypt"
-    /// opens, scrolled to the line spoken at `seconds` with the same highlight as a search hit.
+    /// meeting is selected and "Transkrypt" opens, scrolled to the line spoken at `seconds` with
+    /// the same highlight as a search hit. A meeting the list does not show (hidden by the search,
+    /// or older than the newest `listLimit`) clears the search and the reload lists it
+    /// (`MeetingListSelection`).
     private func openCitation(_ meetingID: UUID, seconds: Double?) {
         showsLibraryAsk = false
         if !meetings.contains(where: { $0.id == meetingID }) {
             query = ""
+            citationOpens += 1
         }
         selectedID = meetingID
         tab = .transcript
@@ -462,7 +471,8 @@ struct MeetingsView: View {
     // MARK: Data
 
     /// The index search when it can answer (`MeetingSearchResults.load`), else the store's
-    /// `contains` search; no hit lines then.
+    /// `contains` search; no hit lines then. Without a search, a selected meeting older than the
+    /// newest `listLimit` is fetched on its own and stays listed and selected.
     private func reload() async {
         let database = appState.database
         let index = appState.meetingSearchIndex
@@ -477,12 +487,16 @@ struct MeetingsView: View {
                 fetched = try await database.meetings(query: query, limit: Self.listLimit)
                 lines = [:]
             }
-            guard !Task.isCancelled else { return }
-            meetings = fetched
-            hitLines = lines
-            if selectedID == nil || !fetched.contains(where: { $0.id == selectedID }) {
-                selectedID = fetched.first?.id
+            var extra: MeetingRecord?
+            if let missingID = MeetingListSelection.missing(selected: selectedID, query: query, fetched: fetched) {
+                // Deleted meanwhile: the store returns nothing and the newest row is selected.
+                extra = try await database.meetings(ids: [missingID]).first
             }
+            guard !Task.isCancelled else { return }
+            let rows = MeetingListSelection.rows(fetched: fetched, adding: extra)
+            meetings = rows
+            hitLines = lines
+            selectedID = MeetingListSelection.selection(current: selectedID, rows: rows)
             listVersion += 1
             // `CAPTYLO_PREVIEW_HIT`: the preview clicks the first hit line once.
             if appState.isDesignPreview, jump == nil, DesignPreviewData.opensFirstHit(),
