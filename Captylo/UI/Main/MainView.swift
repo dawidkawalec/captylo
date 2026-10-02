@@ -106,7 +106,7 @@ private struct MainPageHeader: View {
     }
 }
 
-/// State of the Parakeet banner, derived from the observed `ParakeetModelStore.status` (never from
+/// State of the local model banner, derived from the observed `LocalModelStore.status` (never from
 /// the file system, which SwiftUI cannot observe). Hidden on Modele, which shows the same state.
 enum ModelBanner: Equatable {
     case missing
@@ -118,8 +118,8 @@ enum ModelBanner: Equatable {
         self.init(engine: appState.settings.sttEngine, status: appState.modelStore.status)
     }
 
-    init?(engine: STTEngine, status: ParakeetModelStore.Status) {
-        guard engine == .parakeet else { return nil }
+    init?(engine: STTEngine, status: LocalModelStore.Status) {
+        guard engine == .local else { return nil }
         switch status {
         case .missing, .failed:
             self = .missing

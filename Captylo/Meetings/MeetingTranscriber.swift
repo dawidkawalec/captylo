@@ -3,7 +3,7 @@ import Foundation
 import os
 
 /// Live meeting transcription. Each track runs its own ordered pipeline:
-/// samples -> 4096-sample chunks -> Silero VAD -> utterances (max 14 s) -> timed Parakeet pass ->
+/// samples -> 4096-sample chunks -> Silero VAD -> utterances (max 14 s) -> timed Whisper pass ->
 /// segment saved immediately (a crash loses at most the open utterance).
 /// Partials (the grey "w trakcie" line) are re-transcribed about once per second of speech and
 /// skipped while a track is more than `partialBacklogLimit` behind, so the finals catch up first.
@@ -223,7 +223,7 @@ actor MeetingTranscriber {
             switch output {
             case .partial(_, let samples):
                 guard allowPartials else { continue }
-                if let text = try? await engine.transcribeTimed(samples, language: language).text, !text.isEmpty {
+                if let text = try? await engine.previewText(samples, language: language), !text.isEmpty {
                     updatesContinuation.yield(.partial(track, text))
                 }
             case .final(let start, let samples):

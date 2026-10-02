@@ -76,7 +76,7 @@ struct DataTypesTests {
         let id = UUID()
         #expect(AppPaths.recordingURL(for: id).lastPathComponent == "\(id.uuidString).wav")
         #expect(AppPaths.recordingURL(fileName: "a.wav").deletingLastPathComponent() == AppPaths.recordings)
-        #expect(AppPaths.parakeetModelDir.lastPathComponent == "parakeet-tdt-0.6b-v3")
+        #expect(AppPaths.legacyParakeetModelDir.lastPathComponent == "parakeet-tdt-0.6b-v3")
     }
 
     @Test func snapshotAndTrendTypes() {

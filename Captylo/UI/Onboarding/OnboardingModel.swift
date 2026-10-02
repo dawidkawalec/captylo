@@ -26,7 +26,7 @@ final class OnboardingModel {
     var canSkip: Bool { !step.isFirst && !step.isLast }
 
     /// The primary button never blocks: a running model download continues in
-    /// `ParakeetModelStore`, and the Wypróbuj step shows its progress.
+    /// `LocalModelStore`, and the Wypróbuj step shows its progress.
     var canAdvance: Bool { true }
 
     var primaryTitle: String {

@@ -174,7 +174,7 @@ final class RecorderAppControls: RecorderWidgetControls {
     }
 }
 
-/// Languages of the Język transkrypcji menu: "Automatycznie" first, then the Parakeet languages
+/// Languages of the Język transkrypcji menu: "Automatycznie" first, then the offered languages
 /// named in the UI language, sorted.
 enum RecorderLanguageOptions {
     struct Option: Identifiable, Hashable, Sendable {

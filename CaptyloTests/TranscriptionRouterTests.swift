@@ -17,27 +17,27 @@ struct TranscriptionRouterTests {
         )
     }
 
-    @Test func parakeetPathUsesTheLocalEngine() async throws {
+    @Test func localPathUsesTheLocalEngine() async throws {
         let local = TranscriptionFakeLocalTranscriber(text: "  lokalnie  ")
         let router = TranscriptionRouter(local: local, localInstalled: { true }, elevenLabs: cloud(key: nil))
         let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud)
 
-        let result = try await router.transcribe(audio, engine: .parakeet, language: "pl", vocabulary: [])
+        let result = try await router.transcribe(audio, engine: .local, language: "pl", vocabulary: [])
 
         #expect(result.text == "lokalnie")
-        #expect(result.modelName == "parakeet-tdt-0.6b-v3")
+        #expect(result.modelName == "whisper-large-v3-turbo")
         #expect(result.usedFallback == false)
         #expect(result.ms >= 0)
         #expect(local.transcribeCalls == 1)
     }
 
-    @Test func parakeetPathRequiresTheModel() async throws {
+    @Test func localPathRequiresTheModel() async throws {
         let local = TranscriptionFakeLocalTranscriber(text: "x")
         let router = TranscriptionRouter(local: local, localInstalled: { false }, elevenLabs: cloud(key: nil))
         let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud)
 
         await #expect(throws: DictationError.modelNotReady) {
-            try await router.transcribe(audio, engine: .parakeet, language: "pl", vocabulary: [])
+            try await router.transcribe(audio, engine: .local, language: "pl", vocabulary: [])
         }
         #expect(local.transcribeCalls == 0)
     }
@@ -55,7 +55,7 @@ struct TranscriptionRouterTests {
         #expect(local.transcribeCalls == 0)
     }
 
-    @Test func cloudFailureFallsBackToParakeetWhenInstalled() async throws {
+    @Test func cloudFailureFallsBackToTheLocalEngineWhenInstalled() async throws {
         let local = TranscriptionFakeLocalTranscriber(text: "lokalnie")
         let router = TranscriptionRouter(
             local: local,
@@ -67,12 +67,12 @@ struct TranscriptionRouterTests {
         let result = try await router.transcribe(audio, engine: .elevenLabs, language: "pl", vocabulary: [])
 
         #expect(result.text == "lokalnie")
-        #expect(result.modelName == "parakeet-tdt-0.6b-v3")
+        #expect(result.modelName == "whisper-large-v3-turbo")
         #expect(result.usedFallback == true)
         #expect(local.transcribeCalls == 1)
     }
 
-    @Test func keychainTimeoutFallsBackToParakeet() async throws {
+    @Test func keychainTimeoutFallsBackToTheLocalEngine() async throws {
         let local = TranscriptionFakeLocalTranscriber(text: "lokalnie")
         let router = TranscriptionRouter(
             local: local,
@@ -120,7 +120,7 @@ struct TranscriptionRouterTests {
         await #expect(throws: CancellationError.self) {
             try await router.transcribe(audio, engine: .elevenLabs, language: "pl", vocabulary: [])
         }
-        #expect(local.transcribeCalls == 0, "a cancelled take must not run the Parakeet fallback")
+        #expect(local.transcribeCalls == 0, "a cancelled take must not run the local fallback")
     }
 
     @Test func missingKeyWithoutTheModelSurfacesMissingKey() async throws {
@@ -141,11 +141,11 @@ struct TranscriptionRouterTests {
         let router = TranscriptionRouter(local: local, localInstalled: { true }, elevenLabs: cloud(key: nil))
 
         let silent = try await router.transcribe(
-            try TranscriptionFixtures.capturedAudio(samples: Self.silent), engine: .parakeet, language: "pl", vocabulary: [])
+            try TranscriptionFixtures.capturedAudio(samples: Self.silent), engine: .local, language: "pl", vocabulary: [])
         #expect(silent.text == "")
 
         let loud = try await router.transcribe(
-            try TranscriptionFixtures.capturedAudio(samples: Self.loud), engine: .parakeet, language: "pl", vocabulary: [])
+            try TranscriptionFixtures.capturedAudio(samples: Self.loud), engine: .local, language: "pl", vocabulary: [])
         #expect(loud.text == "Dziękuję za uwagę.")
     }
 
@@ -154,6 +154,11 @@ struct TranscriptionRouterTests {
         #expect(TranscriptionRouter.filterHallucination("Subtitles by the Amara.org community", samples: Self.silent) == "")
         #expect(TranscriptionRouter.filterHallucination("  Idę do sklepu.  ", samples: Self.silent) == "Idę do sklepu.")
         #expect(TranscriptionRouter.filterHallucination("Dziękuję za uwagę", samples: Self.loud) == "Dziękuję za uwagę")
+        // Whisper's short silence lines go only when they are the whole text of a silent take.
+        #expect(TranscriptionRouter.filterHallucination(" Dziękuję. ", samples: Self.silent) == "")
+        #expect(TranscriptionRouter.filterHallucination("Thank you.", samples: Self.silent) == "")
+        #expect(TranscriptionRouter.filterHallucination("Dziękuję, wyślę jutro.", samples: Self.silent) == "Dziękuję, wyślę jutro.")
+        #expect(TranscriptionRouter.filterHallucination("Dziękuję.", samples: Self.loud) == "Dziękuję.")
         #expect(TranscriptionRouter.filterHallucination("", samples: []) == "")
         #expect(TranscriptionRouter.rms(Self.silent) < TranscriptionRouter.silenceRMS)
         #expect(TranscriptionRouter.rms(Self.loud) > TranscriptionRouter.silenceRMS)

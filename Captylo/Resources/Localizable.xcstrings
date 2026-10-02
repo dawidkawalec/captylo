@@ -293,12 +293,12 @@
         }
       }
     },
-    "25 języków": {
+    "ok. 1,6 GB": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "25 languages"
+            "value": "about 1.6 GB"
           }
         }
       }
@@ -713,12 +713,12 @@
         }
       }
     },
-    "Chmura nie odpowiedziała, użyto Parakeet.": {
+    "Chmura nie odpowiedziała, użyto modelu lokalnego.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The cloud did not respond, Parakeet was used."
+            "value": "The cloud did not respond, the local model was used."
           }
         }
       }
@@ -1893,12 +1893,12 @@
         }
       }
     },
-    "Gdy silnik usłyszy jedno z wyrażeń po lewej, w tekście pojawi się wersja po prawej. Kilka wariantów oddziel przecinkami. To jedyny sposób, aby Parakeet poprawnie pisał nazwy własne.": {
+    "Gdy silnik usłyszy jedno z wyrażeń po lewej, w tekście pojawi się wersja po prawej. Kilka wariantów oddziel przecinkami. To jedyny sposób, aby model lokalny poprawnie pisał nazwy własne.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "When the engine hears one of the phrases on the left, the text gets the version on the right. Separate several variants with commas. This is the only way to make Parakeet spell proper names correctly."
+            "value": "When the engine hears one of the phrases on the left, the text gets the version on the right. Separate several variants with commas. This is the only way to make the local model spell proper names correctly."
           }
         }
       }
@@ -2263,42 +2263,42 @@
         }
       }
     },
-    "Model Parakeet nie jest gotowy. Pobierz go w zakładce Modele.": {
+    "Model lokalny nie jest gotowy. Pobierz go w zakładce Modele.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The Parakeet model is not ready. Download it on the Models tab."
+            "value": "The local model is not ready. Download it on the Models tab."
           }
         }
       }
     },
-    "Model Parakeet nie jest pobrany, więc dyktowanie jeszcze nie zadziała.": {
+    "Model lokalny nie jest pobrany, więc dyktowanie jeszcze nie zadziała.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The Parakeet model is not downloaded, so dictation will not work yet."
+            "value": "The local model is not downloaded, so dictation will not work yet."
           }
         }
       }
     },
-    "Model Parakeet nie jest pobrany. Dyktowanie nie zadziała, dopóki go nie pobierzesz.": {
+    "Model lokalny nie jest pobrany. Dyktowanie nie zadziała, dopóki go nie pobierzesz.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The Parakeet model is not downloaded. Dictation will not work until you download it."
+            "value": "The local model is not downloaded. Dictation will not work until you download it."
           }
         }
       }
     },
-    "Model Parakeet v3 nie jest pobrany (ok. 600 MB, 25 języków, działa bez internetu).": {
+    "Model nie jest pobrany (ok. 1,6 GB, działa bez internetu).": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The Parakeet v3 model is not downloaded (about 600 MB, 25 languages, works offline)."
+            "value": "The model is not downloaded (about 1.6 GB, works offline)."
           }
         }
       }
@@ -2313,12 +2313,12 @@
         }
       }
     },
-    "Model lokalny (Parakeet)": {
+    "Model lokalny": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local model (Parakeet)"
+            "value": "Local model"
           }
         }
       }
@@ -2453,12 +2453,12 @@
         }
       }
     },
-    "Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje Parakeet, jeśli jest pobrany.": {
+    "Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recordings are sent to cloud transcription. When the cloud does not respond, Captylo uses Parakeet if it is downloaded."
+            "value": "Recordings are sent to cloud transcription. When the cloud does not respond, Captylo uses the local model if it is downloaded."
           }
         }
       }
@@ -2523,12 +2523,12 @@
         }
       }
     },
-    "Nazwy własne, marki i żargon. Te słowa podpowiadają silnikowi w chmurze i poprawianiu przez AI. Parakeet ich nie widzi: dla niego dodaj regułę w sekcji Zamiany.": {
+    "Nazwy własne, marki i żargon. Te słowa podpowiadają silnikowi w chmurze i poprawianiu przez AI. Model lokalny ich nie widzi: dla niego dodaj regułę w sekcji Zamiany.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Proper names, brands and jargon. These words guide the cloud engine and the AI cleanup. Parakeet does not see them: add a rule in Replacements for it."
+            "value": "Proper names, brands and jargon. These words guide the cloud engine and the AI cleanup. The local model does not see them: add a rule in Replacements for it."
           }
         }
       }
@@ -2983,12 +2983,12 @@
         }
       }
     },
-    "Optymalizuję model dla Twojego Maca (jednorazowo)": {
+    "Optymalizuję model dla Twojego Maca (jednorazowo, do kilku minut)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Optimizing the model for your Mac (one time)"
+            "value": "Optimizing the model for your Mac (one time, up to a few minutes)"
           }
         }
       }
@@ -3053,32 +3053,32 @@
         }
       }
     },
-    "Parakeet (lokalnie)": {
+    "Poprzedni model lokalny": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Parakeet (local)"
+            "value": "Previous local model"
           }
         }
       }
     },
-    "Parakeet TDT 0.6b v3": {
+    "Captylo go już nie używa. Zajmuje ok. 460 MB.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Parakeet TDT 0.6b v3"
+            "value": "Captylo no longer uses it. It takes about 460 MB."
           }
         }
       }
     },
-    "Parakeet działa w całości na Twoim Macu: bez internetu, bez wysyłania nagrań.": {
+    "Model lokalny działa w całości na Twoim Macu: bez internetu, bez wysyłania nagrań.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Parakeet runs entirely on your Mac: no internet, no uploaded recordings."
+            "value": "The local model runs entirely on your Mac: no internet, no uploaded recordings."
           }
         }
       }
@@ -4207,12 +4207,12 @@
         }
       }
     },
-    "Transkrypcja w chmurze wysyła nagranie na serwer. Gdy chmura zawiedzie, Captylo wraca do Parakeet.": {
+    "Transkrypcja w chmurze wysyła nagranie na serwer. Gdy chmura zawiedzie, Captylo wraca do modelu lokalnego.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cloud transcription sends the recording to a server. When the cloud fails, Captylo falls back to Parakeet."
+            "value": "Cloud transcription sends the recording to a server. When the cloud fails, Captylo falls back to the local model."
           }
         }
       }
@@ -4407,12 +4407,32 @@
         }
       }
     },
-    "Usunąć model Parakeet?": {
+    "Usunąć model lokalny?": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete the Parakeet model?"
+            "value": "Delete the local model?"
+          }
+        }
+      }
+    },
+    "Usunąć poprzedni model?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the previous model?"
+          }
+        }
+      }
+    },
+    "Dyktowanie bez internetu i transkrypt spotkań na żywo przestaną działać, dopóki nie pobierzesz modelu ponownie (ok. 1,6 GB).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline dictation and the live meeting transcript stop working until you download the model again (about 1.6 GB)."
           }
         }
       }

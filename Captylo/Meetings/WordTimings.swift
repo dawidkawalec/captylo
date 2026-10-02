@@ -1,19 +1,27 @@
-import FluidAudio
 import Foundation
 
-/// Groups Parakeet's SentencePiece tokens into words. A token that starts with the word marker
-/// begins a new word, anything else continues it. `AsrManager` hands the marker out already turned
-/// into a leading space ("▁do" arrives as " do"), so both forms count; FluidAudio's
-/// `buildWordTimings` does exactly that and also skips `<blank>` / `<pad>` and bare marker tokens.
+/// Turns the word times of a Whisper pass into meeting words. Whisper hands words out with their
+/// leading space (" dzień"), may time a last word past the end of the slice, and sometimes emits
+/// a sound annotation ("*szum*") as a word; all three are cleaned here.
 enum WordTimings {
-    static func words(from tokens: [TokenTiming], offset: Double) -> [MeetingWord] {
-        buildWordTimings(from: tokens).map {
-            MeetingWord(text: $0.word, start: offset + $0.startTime, end: offset + $0.endTime)
-        }
+    struct Timed: Sendable, Equatable {
+        var word: String
+        var start: Double
+        var end: Double
     }
 
-    /// Every pass appends zero padding after the slice, and tokens decoded there (often the final
-    /// punctuation) get times past its end. Pins them to `duration` so a word never outlives its audio.
+    /// Trimmed, non-empty words without annotations, pinned to `duration` (seconds, relative to
+    /// the start of the slice).
+    static func words(from timings: [Timed], duration: Double) -> [MeetingWord] {
+        let words = timings.compactMap { timing -> MeetingWord? in
+            let text = timing.word.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty, !WhisperOutputFilter.isAnnotation(text) else { return nil }
+            return MeetingWord(text: text, start: timing.start, end: timing.end)
+        }
+        return clamped(words, toDuration: duration)
+    }
+
+    /// A word never outlives its audio: times past `duration` are pinned to it.
     static func clamped(_ words: [MeetingWord], toDuration duration: Double) -> [MeetingWord] {
         words.map { word in
             var word = word

@@ -72,7 +72,7 @@ struct DictionaryView: View {
             GlassSectionHeader("Słownictwo", systemImage: "character.book.closed") {
                 GlassBadge(title: Text(verbatim: "\(dictionary.data.vocabulary.count)"))
             }
-            ToolCaption("Nazwy własne, marki i żargon. Te słowa podpowiadają silnikowi w chmurze i poprawianiu przez AI. Parakeet ich nie widzi: dla niego dodaj regułę w sekcji Zamiany.")
+            ToolCaption("Nazwy własne, marki i żargon. Te słowa podpowiadają silnikowi w chmurze i poprawianiu przez AI. Model lokalny ich nie widzi: dla niego dodaj regułę w sekcji Zamiany.")
             if dictionary.data.vocabulary.isEmpty {
                 emptyLine("Brak słów. Dodaj pierwsze poniżej.")
             } else {
@@ -236,7 +236,7 @@ private struct ReplacementsPanel: View {
             GlassSectionHeader("Zamiany", systemImage: "arrow.left.arrow.right") {
                 GlassBadge(title: Text(verbatim: "\(dictionary.data.replacements.count)"))
             }
-            ToolCaption("Gdy silnik usłyszy jedno z wyrażeń po lewej, w tekście pojawi się wersja po prawej. Kilka wariantów oddziel przecinkami. To jedyny sposób, aby Parakeet poprawnie pisał nazwy własne.")
+            ToolCaption("Gdy silnik usłyszy jedno z wyrażeń po lewej, w tekście pojawi się wersja po prawej. Kilka wariantów oddziel przecinkami. To jedyny sposób, aby model lokalny poprawnie pisał nazwy własne.")
             if dictionary.data.replacements.isEmpty {
                 Text("Brak reguł. Dodaj pierwszą poniżej.")
                     .font(GlassFont.body)

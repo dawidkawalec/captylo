@@ -41,7 +41,7 @@ struct MainBanners: View {
                 MainBanner(
                     symbol: "arrow.down.circle",
                     tone: .warning,
-                    text: String(localized: "Model Parakeet nie jest pobrany. Dyktowanie nie zadziała, dopóki go nie pobierzesz.")
+                    text: String(localized: "Model lokalny nie jest pobrany. Dyktowanie nie zadziała, dopóki go nie pobierzesz.")
                 ) {
                     Button("Przejdź do Modele") {
                         router.select(.modele)

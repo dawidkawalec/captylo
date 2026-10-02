@@ -1,5 +1,5 @@
 /// The local engine seam consumed by `LivePreview` and `TranscriptionRouter`.
-/// `ParakeetEngine` is the production implementation; tests inject a fake.
+/// `WhisperEngine` is the production implementation; tests inject a fake.
 protocol LocalTranscribing: Sendable {
     /// Full pass over a complete recording. Returns "" for audio shorter than 0.3 s.
     func transcribe(_ samples: [Float], language: String?) async throws -> String

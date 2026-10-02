@@ -33,7 +33,8 @@ struct DictionaryData: Codable, Hashable, Sendable {
     static let defaultFillerWords: [String] = ["yyy", "yy", "eee", "ee", "mmm", "hmm", "hm", "um", "uh", "uhm"]
 
     var version: Int
-    /// Hints for cloud STT keyterms and the AI prompt. Parakeet ignores them (gotcha 22).
+    /// Hints for cloud STT keyterms and the AI prompt. The local model gets none (a Whisper
+    /// prompt dropped words on a real meeting, see `WhisperEngine.init`).
     var vocabulary: [String]
     var replacements: [ReplacementRule]
     var fillerWords: [String]

@@ -42,11 +42,13 @@ struct DebugCommandTests {
 
     @Test func parsesTranscribeEngine() {
         let url = URL(fileURLWithPath: "/tmp/a.wav")
-        #expect(DebugCommand.parse(["app", "--transcribe", "/tmp/a.wav", "--engine", "parakeet"])
-            == .transcribe(url: url, ai: false, language: nil, engine: .parakeet))
+        for name in ["local", "whisper", "parakeet"] {
+            #expect(DebugCommand.parse(["app", "--transcribe", "/tmp/a.wav", "--engine", name])
+                == .transcribe(url: url, ai: false, language: nil, engine: .local))
+        }
         #expect(DebugCommand.parse(["app", "--transcribe", "/tmp/a.wav", "--engine", "cloud", "--ai"])
             == .transcribe(url: url, ai: true, language: nil, engine: .elevenLabs))
-        #expect(DebugCommand.parse(["app", "--transcribe", "/tmp/a.wav", "--engine", "whisper"]) == nil)
+        #expect(DebugCommand.parse(["app", "--transcribe", "/tmp/a.wav", "--engine", "gpu"]) == nil)
         #expect(DebugCommand.parse(["app", "--transcribe", "/tmp/a.wav", "--engine"]) == nil)
     }
 
@@ -108,15 +110,15 @@ struct DebugCommandTests {
         #expect(!them.path.contains("~"))
     }
 
-    @Test func parsesCompareModels() {
+    @Test func parsesBenchmark() {
         let audio = URL(filePath: "/tmp/sample.wav")
-        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav"])
-                == .compareModels(url: audio, reference: nil, language: nil))
-        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--reference", "/tmp/ref.txt", "--language", "pl"])
-                == .compareModels(url: audio, reference: URL(filePath: "/tmp/ref.txt"), language: "pl"))
-        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--language", "en"])
-                == .compareModels(url: audio, reference: nil, language: "en"))
-        #expect(DebugCommand.compareModels(url: audio, reference: nil, language: nil).isHeadless)
+        #expect(DebugCommand.parse(["Captylo", "--benchmark", "/tmp/sample.wav"])
+                == .benchmark(url: audio, reference: nil, language: nil))
+        #expect(DebugCommand.parse(["Captylo", "--benchmark", "/tmp/sample.wav", "--reference", "/tmp/ref.txt", "--language", "pl"])
+                == .benchmark(url: audio, reference: URL(filePath: "/tmp/ref.txt"), language: "pl"))
+        #expect(DebugCommand.parse(["Captylo", "--benchmark", "/tmp/sample.wav", "--language", "en"])
+                == .benchmark(url: audio, reference: nil, language: "en"))
+        #expect(DebugCommand.benchmark(url: audio, reference: nil, language: nil).isHeadless)
     }
 
     @Test func parsesRebuildSearchIndex() {
@@ -138,17 +140,17 @@ struct DebugCommandTests {
         #expect(CaptyloMain.mode(for: ["Captylo", "--rebuild-search-index"]) == .app)
     }
 
-    @Test func compareModelsRejectsMissingValues() {
-        #expect(DebugCommand.parse(["Captylo", "--compare-models"]) == nil)
-        #expect(DebugCommand.parse(["Captylo", "--compare-models", "--language", "pl"]) == nil)
-        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--reference"]) == nil)
-        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--reference", "--language", "pl"]) == nil)
-        #expect(DebugCommand.parse(["Captylo", "--compare-models", "/tmp/sample.wav", "--language"]) == nil)
+    @Test func benchmarkRejectsMissingValues() {
+        #expect(DebugCommand.parse(["Captylo", "--benchmark"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--benchmark", "--language", "pl"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--benchmark", "/tmp/sample.wav", "--reference"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--benchmark", "/tmp/sample.wav", "--reference", "--language", "pl"]) == nil)
+        #expect(DebugCommand.parse(["Captylo", "--benchmark", "/tmp/sample.wav", "--language"]) == nil)
     }
 
-    @Test func compareModelsExpandsTilde() {
-        guard case .compareModels(let url, let reference, _) = DebugCommand.parse(["app", "--compare-models", "~/sample.m4a", "--reference", "~/sample.txt"]) else {
-            Issue.record("expected compareModels")
+    @Test func benchmarkExpandsTilde() {
+        guard case .benchmark(let url, let reference, _) = DebugCommand.parse(["app", "--benchmark", "~/sample.m4a", "--reference", "~/sample.txt"]) else {
+            Issue.record("expected benchmark")
             return
         }
         #expect(url.lastPathComponent == "sample.m4a")

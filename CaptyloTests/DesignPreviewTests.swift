@@ -247,7 +247,7 @@ struct DesignPreviewTests {
     }
 
     @Test func pinnedModelStatusSurvivesRefresh() {
-        let store = ParakeetModelStore(engine: ParakeetEngine(), pinnedStatus: .ready)
+        let store = LocalModelStore(engine: WhisperEngine(), pinnedStatus: .ready)
         store.refresh()
         #expect(store.status == .ready)
     }

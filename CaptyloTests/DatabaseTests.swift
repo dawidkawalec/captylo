@@ -314,8 +314,8 @@ struct DatabaseTests {
         var record = Self.record(text: "z chmury")
         record.modelName = STTEngine.elevenLabs.modelName
         #expect(CSV.fields(for: record)[5] == STTEngine.elevenLabs.displayName)
-        record.modelName = STTEngine.parakeet.modelName
-        #expect(CSV.fields(for: record)[5] == "parakeet-tdt-0.6b-v3")
+        record.modelName = STTEngine.local.modelName
+        #expect(CSV.fields(for: record)[5] == "whisper-large-v3-turbo")
     }
 
     @Test func csvDocumentFromDatabase() async throws {

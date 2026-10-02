@@ -66,7 +66,7 @@ enum DictationError: LocalizedError, Sendable, Equatable {
         case .accessibilityMissing:
             return String(localized: "Brak uprawnienia Dostępność. Tekst skopiowano do schowka.")
         case .modelNotReady:
-            return String(localized: "Model Parakeet nie jest gotowy. Pobierz go w zakładce Modele.")
+            return String(localized: "Model lokalny nie jest gotowy. Pobierz go w zakładce Modele.")
         case .tooShort:
             return String(localized: "Nagranie było za krótkie.")
         case .emptyResult:
@@ -224,7 +224,7 @@ protocol LevelSource: AnyObject, Sendable {
     func read(now: TimeInterval) -> Float
 }
 
-/// Local vs cloud routing with Parakeet fallback (module Transcription).
+/// Local vs cloud routing with the local engine as fallback (module Transcription).
 protocol TranscriptionRouting: Sendable {
     func transcribe(
         _ audio: CapturedAudio,
@@ -337,7 +337,7 @@ protocol SystemMuting: AnyObject {
     func restore()
 }
 
-/// 1 s tail preview over the live buffer (module Transcription). Always Parakeet.
+/// Tail preview over the live buffer (module Transcription). Always the local engine.
 protocol LivePreviewing: Sendable {
     /// Emits partial text while the stream is alive; cancel the consuming task to stop.
     func updates(buffer: SampleBuffer, language: String?) -> AsyncStream<String>

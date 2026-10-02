@@ -36,8 +36,8 @@ final class AppState {
     @ObservationIgnored let sounds: Sounds
 
     // Transcription
-    @ObservationIgnored let parakeetEngine: ParakeetEngine
-    @ObservationIgnored let modelStore: ParakeetModelStore
+    @ObservationIgnored let localEngine: WhisperEngine
+    @ObservationIgnored let modelStore: LocalModelStore
     @ObservationIgnored let livePreview: LivePreview
     @ObservationIgnored let keyStore: KeyStore
     @ObservationIgnored let elevenLabs: ElevenLabsSTT
@@ -152,9 +152,9 @@ final class AppState {
         sounds = Sounds(settings: settings)
 
         // Transcription
-        let engine = ParakeetEngine()
-        parakeetEngine = engine
-        modelStore = ParakeetModelStore(engine: engine, pinnedStatus: overrides.pinnedModelStatus)
+        let engine = WhisperEngine()
+        localEngine = engine
+        modelStore = LocalModelStore(engine: engine, pinnedStatus: overrides.pinnedModelStatus)
         livePreview = LivePreview(engine: engine)
         let keyStore = overrides.keyStore ?? KeyStore()
         self.keyStore = keyStore
@@ -165,7 +165,7 @@ final class AppState {
         )
         transcriptionRouter = TranscriptionRouter(
             local: engine,
-            localInstalled: { ParakeetEngine.isDownloaded },
+            localInstalled: { WhisperEngine.isDownloaded },
             elevenLabs: elevenLabs
         )
 
@@ -356,7 +356,7 @@ final class AppState {
                 meetingRetention,
             ],
             outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() },
-            speechModelReady: { ParakeetEngine.isDownloaded },
+            speechModelReady: { WhisperEngine.isDownloaded },
             currentEvent: { meetingCalendar.currentEvent() }
         ))
 
@@ -450,7 +450,7 @@ final class AppState {
             recorderModel: recorderModel,
             database: database,
             persistsHistory: !isFallback,
-            isLocalModelInstalled: { ParakeetEngine.isDownloaded },
+            isLocalModelInstalled: { WhisperEngine.isDownloaded },
             isLocalModelReady: { engine.state == .ready },
             setEscapeArmed: { tap.setEscapeArmed($0) },
             didSave: {
@@ -563,7 +563,7 @@ final class AppState {
         }
         prewarmCapture()
 
-        // Parakeet: background load at launch and after sleep (gotcha 16). The meeting voice
+        // Local model: background load at launch and after sleep. The meeting voice
         // detector follows it once the model is installed (its first load downloads it).
         let store = modelStore
         let detectorStatus = speechDetectorStatus

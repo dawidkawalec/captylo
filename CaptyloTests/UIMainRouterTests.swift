@@ -4,11 +4,11 @@ import Testing
 
 struct UIMainModelBannerTests {
     @Test func followsTheObservedModelStatus() {
-        #expect(ModelBanner(engine: .parakeet, status: .missing) == .missing)
-        #expect(ModelBanner(engine: .parakeet, status: .failed("x")) == .missing)
-        #expect(ModelBanner(engine: .parakeet, status: .downloading(0.426)) == .downloading(percent: 43))
-        #expect(ModelBanner(engine: .parakeet, status: .optimizing) == nil)
-        #expect(ModelBanner(engine: .parakeet, status: .ready) == nil)
+        #expect(ModelBanner(engine: .local, status: .missing) == .missing)
+        #expect(ModelBanner(engine: .local, status: .failed("x")) == .missing)
+        #expect(ModelBanner(engine: .local, status: .downloading(0.426)) == .downloading(percent: 43))
+        #expect(ModelBanner(engine: .local, status: .optimizing) == nil)
+        #expect(ModelBanner(engine: .local, status: .ready) == nil)
         #expect(ModelBanner(engine: .elevenLabs, status: .missing) == nil)
     }
 }

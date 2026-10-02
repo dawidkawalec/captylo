@@ -261,7 +261,7 @@ struct ModelStep: View {
     @State private var keyMessage: String?
     @State private var keyMessageIsError = false
 
-    private var modelStore: ParakeetModelStore { model.appState.modelStore }
+    private var modelStore: LocalModelStore { model.appState.modelStore }
     private var keyStore: KeyStore { model.appState.keyStore }
 
     var body: some View {
@@ -282,14 +282,14 @@ struct ModelStep: View {
             OnboardingHeader(
                 symbol: OnboardingStep.model.symbol,
                 title: String(localized: "Model rozpoznawania mowy"),
-                subtitle: String(localized: "Parakeet działa w całości na Twoim Macu: bez internetu, bez wysyłania nagrań.")
+                subtitle: String(localized: "Model lokalny działa w całości na Twoim Macu: bez internetu, bez wysyłania nagrań.")
             )
 
             GlassRowSeparator()
                 .padding(.top, 20)
                 .padding(.bottom, 8)
 
-            parakeetRow
+            localModelRow
 
             GlassRowSeparator()
                 .padding(.vertical, 8)
@@ -321,18 +321,18 @@ struct ModelStep: View {
         code == TranscriptionLanguages.auto ? String(localized: "Wykrywaj automatycznie") : Self.languageName(code)
     }
 
-    // MARK: Parakeet
+    // MARK: Local model
 
-    private var parakeetRow: some View {
+    private var localModelRow: some View {
         HStack(alignment: .center, spacing: 12) {
             GlassIconBadge(systemImage: "waveform.badge.mic", size: GlassTokens.Size.rowBadge)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Text(verbatim: "Parakeet TDT 0.6b v3")
+                    Text(verbatim: "Whisper large-v3 turbo")
                         .font(GlassFont.rowTitle.weight(.semibold))
                         .foregroundStyle(GlassColor.textPrimary)
                     GlassBadge("Lokalnie", tone: .accent)
-                    GlassBadge("25 języków")
+                    GlassBadge("ok. 1,6 GB")
                 }
                 statusView
             }
@@ -366,7 +366,7 @@ struct ModelStep: View {
             HStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                Text("Optymalizuję model dla Twojego Maca (jednorazowo)")
+                Text("Optymalizuję model dla Twojego Maca (jednorazowo, do kilku minut)")
                     .font(GlassFont.caption)
                     .foregroundStyle(GlassColor.textSecondary)
             }
@@ -443,7 +443,7 @@ struct ModelStep: View {
     private func cloudContent(settings: AppSettings) -> some View {
         @Bindable var settings = settings
         return VStack(alignment: .leading, spacing: 12) {
-            Text("Transkrypcja w chmurze wysyła nagranie na serwer. Gdy chmura zawiedzie, Captylo wraca do Parakeet.")
+            Text("Transkrypcja w chmurze wysyła nagranie na serwer. Gdy chmura zawiedzie, Captylo wraca do modelu lokalnego.")
                 .font(GlassFont.caption)
                 .foregroundStyle(GlassColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -462,7 +462,7 @@ struct ModelStep: View {
             }
             GlassToggleRow("Transkrybuj w chmurze zamiast lokalnie", isOn: Binding(
                 get: { settings.sttEngine == .elevenLabs },
-                set: { settings.sttEngine = $0 ? .elevenLabs : .parakeet }
+                set: { settings.sttEngine = $0 ? .elevenLabs : .local }
             ))
             .disabled(keyStore.get(KeyStore.Account.elevenLabs) == nil)
         }
@@ -604,13 +604,13 @@ struct TryItStep: View {
         String(localized: "Przytrzymaj \(model.settings.hotkey.displayName) i powiedz coś. Puść klawisz, a tekst wklei się poniżej.")
     }
 
-    /// Parakeet selected but not usable yet: say so here instead of letting the hotkey fail.
+    /// The local engine selected but not usable yet: say so here instead of letting the hotkey fail.
     @ViewBuilder
     private var modelWarning: some View {
         switch ModelBanner(engine: model.settings.sttEngine, status: model.appState.modelStore.status) {
         case .missing:
             HStack(spacing: 12) {
-                Label("Model Parakeet nie jest pobrany, więc dyktowanie jeszcze nie zadziała.", systemImage: "arrow.down.circle")
+                Label("Model lokalny nie jest pobrany, więc dyktowanie jeszcze nie zadziała.", systemImage: "arrow.down.circle")
                     .font(GlassFont.caption)
                     .foregroundStyle(GlassColor.warning)
                     .fixedSize(horizontal: false, vertical: true)

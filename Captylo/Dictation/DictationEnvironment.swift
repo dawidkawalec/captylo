@@ -27,9 +27,9 @@ struct DictationEnvironment {
     /// (treated like "Zapisuj historię" off).
     let persistsHistory: Bool
 
-    /// Parakeet files on disk (a cloud engine still works without them).
+    /// Local model files on disk (a cloud engine still works without them).
     let isLocalModelInstalled: @MainActor () -> Bool
-    /// Parakeet loaded and warm: the live preview only runs then.
+    /// Local model loaded and warm: the live preview only runs then.
     let isLocalModelReady: @MainActor () -> Bool
     /// `HotkeyTap.setEscapeArmed`: Esc is swallowed only while the widget is visible.
     let setEscapeArmed: @MainActor (Bool) -> Void

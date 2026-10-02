@@ -9,7 +9,7 @@ Captylo is a minimalist, open source dictation app for macOS. Hold a hotkey, spe
 ## Features
 
 - One hotkey, two ways to use it: a short tap starts and stops dictation, holding it records push-to-talk (default Right Option, Fn, Right Command or a custom combo).
-- Local transcription with Parakeet TDT 0.6b v3 (FluidAudio), with a live preview in a small floating widget.
+- Local transcription with Whisper large-v3-turbo (WhisperKit, on the Neural Engine), with a live preview in a small floating widget.
 - Optional cloud transcription; if the cloud fails, Captylo falls back to the local model.
 - Optional AI modes (cleanup, email, to-do list, English, your own) with a hard time limit.
 - Learns from your corrections: fix a word once and Captylo remembers it, on your Mac.

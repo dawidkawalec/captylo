@@ -2,7 +2,7 @@ import Foundation
 import os
 
 /// After a meeting (Pro, "Dokładniejszy transkrypt z chmury"): each track file goes to the cloud
-/// engine with word times, and its transcript replaces the live Parakeet segments of that track.
+/// engine with word times, and its transcript replaces the live local segments of that track.
 /// Runs first among the post-processors, so the speaker labels, the AI fixes and the AI notes all
 /// work on the cloud text. A track that fails, or comes back empty where the live pass heard
 /// speech, keeps its live segments; the meeting row says which engine made the transcript and

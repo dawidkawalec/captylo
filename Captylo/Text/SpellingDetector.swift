@@ -2,7 +2,7 @@ import Foundation
 
 /// Words spelled out loud ("Honcho, pisane H O N C H O"). Seen in the self-learning spike
 /// (docs/reference/spelling-spike.md): the cloud engine writes "H-O-N-C-H-O" (also for letter
-/// names: "ef i gie em a" -> "F-i-g-m-a"), Parakeet merges them into "HONCHO" after the cue and
+/// names: "ef i gie em a" -> "F-i-g-m-a"), the earlier local engine (Parakeet) merged them into "HONCHO" after the cue and
 /// may drop a Polish letter ("BRZK"). The spelling is removed, the word before it takes the
 /// spelled form, and the pair goes to self-learning.
 enum SpellingDetector {

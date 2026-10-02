@@ -66,7 +66,7 @@ final class DictationController: RecorderCoordinator {
         env.pasteWatcher.flush()
         env.pasteWatcher.prepare()
 
-        if env.settings.sttEngine == .parakeet, !env.isLocalModelInstalled() {
+        if env.settings.sttEngine == .local, !env.isLocalModelInstalled() {
             env.toasts.showError(DictationError.modelNotReady)
             env.openModels()
             return
@@ -269,7 +269,7 @@ final class DictationController: RecorderCoordinator {
             record.modelName = result.modelName
             record.transcriptionMs = result.ms
             if result.usedFallback {
-                env.toasts.showInfo(String(localized: "Chmura nie odpowiedziała, użyto Parakeet."))
+                env.toasts.showInfo(String(localized: "Chmura nie odpowiedziała, użyto modelu lokalnego."))
             }
 
             // A take that is only a spelling corrects the previous dictation: learn the pair,

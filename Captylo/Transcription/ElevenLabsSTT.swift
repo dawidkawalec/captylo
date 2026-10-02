@@ -121,7 +121,7 @@ struct ElevenLabsSTT: Sendable {
             throw error
         } catch {
             // A cancelled take surfaces as `URLError.cancelled`: keep it a cancellation, never a
-            // network error that would retry, fall back to Parakeet or save a failed row.
+            // network error that would retry, fall back to the local engine or save a failed row.
             if Self.isCancellation(error) || Task.isCancelled { throw CancellationError() }
             throw Self.mapTransportError(error)
         }

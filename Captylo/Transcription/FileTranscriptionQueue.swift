@@ -155,7 +155,7 @@ final class FileTranscriptionQueue {
 
     /// Stops the item being processed and takes it off the list: no history row is saved and its
     /// WAV copy is deleted. A waiting or finished item is simply removed. The queue moves on to
-    /// the next file once the engine lets go (a running Parakeet pass cannot be interrupted).
+    /// the next file once the engine lets go (a running local pass stops at its next window).
     func cancel(id: UUID) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         guard items[index].status.isActive else {

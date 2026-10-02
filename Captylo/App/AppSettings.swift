@@ -89,7 +89,7 @@ final class AppSettings {
     var transcriptionLanguage: String? { TranscriptionLanguages.engineCode(for: language) }
 
     var sttEngine: STTEngine {
-        get { track(\.sttEngine); return STTEngine(rawValue: string(.sttEngine, default: "")) ?? .parakeet }
+        get { track(\.sttEngine); return STTEngine(rawValue: string(.sttEngine, default: "")) ?? .local }
         set { withMutation(keyPath: \.sttEngine) { defaults.set(newValue.rawValue, forKey: Key.sttEngine.rawValue) } }
     }
 

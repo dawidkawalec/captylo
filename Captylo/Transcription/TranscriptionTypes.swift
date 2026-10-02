@@ -2,22 +2,25 @@ import Foundation
 
 /// Speech engine chosen once in Modele. Persisted as the raw value under `AppSettings.Key.sttEngine`.
 enum STTEngine: String, Codable, CaseIterable, Hashable, Sendable {
-    case parakeet
+    /// The on-device engine (`WhisperEngine`). The raw value is from the Parakeet era and stays,
+    /// so the stored setting keeps meaning "local" without a migration.
+    case local = "parakeet"
     case elevenLabs
 
     var isCloud: Bool { self == .elevenLabs }
 
-    /// Model id reported in `TranscriptionResult.modelName` and shown in history.
+    /// Model id reported in `TranscriptionResult.modelName` and shown in history. History rows
+    /// from before the switch keep "parakeet-tdt-0.6b-v3".
     var modelName: String {
         switch self {
-        case .parakeet: return "parakeet-tdt-0.6b-v3"
+        case .local: return "whisper-large-v3-turbo"
         case .elevenLabs: return "scribe_v2"
         }
     }
 
     var displayName: String {
         switch self {
-        case .parakeet: return String(localized: "Parakeet (lokalnie)")
+        case .local: return String(localized: "Lokalnie")
         case .elevenLabs: return String(localized: "Chmura")
         }
     }
@@ -33,7 +36,7 @@ struct TranscriptionResult: Sendable, Equatable {
     let text: String
     let modelName: String
     let ms: Int
-    /// True when the cloud engine failed and Parakeet produced the text.
+    /// True when the cloud engine failed and the local engine produced the text.
     let usedFallback: Bool
 
     init(text: String, modelName: String, ms: Int, usedFallback: Bool = false) {

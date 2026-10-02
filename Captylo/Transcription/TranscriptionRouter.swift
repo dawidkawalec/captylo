@@ -2,7 +2,7 @@ import Accelerate
 import Foundation
 import os
 
-/// Routes a finished recording to Parakeet or ElevenLabs. A cloud failure falls back to Parakeet
+/// Routes a finished recording to the local engine or ElevenLabs. A cloud failure falls back to the local engine
 /// when the model is installed (`usedFallback`), otherwise surfaces as `DictationError.stt`.
 struct TranscriptionRouter: TranscriptionRouting {
     /// Below this RMS the recording counts as silence for the hallucination filter (gotcha 87).
@@ -14,13 +14,17 @@ struct TranscriptionRouter: TranscriptionRouting {
         "Dziękuję za oglądanie",
         "Subtitles by",
     ]
+    /// Short lines Whisper says on silence; dropped only when they are the whole text.
+    static let silenceOnlyLines: Set<String> = [
+        "dziękuję", "dziękuję bardzo", "dzięki", "thank you", "thanks for watching",
+    ]
 
     private let local: any LocalTranscribing
     private let localInstalled: @Sendable () -> Bool
     private let elevenLabs: ElevenLabsSTT
 
     /// - Parameters:
-    ///   - local: the Parakeet engine (or a fake in tests).
+    ///   - local: the Whisper engine (or a fake in tests).
     ///   - localInstalled: whether the model files are on disk; gates the local path and the fallback.
     ///   - elevenLabs: the cloud client; its key provider decides `missingKey`.
     init(local: any LocalTranscribing, localInstalled: @escaping @Sendable () -> Bool, elevenLabs: ElevenLabsSTT) {
@@ -44,20 +48,20 @@ struct TranscriptionRouter: TranscriptionRouting {
         let modelName: String
         var usedFallback = false
         switch engine {
-        case .parakeet:
+        case .local:
             text = try await transcribeLocally(audio, language: language)
-            modelName = STTEngine.parakeet.modelName
+            modelName = STTEngine.local.modelName
         case .elevenLabs:
             do {
                 text = try await transcribeInCloud(audio, language: language, vocabulary: vocabulary)
                 modelName = STTEngine.elevenLabs.modelName
             } catch let error as STTError {
-                // A cancelled take never falls back: the Parakeet pass cannot be interrupted.
+                // A cancelled take never falls back: it would only start a local pass nobody waits for.
                 if Task.isCancelled { throw CancellationError() }
                 guard localInstalled() else { throw DictationError.stt(error) }
-                Log.transcription.error("ElevenLabs failed (\(String(describing: error), privacy: .public)), falling back to Parakeet")
+                Log.transcription.error("ElevenLabs failed (\(String(describing: error), privacy: .public)), falling back to the local engine")
                 text = try await transcribeLocally(audio, language: language)
-                modelName = STTEngine.parakeet.modelName
+                modelName = STTEngine.local.modelName
                 usedFallback = true
             }
         }
@@ -103,7 +107,8 @@ struct TranscriptionRouter: TranscriptionRouting {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, rms(samples) < silenceRMS else { return trimmed }
         let lowered = trimmed.lowercased()
-        let matches = hallucinations.contains { lowered.contains($0.lowercased()) }
+        let bare = lowered.trimmingCharacters(in: .punctuationCharacters.union(.whitespaces))
+        let matches = hallucinations.contains { lowered.contains($0.lowercased()) } || silenceOnlyLines.contains(bare)
         if matches {
             Log.transcription.notice("Dropped a silence hallucination: \(trimmed, privacy: .private)")
         }

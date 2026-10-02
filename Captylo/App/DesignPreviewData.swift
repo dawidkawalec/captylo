@@ -3,7 +3,7 @@ import Security
 import SwiftData
 
 /// Fake world for `--design-preview`: a wiped defaults suite, an in-memory store with 42
-/// dictations over the last 14 days, a temp `dictionary.json`, a seeded key store, the Parakeet
+/// dictations over the last 14 days, a temp `dictionary.json`, a seeded key store, the local model
 /// status "ready" and a small OpenRouter model list. Nothing here touches the user's data.
 @MainActor
 enum DesignPreviewData {
@@ -200,7 +200,7 @@ enum DesignPreviewData {
         let url = folder.appending(path: "dictionary.json")
         let learnedRule = ReplacementRule(triggers: ["supa bejs"], replacement: "Supabase")
         let data = DictionaryData(
-            vocabulary: ["Captylo", "Parakeet", "Notion", "Kubernetes", "Figma", "Dawid Kawalec", "PRD", "Supabase", "Honcho"],
+            vocabulary: ["Captylo", "Whisper", "Notion", "Kubernetes", "Figma", "Dawid Kawalec", "PRD", "Supabase", "Honcho"],
             replacements: [
                 ReplacementRule(triggers: ["kapytlo", "kaptylo"], replacement: "Captylo"),
                 ReplacementRule(triggers: ["pe er de"], replacement: "PRD"),
@@ -353,7 +353,7 @@ enum DesignPreviewData {
                 source: isFile ? .file : .dictation,
                 audioDuration: (duration * 10).rounded() / 10,
                 language: "pl",
-                modelName: "Parakeet v3",
+                modelName: STTEngine.local.modelName,
                 transcriptionMs: 180 + Int(generator.next() % 220),
                 enhancementModel: enhanced == nil ? nil : "openai/gpt-4.1-mini",
                 enhancementMs: enhanced == nil ? nil : 620 + Int(generator.next() % 500),

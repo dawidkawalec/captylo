@@ -119,7 +119,7 @@ enum CorrectionLearner {
         return prefix >= shorter - 1
     }
 
-    /// The form to keep when a spelled word turns out to be the heard one: Parakeet can drop
+    /// The form to keep when a spelled word turns out to be the heard one: a local engine can drop
     /// letters from a spelling ("brzęk, pisane BRZK"), so a shorter spelling whose letters all
     /// appear in the heard word, in order, loses to the heard word.
     static func preferredForm(heard: String, spelled: String) -> String {

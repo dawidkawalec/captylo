@@ -58,6 +58,11 @@ enum AppPaths {
         }
     }
 
-    /// `~/Library/Application Support/FluidAudio/Models/parakeet-tdt-0.6b-v3` (shared with the old app, gotcha 23).
-    static var parakeetModelDir: URL { AsrModels.defaultCacheDirectory(for: .v3) }
+    /// `~/Library/Application Support/FluidAudio/Models/parakeet-tdt-0.6b-v3`: the Parakeet model of
+    /// earlier versions (shared with the old app, gotcha 23). Only read to offer its removal.
+    static var legacyParakeetModelDir: URL { AsrModels.defaultCacheDirectory(for: .v3) }
+
+    /// WhisperKit download base: the model lands in `models/argmaxinc/whisperkit-coreml/<variant>`,
+    /// the tokenizer in `models/openai/whisper-large-v3` (both found there offline).
+    static var whisperDownloadBase: URL { dataDirectory.appending(path: "WhisperModels", directoryHint: .isDirectory) }
 }

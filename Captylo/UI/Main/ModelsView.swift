@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// "Modele": speech engine (Parakeet download / ElevenLabs key, language), the "Tryby AI" list
+/// "Modele": speech engine (local model download / ElevenLabs key, language), the "Tryby AI" list
 /// (`AIModesPanel`) and AI cleanup (master switch, OpenRouter key, model picker, test call), as
 /// three Dusk Glass panels.
 @MainActor
@@ -18,19 +18,23 @@ struct ModelsView: View {
             GlassPanel {
                 GlassSectionHeader("Silnik mowy", systemImage: "waveform")
                 GlassSegmentedPicker(selection: $settings.sttEngine, segments: [
-                    GlassSegment(STTEngine.parakeet, "Parakeet (lokalnie)", systemImage: "cpu"),
+                    GlassSegment(STTEngine.local, "Lokalnie", systemImage: "cpu"),
                     GlassSegment(STTEngine.elevenLabs, "Chmura", systemImage: "cloud"),
                 ])
                 .accessibilityLabel(Text("Silnik"))
 
-                if settings.sttEngine == .parakeet {
-                    ParakeetSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: false)
+                if settings.sttEngine == .local {
+                    LocalModelSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: false)
                 } else {
                     ElevenLabsSection(keyStore: appState.keyStore, client: appState.elevenLabs)
-                    // The cloud path still uses Parakeet for the fallback and the live preview,
-                    // so the local model stays manageable without switching engines.
+                    // The cloud path still uses the local model for the fallback and the live
+                    // preview, so it stays manageable without switching engines.
                     GlassRowSeparator()
-                    ParakeetSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: true)
+                    LocalModelSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: true)
+                }
+                if appState.modelStore.hasLegacyParakeet {
+                    GlassRowSeparator()
+                    LegacyParakeetRow(store: appState.modelStore)
                 }
 
                 GlassRowSeparator()
@@ -55,11 +59,11 @@ struct ModelsView: View {
     }
 }
 
-// MARK: - Parakeet
+// MARK: - Local model
 
 @MainActor
-private struct ParakeetSection: View {
-    let store: ParakeetModelStore
+private struct LocalModelSection: View {
+    let store: LocalModelStore
     /// The meeting voice detector that downloads with the model ("Wykrywanie mowy do spotkań").
     let detector: SpeechDetectorStatus
     /// On the cloud engine: explain why the local model still matters.
@@ -70,7 +74,7 @@ private struct ParakeetSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            GlassRow(title: Text("Model lokalny (Parakeet)"), subtitle: subtitle, systemImage: "cpu") {
+            GlassRow(title: Text("Model lokalny"), subtitle: subtitle, systemImage: "cpu") {
                 trailing
             }
             if case .downloading(let progress) = store.status {
@@ -90,18 +94,20 @@ private struct ParakeetSection: View {
             SpeechDetectorStatusLine(status: detector)
                 .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
         }
-        .alert("Usunąć model Parakeet?", isPresented: $confirmDelete) {
+        .alert("Usunąć model lokalny?", isPresented: $confirmDelete) {
             Button("Usuń", role: .destructive) {
-                do {
-                    try store.delete()
-                    deleteError = nil
-                } catch {
-                    deleteError = String(localized: "Nie udało się usunąć modelu: \(error.localizedDescription)")
+                Task {
+                    do {
+                        try await store.delete()
+                        deleteError = nil
+                    } catch {
+                        deleteError = String(localized: "Nie udało się usunąć modelu: \(error.localizedDescription)")
+                    }
                 }
             }
             Button("Anuluj", role: .cancel) {}
         } message: {
-            Text("Folder modelu jest współdzielony z poprzednią aplikacją do dyktowania. Po usunięciu ona również straci model i będzie musiała pobrać go ponownie.")
+            Text("Dyktowanie bez internetu i transkrypt spotkań na żywo przestaną działać, dopóki nie pobierzesz modelu ponownie (ok. 1,6 GB).")
         }
         .onAppear {
             store.refresh()
@@ -114,13 +120,13 @@ private struct ParakeetSection: View {
             if showsCloudNote {
                 return Text("Potrzebny, gdy chmura nie odpowie, i do podglądu na żywo podczas nagrywania.")
             }
-            return Text("Model Parakeet v3 nie jest pobrany (ok. 600 MB, 25 języków, działa bez internetu).")
+            return Text("Model nie jest pobrany (ok. 1,6 GB, działa bez internetu).")
         case .downloading(let progress):
             return Text("Pobieram model... \(Int((progress * 100).rounded()))%")
         case .optimizing:
-            return Text("Optymalizuję model dla Twojego Maca (jednorazowo)")
+            return Text("Optymalizuję model dla Twojego Maca (jednorazowo, do kilku minut)")
         case .ready:
-            return Text(verbatim: "Parakeet TDT 0.6b v3")
+            return Text(verbatim: "Whisper large-v3 turbo")
         case .failed:
             return nil
         }
@@ -166,6 +172,54 @@ private struct ParakeetSection: View {
                 Task { await store.download() }
             }
             .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+        }
+    }
+}
+
+/// The Parakeet model of earlier versions, still on disk: offered for removal, never used.
+@MainActor
+private struct LegacyParakeetRow: View {
+    let store: LocalModelStore
+
+    @State private var confirmDelete = false
+    @State private var deleteError: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            GlassRow(
+                title: Text("Poprzedni model lokalny"),
+                subtitle: Text("Captylo go już nie używa. Zajmuje ok. 460 MB."),
+                systemImage: "archivebox"
+            ) {
+                Button {
+                    confirmDelete = true
+                } label: {
+                    Label {
+                        Text("Usuń")
+                    } icon: {
+                        Image(systemName: "trash")
+                            .foregroundStyle(GlassColor.destructive)
+                    }
+                }
+                .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+            }
+            if let deleteError {
+                ToolStatusLine(text: deleteError, tone: .error)
+                    .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+            }
+        }
+        .alert("Usunąć poprzedni model?", isPresented: $confirmDelete) {
+            Button("Usuń", role: .destructive) {
+                do {
+                    try store.deleteLegacyParakeet()
+                    deleteError = nil
+                } catch {
+                    deleteError = String(localized: "Nie udało się usunąć modelu: \(error.localizedDescription)")
+                }
+            }
+            Button("Anuluj", role: .cancel) {}
+        } message: {
+            Text("Folder modelu jest współdzielony z poprzednią aplikacją do dyktowania. Po usunięciu ona również straci model i będzie musiała pobrać go ponownie.")
         }
     }
 }
@@ -277,7 +331,7 @@ private struct ElevenLabsSection: View {
                 onSave: save,
                 onVerify: verify
             )
-            ToolCaption("Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje Parakeet, jeśli jest pobrany.")
+            ToolCaption("Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.")
                 .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
         }
         .onAppear {
@@ -322,7 +376,7 @@ private struct LanguagePicker: View {
         var id: String { code }
     }
 
-    /// "Automatycznie" first, then the 25 Parakeet languages named in the UI language.
+    /// "Automatycznie" first, then the 25 offered languages named in the UI language.
     static let options: [Option] = {
         let locale = AppLocale.current
         let named = TranscriptionLanguages.codes.map { code -> Option in

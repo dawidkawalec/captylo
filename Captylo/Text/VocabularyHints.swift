@@ -1,7 +1,7 @@
 import Foundation
 
-/// Turns the vocabulary list into the shape each consumer accepts. Parakeet ignores vocabulary
-/// (gotcha 22); only the cloud STT and the AI prompt use these.
+/// Turns the vocabulary list into the shape the cloud STT and the AI prompt accept. The local
+/// model gets no vocabulary (see `WhisperEngine.init`).
 enum VocabularyHints {
     static let elevenLabsMaxTerms = 1000
     static let elevenLabsMaxLength = 50

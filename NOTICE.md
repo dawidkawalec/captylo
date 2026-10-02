@@ -22,8 +22,10 @@ Files: `Captylo/UI/Glass/Grainient.metal`, the shader in `site/assets/js/grainie
 
 | Component | Used for | Licence |
 |---|---|---|
-| [FluidAudio](https://github.com/FluidInference/FluidAudio) | on-device speech recognition runtime (Swift package) | Apache License 2.0 |
-| [Parakeet TDT 0.6b v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) by NVIDIA, Core ML conversion by FluidInference | the local speech model, downloaded on first launch (not bundled) | CC BY 4.0 |
+| [WhisperKit](https://github.com/argmaxinc/argmax-oss-swift) (argmax-oss-swift) by Argmax, Inc. | on-device speech recognition runtime (Swift package) | MIT |
+| [swift-transformers](https://github.com/huggingface/swift-transformers) by Hugging Face, modified by Argmax (`Sources/ArgmaxCore/External` of WhisperKit) | tokenizer and model download code inside WhisperKit | Apache License 2.0 |
+| [Whisper large-v3-turbo](https://github.com/openai/whisper) by OpenAI, [Core ML conversion](https://huggingface.co/argmaxinc/whisperkit-coreml) by Argmax | the local speech model, downloaded on first launch (not bundled) | MIT |
+| [FluidAudio](https://github.com/FluidInference/FluidAudio) | meeting voice detection and speaker labels runtime (Swift package) | Apache License 2.0 |
 | [Silero VAD](https://github.com/snakers4/silero-vad) by Silero Team, [Core ML conversion](https://huggingface.co/FluidInference/silero-vad-coreml) by FluidInference | detecting speech in meetings, downloaded on first use (not bundled) | MIT |
 | [pyannote speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1) by pyannote (segmentation, WeSpeaker speaker embedding, PLDA parameters by BUT Speech@FIT), modified [Core ML conversion](https://huggingface.co/FluidInference/speaker-diarization-coreml) by FluidInference | speaker labels in meetings (macOS 15+), downloaded on first use (not bundled) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | [Inter](https://rsms.me/inter/) by Rasmus Andersson | UI typeface, app and site | SIL Open Font License 1.1 (`OFL-Inter.txt`) |

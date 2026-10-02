@@ -41,8 +41,8 @@ final class DebugRunner: DebugCommandRunner {
             return await watchPaste(text)
         case .meetingFromFiles(let me, let them):
             return await meetingFromFiles(me: me, them: them)
-        case .compareModels(let url, let reference, let language):
-            return await compareModels(url: url, reference: reference, language: language)
+        case .benchmark(let url, let reference, let language):
+            return await benchmark(url: url, reference: reference, language: language)
         case .rebuildSearchIndex:
             return await rebuildSearchIndex()
         case .mcp:
@@ -77,46 +77,40 @@ final class DebugRunner: DebugCommandRunner {
         }
     }
 
-    // MARK: --compare-models
+    // MARK: --benchmark
 
-    /// Parakeet v3 against Parakeet Ultra on one file (`ModelComparison`): both transcripts, load
-    /// and run time, real-time factor, peak memory and the word error rate against `--reference`.
-    /// The language flag maps like `--transcribe` (nil = the app setting, "auto" = no hint).
-    private func compareModels(url: URL, reference: URL?, language: String?) async -> Int32 {
+    /// The local model on one file (`ModelBenchmark`): transcript, load and run time, real-time
+    /// factor, peak memory and the word error rate against `--reference`. The language flag maps
+    /// like `--transcribe` (nil = the app setting, "auto" = no hint).
+    private func benchmark(url: URL, reference: URL?, language: String?) async -> Int32 {
         do {
             let referenceText = try reference.map { try String(contentsOf: $0, encoding: .utf8) }
             let languageCode = language.map { TranscriptionLanguages.engineCode(for: $0) } ?? appState.settings.transcriptionLanguage
-            let report = try await ModelComparison.run(file: url, reference: referenceText, language: languageCode)
-            let models = report.models.map { model -> [String: Any] in
-                var payload: [String: Any] = [
-                    "model": model.model,
-                    "text": model.text,
-                    "loadMs": model.loadMs,
-                    "ms": model.ms,
-                    "rtf": Self.decimal(model.rtf, places: 3),
-                    "peakMemoryMB": model.peakMemoryMB,
-                    "memoryDeltaMB": model.memoryDeltaMB,
-                    "wer": NSNull(),
+            let report = try await ModelBenchmark.run(file: url, reference: referenceText, language: languageCode, engine: appState.localEngine)
+            var wer: Any = NSNull()
+            if let value = report.wer {
+                wer = [
+                    "percent": Self.decimal(value.percent, places: 1),
+                    "substitutions": value.substitutions,
+                    "deletions": value.deletions,
+                    "insertions": value.insertions,
+                    "words": value.words,
                 ]
-                if let wer = model.wer {
-                    payload["wer"] = [
-                        "percent": Self.decimal(wer.percent, places: 1),
-                        "substitutions": wer.substitutions,
-                        "deletions": wer.deletions,
-                        "insertions": wer.insertions,
-                        "words": wer.words,
-                    ]
-                }
-                return payload
             }
             Self.emit([
                 "ok": true,
                 "file": report.file.path(percentEncoded: false),
                 "durationSeconds": Self.seconds(report.durationSeconds),
                 "language": Self.orNull(report.language),
-                "reference": report.hasReference,
-                "models": models,
+                "reference": reference != nil,
+                "model": report.model,
+                "text": report.text,
+                "loadMs": report.loadMs,
+                "ms": report.ms,
+                "rtf": Self.decimal(report.rtf, places: 3),
                 "peakMemoryMB": report.peakMemoryMB,
+                "memoryDeltaMB": report.memoryDeltaMB,
+                "wer": wer,
             ])
             return 0
         } catch {
@@ -129,7 +123,7 @@ final class DebugRunner: DebugCommandRunner {
     // MARK: --meeting-from-files
 
     /// The meeting transcription path on two files instead of live capture (no mic, no TCC): the
-    /// real Parakeet and VAD, a real `MeetingTranscriber` and an in-memory store. Both tracks start
+    /// real local model and VAD, a real `MeetingTranscriber` and an in-memory store. Both tracks start
     /// at meeting time 0 and are fed 4096-sample chunks alternately, like the live sources.
     /// Prints the transcript as stored (echo marks written back like at a meeting's stop);
     /// `transcribed` differs from the stored count only when a segment failed to save. With Pro
@@ -140,7 +134,7 @@ final class DebugRunner: DebugCommandRunner {
             let meSamples = try await AudioDecoder.decode16kMono(me).samples
             let themSamples = try await AudioDecoder.decode16kMono(them).samples
             // Loaded up front: a missing model or VAD fails here, not as an empty transcript.
-            let engine = appState.parakeetEngine
+            let engine = appState.localEngine
             try await engine.load()
             let vad = SpeechDetectorCache { try await FluidSpeechDetector.load() }
             _ = try await vad.detector()
@@ -348,8 +342,9 @@ final class DebugRunner: DebugCommandRunner {
             try AudioDecoder.writeWAV16k(samples, to: wavURL)
             defer { try? FileManager.default.removeItem(at: wavURL) }
 
-            if engine == .parakeet {
-                try await appState.parakeetEngine.load()
+            // Loaded first so `transcriptionMs` is the pass alone, like a dictation on a warm model.
+            if engine == .local {
+                try await appState.localEngine.load()
             }
             let audio = CapturedAudio(id: id, fileURL: wavURL, samples: samples, duration: duration)
             let result = try await appState.transcriptionRouter.transcribe(
@@ -470,8 +465,9 @@ final class DebugRunner: DebugCommandRunner {
             ],
             "model": [
                 "status": modelStatus,
-                "installed": ParakeetEngine.isDownloaded,
-                "directory": AppPaths.parakeetModelDir.path(percentEncoded: false),
+                "installed": WhisperEngine.isDownloaded,
+                "directory": WhisperEngine.modelFolder.path(percentEncoded: false),
+                "legacyParakeet": FileManager.default.fileExists(atPath: AppPaths.legacyParakeetModelDir.path(percentEncoded: false)),
             ],
             "microphone": [
                 "selected": Self.orNull(appState.audioDevices.resolveInput()?.name),

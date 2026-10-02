@@ -1,5 +1,6 @@
-/// Turns VAD start/end flags per chunk into utterances of at most `maxSamples` (one Parakeet
-/// encoder window, so a pass has no seams). Keeps a short pre-roll so first syllables survive,
+/// Turns VAD start/end flags per chunk into utterances of at most `maxSamples` (14 s, well inside
+/// one 30 s Whisper window, so a pass has no seams; longer utterances mix the mic's own words
+/// with echo of the other side, and `EchoFilter` judges a segment as a whole). Keeps a short pre-roll so first syllables survive,
 /// and at most one open utterance in memory: a 2 h meeting never builds a big array.
 ///
 /// All positions are absolute sample indices (16 kHz) within the track, counted from the first

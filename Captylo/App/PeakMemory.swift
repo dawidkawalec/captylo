@@ -3,7 +3,7 @@ import Foundation
 
 /// Physical memory footprint of this process, as Activity Monitor's "Memory" column counts it
 /// (`task_info` `TASK_VM_INFO`: `phys_footprint` now, `ledger_phys_footprint_peak` since launch).
-/// Printed by `--compare-models` and `--meeting-from-files` so long runs can be checked for growth.
+/// Printed by `--benchmark` and `--meeting-from-files` so long runs can be checked for growth.
 enum PeakMemory {
     struct Footprint: Equatable, Sendable {
         let currentBytes: Int

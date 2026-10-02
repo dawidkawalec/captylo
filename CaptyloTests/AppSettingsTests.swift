@@ -17,7 +17,7 @@ struct AppSettingsTests {
         #expect(settings.hotkey == .rightOption)
         #expect(settings.language == "pl")
         #expect(settings.transcriptionLanguage == "pl")
-        #expect(settings.sttEngine == .parakeet)
+        #expect(settings.sttEngine == .local)
         #expect(settings.livePreview)
         #expect(!settings.aiEnabled)
         #expect(settings.aiModel == "openai/gpt-4.1-mini")

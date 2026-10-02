@@ -18,8 +18,8 @@ struct AppStateOverrides {
     var keyStore: KeyStore?
     /// Defaults for the crash-recovery mute marker instead of `.standard`.
     var systemMuteDefaults: UserDefaults?
-    /// Parakeet status shown regardless of the files on disk.
-    var pinnedModelStatus: ParakeetModelStore.Status?
+    /// Local model status shown regardless of the files on disk.
+    var pinnedModelStatus: LocalModelStore.Status?
     /// Meeting voice detector status shown without loading it (the design preview never downloads).
     var pinnedSpeechDetectorStatus: SpeechDetectorStatus.State?
     /// Accessibility grant reported regardless of `AXIsProcessTrusted()`.

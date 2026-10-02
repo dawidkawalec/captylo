@@ -109,7 +109,7 @@ struct UIMainFileTranscriptionQueueTests {
             },
             recordingURL: { recordings.appending(path: "\($0.uuidString).wav") },
             router: router,
-            engine: { .parakeet },
+            engine: { .local },
             language: { "pl" },
             vocabulary: { ["Captylo"] },
             processor: { TextProcessor(dictionary: .default, paragraphs: true) },
@@ -157,7 +157,7 @@ struct UIMainFileTranscriptionQueueTests {
 
         let item = try #require(queue.items.first)
         #expect(item.status == .done(text: "Raz dwa trzy cztery"), "the text processor removed the filler and capitalized the sentence")
-        #expect(router.engines == [.parakeet])
+        #expect(router.engines == [.local])
 
         let record = try #require(recorder.records.first)
         #expect(recorder.records.count == 1)

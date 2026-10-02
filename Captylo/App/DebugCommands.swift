@@ -9,9 +9,9 @@ enum WidgetDebugState: String, CaseIterable, Sendable {
 
 /// Headless CLI flags kept in Release (docs/architecture.md "Debug CLI flags").
 enum DebugCommand: Sendable, Equatable {
-    /// `--transcribe <file> [--ai] [--language pl] [--engine parakeet|cloud]`. `language` is the raw
+    /// `--transcribe <file> [--ai] [--language pl] [--engine local|cloud]`. `language` is the raw
     /// flag value (nil = use the app setting; "auto" is passed through and mapped by the runner);
-    /// `engine` nil = the app setting (`--engine parakeet` never reads the Keychain without `--ai`).
+    /// `engine` nil = the app setting (`--engine local` never reads the Keychain without `--ai`).
     case transcribe(url: URL, ai: Bool, language: String?, engine: STTEngine? = nil)
     /// `--show-widget <recording|transcribing|enhancing>`
     case showWidget(WidgetDebugState)
@@ -39,11 +39,11 @@ enum DebugCommand: Sendable, Equatable {
     /// instead of live capture (no mic, no system audio tap, in-memory store). `me` stands for the
     /// mic track and `them` for the system track; both start at meeting time 0.
     case meetingFromFiles(me: URL, them: URL)
-    /// `--compare-models <audio file> [--reference <txt file>] [--language pl]`: transcribes the file
-    /// with Parakeet v3 and Parakeet Ultra one after the other (`ModelComparison`) and prints both
-    /// texts with timings, peak memory and, with a reference transcript, the word error rate.
-    /// `language` is the raw flag value like `--transcribe` (nil = the app setting).
-    case compareModels(url: URL, reference: URL?, language: String?)
+    /// `--benchmark <audio file> [--reference <txt file>] [--language pl]`: transcribes the file with
+    /// the local model (`ModelBenchmark`) and prints the text with timings, peak memory and, with a
+    /// reference transcript, the word error rate. `language` is the raw flag value like
+    /// `--transcribe` (nil = the app setting).
+    case benchmark(url: URL, reference: URL?, language: String?)
     /// `--rebuild-search-index`: empties the meeting search index and fills it again from the
     /// store at `AppPaths` (point `CAPTYLO_DATA_DIR` at a copy), then prints meetings, rows and ms.
     case rebuildSearchIndex
@@ -55,7 +55,7 @@ enum DebugCommand: Sendable, Equatable {
 
     static let primaryFlags: [String] = [
         "--transcribe", "--show-widget", "--check", "--reset-onboarding", "--open-section", "--design-preview",
-        "--ax-probe", "--watch-paste", "--meeting-from-files", "--compare-models", "--rebuild-search-index", "--mcp",
+        "--ax-probe", "--watch-paste", "--meeting-from-files", "--benchmark", "--rebuild-search-index", "--mcp",
     ]
 
     /// Headless commands never start the services; all but `--open-section` go to `DebugRunner`.
@@ -114,7 +114,7 @@ enum DebugCommand: Sendable, Equatable {
                 case "--engine":
                     guard index + 1 < rest.count else { return nil }
                     switch rest[index + 1].lowercased() {
-                    case "parakeet", "local": engine = .parakeet
+                    case "local", "whisper", "parakeet": engine = .local
                     case "cloud", "elevenlabs": engine = .elevenLabs
                     default: return nil
                     }
@@ -129,7 +129,7 @@ enum DebugCommand: Sendable, Equatable {
             let paths = rest.prefix(2)
             guard paths.count == 2, paths.allSatisfy({ !$0.isEmpty && !$0.hasPrefix("--") }) else { return nil }
             return .meetingFromFiles(me: fileURL(paths[paths.startIndex]), them: fileURL(paths[paths.startIndex + 1]))
-        case "--compare-models":
+        case "--benchmark":
             guard let path = rest.first, !path.hasPrefix("--"), !path.isEmpty else { return nil }
             var reference: URL?
             var language: String?
@@ -149,7 +149,7 @@ enum DebugCommand: Sendable, Equatable {
                 }
                 index += 1
             }
-            return .compareModels(url: fileURL(path), reference: reference, language: language)
+            return .benchmark(url: fileURL(path), reference: reference, language: language)
         default:
             return nil
         }

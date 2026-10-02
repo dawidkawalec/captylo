@@ -2,7 +2,8 @@
 enum TranscriptionLanguages {
     static let auto = "auto"
 
-    /// The 25 Parakeet v3 languages, ISO codes as accepted by FluidAudio `Language(rawValue:)`.
+    /// The 25 European languages offered in the picker (the set of the earlier Parakeet engine;
+    /// Whisper knows all of them and many more). ISO 639-1 codes, as WhisperKit expects them.
     static let codes: [String] = [
         "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fr", "hr", "hu", "it",
         "lt", "lv", "mt", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "uk",

@@ -47,7 +47,7 @@ final class TranscriptionStubURLProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
-/// Fake Parakeet: fixed text or a fixed error, counts calls.
+/// Fake local engine: fixed text or a fixed error, counts calls.
 final class TranscriptionFakeLocalTranscriber: LocalTranscribing, Sendable {
     private struct Counters {
         var transcribe = 0

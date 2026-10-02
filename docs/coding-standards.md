@@ -2,7 +2,7 @@
 
 ## Swift
 
-- Swift 6 language mode, `SWIFT_STRICT_CONCURRENCY=complete`, no default actor isolation. Mark SwiftUI views, AppKit wrappers and observable UI models `@MainActor`. Long-running or shared services are `actor`s (`ParakeetEngine`, `Enhancer`, `LivePreview`, `Database` as a `ModelActor` on its own `DatabaseExecutor` queue; do not switch it back to `@ModelActor`, whose default executor runs store work on the caller's thread, often main).
+- Swift 6 language mode, `SWIFT_STRICT_CONCURRENCY=complete`, no default actor isolation. Mark SwiftUI views, AppKit wrappers and observable UI models `@MainActor`. Long-running or shared services are `actor`s (`WhisperEngine`, `Enhancer`, `LivePreview`, `Database` as a `ModelActor` on its own `DatabaseExecutor` queue; do not switch it back to `@ModelActor`, whose default executor runs store work on the caller's thread, often main).
 - Audio and event-tap callbacks run off the main thread: keep them in `nonisolated` code, never capture `@MainActor` state, hand results to the main actor with `Task { @MainActor in ... }` or an `AsyncStream`.
 - `@Model` classes never cross actors; pass value structs (`DictationRecord`) or `PersistentIdentifier`.
 - Shared mutable state on hot paths uses `OSAllocatedUnfairLock`; no `Synchronization` module (macOS 15 only), no `DispatchSemaphore` on the cooperative pool.

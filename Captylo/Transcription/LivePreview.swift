@@ -1,14 +1,14 @@
-import FluidAudio
 import Foundation
 
-/// Re-transcribes the last 15 s of the live buffer once per second while recording (gotcha 20).
-/// Always Parakeet; the final text comes from the router's full pass, not from these partials.
+/// Re-transcribes the last 15 s of the live buffer every 1.5 s while recording (one Whisper pass
+/// takes 0.7-0.9 s, so a faster tick would keep the model busy). Always the local engine; the
+/// final text comes from the router's full pass, not from these partials.
 struct LivePreview: LivePreviewing {
-    static let defaultTick: Duration = .seconds(1)
+    static let defaultTick: Duration = .milliseconds(1500)
     /// New samples required since the last pass: 0.5 s at 16 kHz.
-    static let minNewSamples = ASRConstants.sampleRate / 2
-    /// Tail handed to the engine (the engine caps it further so the padded input fits one pass).
-    static let tailSamples = ASRConstants.maxModelSamples
+    static let minNewSamples = SampleBuffer.sampleRate / 2
+    /// Tail handed to the engine: 15 s keeps the decoder short (the engine caps it at one window).
+    static let tailSamples = 15 * SampleBuffer.sampleRate
 
     private let engine: any LocalTranscribing
     private let tick: Duration
