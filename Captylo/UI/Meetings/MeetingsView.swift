@@ -342,7 +342,10 @@ struct MeetingsView: View {
                 settings.meetingsCalendar = true
                 Task { await calendar.requestAccess() }
             },
-            onDismiss: { settings.meetingsCalendarPromptDismissed = true }
+            onDismiss: {
+                settings.meetingsCalendar = false
+                settings.meetingsCalendarPromptDismissed = true
+            }
         )
     }
 

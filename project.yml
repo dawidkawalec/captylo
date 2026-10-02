@@ -62,6 +62,8 @@ targets:
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.device.audio-input: true
+        # Hardened Runtime: without it macOS denies EventKit silently, with no prompt.
+        com.apple.security.personal-information.calendars: true
         com.apple.security.network.client: true
         com.apple.security.files.user-selected.read-only: true
     info:

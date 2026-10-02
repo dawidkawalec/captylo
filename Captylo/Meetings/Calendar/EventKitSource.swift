@@ -20,7 +20,12 @@ final class EventKitSource: CalendarEventSource, @unchecked Sendable {
         } catch {
             Log.calendar.error("Calendar access request failed: \(error.localizedDescription, privacy: .public)")
         }
-        return access()
+        let result = access()
+        if result == .notDetermined {
+            // What a missing calendars entitlement looks like under Hardened Runtime.
+            Log.calendar.error("Calendar access request ended without a prompt")
+        }
+        return result
     }
 
     func events(from: Date, to: Date) async -> [CalendarEvent] {

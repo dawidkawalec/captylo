@@ -1,9 +1,10 @@
 import SwiftUI
 
 /// Makes the calendar findable from Spotkania (the switch alone sits deep in Ustawienia and is off
-/// by default). Calendar off and not dismissed: "Połącz kalendarz" with "Połącz" (turns it on and
-/// asks for access) and "Nie teraz". Calendar on without full access: why the events are missing,
-/// with "Otwórz Ustawienia systemowe". Nothing while the calendar works.
+/// by default). Calendar off and not dismissed, or on while macOS has not answered yet: "Połącz
+/// kalendarz" with "Połącz" (turns it on and asks for access) and "Nie teraz" (turns it off).
+/// Calendar on without full access: why the events are missing, with "Otwórz Ustawienia
+/// systemowe". Nothing while the calendar works.
 @MainActor
 struct CalendarConnectRow: View {
     enum Kind: Equatable {
@@ -19,6 +20,11 @@ struct CalendarConnectRow: View {
     nonisolated static func kind(isOn: Bool, dismissed: Bool, access: CalendarAccess) -> Kind? {
         if !isOn {
             return dismissed ? nil : .connect
+        }
+        // On, but the prompt never came back with an answer: keep "Połącz" so it can be retried
+        // instead of hiding the row while nothing is connected.
+        if access == .notDetermined {
+            return .connect
         }
         return MeetingsSettingsPanel.calendarStatusText(for: access).map(Kind.noAccess)
     }
