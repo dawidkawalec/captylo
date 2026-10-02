@@ -94,6 +94,37 @@ enum DesignPreviewData {
         environment["CAPTYLO_PREVIEW_HIT"] == "1"
     }
 
+    /// `CAPTYLO_PREVIEW_ASK_ALL=1`: `main-spotkania` opens "Zapytaj wszystkie spotkania" with the
+    /// seeded answer of `sampleLibraryAnswers` (never the network).
+    static func opensLibraryAsk(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        environment["CAPTYLO_PREVIEW_ASK_ALL"] == "1"
+    }
+
+    /// The preview's "Zapytaj wszystkie spotkania" answer over the sample meetings (found by
+    /// title in `meetings`, the loaded list): citations into the budget meeting and the client
+    /// call, both as sources. Empty when they are not on the list.
+    static func sampleLibraryAnswers(meetings: [MeetingRecord]) -> [LibraryAnswer] {
+        guard let budget = meetings.first(where: { $0.title == "Budżet marketingu Q4" }),
+              let client = meetings.first(where: { $0.title == "Rozmowa z klientem: wdrożenie" }) else { return [] }
+        let answer = """
+        Dwie oferty są w toku:
+        - Agencja: oferta na wideo przed Black Friday, zapytasz o nią jutro [S1 22:13]. Nie wiadomo jeszcze, czy zdążą [S1 22:00]
+        - Klient: oferta na szkolenia i dostęp testowy dla pięciu osób [S2 10:11], listę osób prześle do piątku [S2 30:51]
+        """
+        return [
+            LibraryAnswer(
+                question: "Jakie oferty mamy wysłać?",
+                answer: answer,
+                model: "openai/gpt-4.1-mini",
+                sources: [
+                    LibraryAnswer.Source(meetingID: budget.id, title: budget.title, createdAt: budget.createdAt),
+                    LibraryAnswer.Source(meetingID: client.id, title: client.title, createdAt: client.createdAt),
+                ],
+                askedAt: Date()
+            ),
+        ]
+    }
+
     /// `CAPTYLO_PREVIEW_AUDIO_CHECK=works|noaccess|nothing|failed`: the result the "Dostęp do
     /// dźwięku systemu" row in Ustawienia shows, as if "Sprawdź" had just run (nil: not checked).
     static func audioCheckOutcome(environment: [String: String] = ProcessInfo.processInfo.environment) -> SystemAudioCheck.Outcome? {

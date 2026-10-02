@@ -71,7 +71,8 @@ enum MeetingAskPrompt {
     }
 
     /// The note lines with their meeting times; notes typed before lines had times as they are.
-    private static func notes(_ meeting: MeetingRecord) -> String {
+    /// Also the user's notes in `LibraryAskPrompt`.
+    static func notes(_ meeting: MeetingRecord) -> String {
         let lines = meeting.noteLines.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
         if !lines.isEmpty {
             return lines.map { "\(MeetingTime.stamp($0.at)) \($0.text)" }.joined(separator: "\n")

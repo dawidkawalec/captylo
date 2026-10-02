@@ -23,6 +23,10 @@ import SwiftUI
 /// lines); a click on a hit line opens "Transkrypt" at that moment (or "Notatki"). Shorter
 /// queries, or an index still being built, use the store's plain `contains` search. While
 /// searching, the number of meetings found sits under the field.
+///
+/// "Zapytaj wszystkie" next to the field opens `LibraryAskPanel` (Pro; Free sees a "Pro" badge
+/// and the Pro card): a citation in an answer closes it, selects that meeting and jumps in
+/// "Transkrypt" like a search hit.
 @MainActor
 struct MeetingsView: View {
     /// Below this content width the list sits above the details.
@@ -66,6 +70,10 @@ struct MeetingsView: View {
     @State private var columnsWidth: CGFloat = 0
     /// The user brought the list back while a meeting records (reset by every start).
     @State private var showsListWhileLive = false
+    /// "Zapytaj wszystkie spotkania" is open.
+    @State private var showsLibraryAsk = false
+    /// The design preview opened the panel once (`CAPTYLO_PREVIEW_ASK_ALL`).
+    @State private var previewOpenedLibraryAsk = false
 
     var body: some View {
         let recorder = appState.meetingRecorder
@@ -100,6 +108,17 @@ struct MeetingsView: View {
                     selectedID = id
                     showsListWhileLive = false
                 }
+            }
+            .sheet(isPresented: $showsLibraryAsk) {
+                LibraryAskPanel(
+                    runs: appState.meetingAskRuns,
+                    isPro: appState.proAccess.allows(.meetingAsk),
+                    onOpen: { meetingID, seconds in openCitation(meetingID, seconds: seconds) },
+                    onAddKey: {
+                        showsLibraryAsk = false
+                        openModels()
+                    }
+                )
             }
             .alert("Usunąć spotkanie?", isPresented: isConfirmingDelete) {
                 Button("Usuń", role: .destructive) {
@@ -199,6 +218,7 @@ struct MeetingsView: View {
                         .accessibilityAddTraits(.updatesFrequently)
                 }
             }
+            askAllButton
             Spacer(minLength: 10)
             if isLiveSelected(recorder) {
                 ToolIconButton(
@@ -210,6 +230,51 @@ struct MeetingsView: View {
                 }
             }
             MeetingRecordButton(isRecording: recorder.isRecording, action: recordAction(recorder))
+        }
+    }
+
+    /// "Zapytaj wszystkie" next to the search field; in Free with a "Pro" badge (the panel then
+    /// shows the Pro card).
+    private var askAllButton: some View {
+        Button {
+            showsLibraryAsk = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "bubble.left.and.text.bubble.right")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Zapytaj wszystkie")
+                    .lineLimit(1)
+                if !appState.proAccess.allows(.meetingAsk) {
+                    GlassBadge(title: Text(verbatim: "Pro"), tone: .accent)
+                }
+            }
+        }
+        .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+        .fixedSize()
+        .help(Text("Zadaj pytanie o wszystkie spotkania"))
+    }
+
+    /// A citation or a source in the "Zapytaj wszystkie spotkania" panel: the panel closes, the
+    /// meeting is selected (the search is cleared when it hides that meeting) and "Transkrypt"
+    /// opens, scrolled to the line spoken at `seconds` with the same highlight as a search hit.
+    private func openCitation(_ meetingID: UUID, seconds: Double?) {
+        showsLibraryAsk = false
+        if !meetings.contains(where: { $0.id == meetingID }) {
+            query = ""
+        }
+        selectedID = meetingID
+        tab = .transcript
+        guard let seconds else { return }
+        let database = appState.database
+        Task {
+            do {
+                let segments = try await database.segments(meetingID: meetingID)
+                if let segment = MeetingCitations.segment(at: seconds, in: segments) {
+                    jump = MeetingTranscriptJump(meetingID: meetingID, segmentID: segment.id)
+                }
+            } catch {
+                Log.data.error("Citation segments could not be read: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
@@ -423,6 +488,12 @@ struct MeetingsView: View {
             if appState.isDesignPreview, jump == nil, DesignPreviewData.opensFirstHit(),
                let first = fetched.first, let line = lines[first.id]?.first {
                 openHit(line, of: first.id)
+            }
+            // `CAPTYLO_PREVIEW_ASK_ALL`: the preview opens the panel once with a seeded answer.
+            if appState.isDesignPreview, !previewOpenedLibraryAsk, DesignPreviewData.opensLibraryAsk() {
+                previewOpenedLibraryAsk = true
+                appState.meetingAskRuns.seedLibrary(DesignPreviewData.sampleLibraryAnswers(meetings: fetched))
+                showsLibraryAsk = true
             }
         } catch {
             Log.data.error("Meetings fetch failed: \(error.localizedDescription, privacy: .public)")

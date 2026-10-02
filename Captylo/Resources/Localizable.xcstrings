@@ -6542,6 +6542,96 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Questions" } }
       }
+    },
+    "Zapytaj wszystkie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask all" } }
+      }
+    },
+    "Zadaj pytanie o wszystkie spotkania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask a question about all meetings" } }
+      }
+    },
+    "Zapytaj wszystkie spotkania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask all meetings" } }
+      }
+    },
+    "Zapytaj wszystkie spotkania jest w Captylo Pro": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask all meetings is part of Captylo Pro" } }
+      }
+    },
+    "Zadaj jedno pytanie o wszystkie spotkania i dostań krótką odpowiedź ze źródłami i odnośnikami do momentów rozmowy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask one question about all your meetings and get a short answer with its sources and links to the moments of the conversation." } }
+      }
+    },
+    "Odpowiedź z Twoich spotkań, ze źródłami i odnośnikami do momentów rozmowy. Pytania znikają po zamknięciu Captylo.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "An answer from your meetings, with its sources and links to the moments of the conversation. Questions disappear when you quit Captylo." } }
+      }
+    },
+    "Zapytaj o cokolwiek z rozmów na tym Macu. Captylo znajdzie pasujące spotkania i pokaże, skąd pochodzi odpowiedź.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask about anything from the conversations on this Mac. Captylo finds the meetings that match and shows where the answer comes from." } }
+      }
+    },
+    "Zapytaj o wszystkie spotkania...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ask about all meetings..." } }
+      }
+    },
+    "Co ustaliliśmy w tym tygodniu?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "What did we agree on this week?" } }
+      }
+    },
+    "Jakie zadania są na mnie?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Which tasks are mine?" } }
+      }
+    },
+    "Co klienci mówili o cenie?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "What did clients say about the price?" } }
+      }
+    },
+    "Szukam w spotkaniach...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Searching your meetings..." } }
+      }
+    },
+    "Szukam tylko w notatkach AI, indeks się buduje.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Searching the AI notes only, the index is being built." } }
+      }
+    },
+    "Nie znalazłem tego w spotkaniach.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I couldn't find that in your meetings." } }
+      }
+    },
+    "Źródła": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Sources" } }
+      }
+    },
+    "Otwórz spotkanie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open the meeting" } }
+      }
+    },
+    "Otwórz „%@” w tym miejscu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open “%@” at this moment" } }
+      }
+    },
+    "Otwórz „%@”, %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open “%1$@”, %2$@" } }
+      }
     }
   },
   "version": "1.0"

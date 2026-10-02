@@ -108,6 +108,25 @@ struct DesignPreviewTests {
         }
     }
 
+    /// `CAPTYLO_PREVIEW_ASK_ALL=1`: the seeded library answer cites real lines of its two sources.
+    @Test func previewLibraryAnswerCitesTheSampleMeetings() throws {
+        #expect(DesignPreviewData.opensLibraryAsk(environment: ["CAPTYLO_PREVIEW_ASK_ALL": "1"]))
+        #expect(!DesignPreviewData.opensLibraryAsk(environment: [:]))
+        let samples = DesignPreviewData.sampleMeetings(now: Date())
+        let answers = DesignPreviewData.sampleLibraryAnswers(meetings: samples.map(\.meeting))
+        let answer = try #require(answers.first)
+        #expect(answers.count == 1)
+        #expect(answer.sources.count == 2)
+        let citations = answer.citations
+        #expect(citations.count == 4)
+        for citation in citations {
+            let segments = try #require(samples.first { $0.meeting.id == citation.meetingID }?.segments)
+            let seconds = try #require(citation.seconds)
+            #expect(segments.contains { $0.start.rounded(.down) == seconds })
+        }
+        #expect(DesignPreviewData.sampleLibraryAnswers(meetings: []).isEmpty)
+    }
+
     /// `CAPTYLO_PREVIEW_QUERY=oferta`: the preview's search finds two sample meetings with hit lines.
     @Test func previewSearchFindsTheSampleOffers() async throws {
         #expect(DesignPreviewData.meetingQuery(environment: ["CAPTYLO_PREVIEW_QUERY": "oferta"]) == "oferta")

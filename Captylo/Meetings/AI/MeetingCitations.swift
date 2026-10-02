@@ -36,14 +36,18 @@ enum MeetingCitations {
     /// rounded down, as its stamp shows it) is nearest, and among lines that span it the one
     /// that starts closest to it. Nil without a line.
     static func track(at seconds: Double, in segments: [MeetingSegmentRecord]) -> MeetingTrack? {
-        let spoken = segments.filter { !$0.isEcho }
-        let best = spoken.min { lhs, rhs in
+        segment(at: seconds, in: segments)?.track
+    }
+
+    /// The line spoken at `seconds` (echo skipped), chosen like `track(at:in:)`: what a
+    /// "Zapytaj wszystkie spotkania" citation jumps to in the transcript. Nil without a line.
+    static func segment(at seconds: Double, in segments: [MeetingSegmentRecord]) -> MeetingSegmentRecord? {
+        segments.filter { !$0.isEcho }.min { lhs, rhs in
             let left = distance(seconds, lhs)
             let right = distance(seconds, rhs)
             if left != right { return left < right }
             return abs(lhs.start.rounded(.down) - seconds) < abs(rhs.start.rounded(.down) - seconds)
         }
-        return best?.track
     }
 
     private static func distance(_ seconds: Double, _ segment: MeetingSegmentRecord) -> Double {

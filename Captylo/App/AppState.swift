@@ -70,8 +70,9 @@ final class AppState {
     /// "Wygeneruj ponownie" in the "Notatki AI" tab: `meetingNotes.regenerate` with the picked
     /// template. Itself `@Observable` (which meetings are being written, finished runs).
     @ObservationIgnored let meetingNotesRuns: MeetingNotesRuns
-    /// "Zapytaj" about one meeting (Pro): `MeetingAsker` with the meetings model and the AI key.
-    /// Itself `@Observable` (the question being answered per meeting, finished questions).
+    /// "Zapytaj" about one meeting and "Zapytaj wszystkie spotkania" (Pro): `MeetingAsker` and
+    /// `LibraryAsker` with the meetings model and the AI key. Itself `@Observable` (the question
+    /// being answered per meeting, finished questions, the library session).
     @ObservationIgnored let meetingAskRuns: MeetingAskRuns
     /// The transcript actions in the details (cloud again, AI fix, restore). Itself `@Observable`.
     @ObservationIgnored let meetingTranscriptRuns: MeetingTranscriptRuns
@@ -277,12 +278,26 @@ final class AppState {
             model: meetingModel,
             reasoning: reasoningPolicy
         )
+        let libraryAsker = LibraryAsker(
+            database: database,
+            index: searchIndex,
+            client: openRouter,
+            key: openRouterKey,
+            model: meetingModel,
+            reasoning: reasoningPolicy
+        )
         // The design preview never reaches the network: its questions are seeded.
         let asksOffline = overrides.isDesignPreview
-        meetingAskRuns = MeetingAskRuns { id, question in
-            guard !asksOffline, await access.allows(.meetingAsk) else { return }
-            _ = await meetingAsker.ask(meetingID: id, question: question)
-        }
+        meetingAskRuns = MeetingAskRuns(
+            ask: { id, question in
+                guard !asksOffline, await access.allows(.meetingAsk) else { return }
+                _ = await meetingAsker.ask(meetingID: id, question: question)
+            },
+            askLibrary: { question in
+                guard !asksOffline, await access.allows(.meetingAsk) else { return nil }
+                return await libraryAsker.ask(question: question)
+            }
+        )
         meetingTranscriptRuns = MeetingTranscriptRuns { id, kind in
             switch kind {
             case .cloud:

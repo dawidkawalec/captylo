@@ -146,18 +146,7 @@ struct MeetingAskView: View {
 
     /// The question on the right, in a small raised glass bubble.
     private func bubble(_ text: String) -> some View {
-        HStack {
-            Spacer(minLength: 48)
-            Text(verbatim: text)
-                .font(GlassFont.body)
-                .foregroundStyle(GlassColor.textPrimary)
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .glassSurface(.raised, cornerRadius: 14, shadow: false)
-        }
+        MeetingQuestionBubble(text: text)
     }
 
     private var searchingLine: some View {
@@ -245,15 +234,7 @@ struct MeetingAskView: View {
         VStack(alignment: .leading, spacing: 18) {
             ForEach(Array(sampleExchanges.enumerated()), id: \.offset) { _, sample in
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Spacer(minLength: 48)
-                        Text(verbatim: sample.question)
-                            .font(GlassFont.body)
-                            .foregroundStyle(GlassColor.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .glassSurface(.raised, cornerRadius: 14, shadow: false)
-                    }
+                    MeetingQuestionBubble(text: sample.question)
                     MeetingNotesSections(
                         document: MeetingNotesDocument(markdown: sample.answer),
                         toggledTasks: .constant([]),
