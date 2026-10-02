@@ -109,7 +109,25 @@ struct AppSettingsTests {
         #expect(raw.contains("meetings.autoDetect"))
         #expect(raw.contains("meetings.consentReminder"))
         #expect(raw.contains("meetings.audioRetention"))
-        #expect(AppSettings.keys.count == 36)
+        #expect(raw.contains("meetings.shortcut"))
+        #expect(raw.contains("meetings.cloudTranscript"))
+        #expect(raw.contains("meetings.aiCorrection"))
+        #expect(raw.contains("meetings.aiModel"))
+        #expect(AppSettings.keys.count == 40)
+    }
+
+    @Test func meetingTranscriptSettingsDefaultOffAndFollowTheDictationModel() throws {
+        let settings = try makeSettings()
+        #expect(settings.meetingsShortcut)
+        #expect(!settings.meetingsCloudTranscript)
+        #expect(!settings.meetingsAICorrection)
+        #expect(settings.meetingsAIModel.isEmpty)
+        settings.aiModel = "openai/gpt-4.1-mini"
+        #expect(settings.meetingAIModelID == "openai/gpt-4.1-mini")
+        settings.meetingsAIModel = "google/gemini-2.5-flash-lite"
+        #expect(settings.meetingAIModelID == "google/gemini-2.5-flash-lite")
+        settings.reset()
+        #expect(settings.meetingsAIModel.isEmpty)
     }
 
     @Test func windowToneDefaultsClampsAndResets() throws {

@@ -30,6 +30,8 @@ struct MeetingsView: View {
         let deletions: Int
         /// "Wygeneruj ponownie" finished: new AI notes (or their error) on a row.
         let notesRuns: Int
+        /// A transcript action finished (cloud again, AI fix, restore): new lines on a row.
+        let transcriptRuns: Int
     }
 
     @Environment(AppState.self) private var appState
@@ -44,6 +46,8 @@ struct MeetingsView: View {
     @State private var deletions = 0
     /// Meeting whose "Usuń spotkanie" awaits confirmation.
     @State private var pendingDelete: UUID?
+    /// Meeting whose "Usuń tylko nagranie" awaits confirmation.
+    @State private var pendingAudioDelete: UUID?
     @State private var columnsWidth: CGFloat = 0
     /// The user brought the list back while a meeting records (reset by every start).
     @State private var showsListWhileLive = false
@@ -57,7 +61,8 @@ struct MeetingsView: View {
                 lastFinishedMeetingID: recorder.lastFinishedMeetingID,
                 processed: recorder.processedCount,
                 deletions: deletions,
-                notesRuns: appState.meetingNotesRuns.finishedCount
+                notesRuns: appState.meetingNotesRuns.finishedCount,
+                transcriptRuns: appState.meetingTranscriptRuns.finishedCount
             )) {
                 await reload()
             }
@@ -88,6 +93,19 @@ struct MeetingsView: View {
                 }
             } message: {
                 Text("Transkrypt, notatki i nagranie znikną z tego Maca.")
+            }
+            .alert("Usunąć nagranie?", isPresented: isConfirmingAudioDelete) {
+                Button("Usuń nagranie", role: .destructive) {
+                    if let id = pendingAudioDelete {
+                        deleteAudio(id)
+                    }
+                    pendingAudioDelete = nil
+                }
+                Button("Anuluj", role: .cancel) {
+                    pendingAudioDelete = nil
+                }
+            } message: {
+                Text("Pliki audio znikną z tego Maca. Transkrypt i notatki zostaną, ale spotkania nie da się już odsłuchać.")
             }
     }
 
@@ -128,6 +146,13 @@ struct MeetingsView: View {
         Binding(
             get: { pendingDelete != nil },
             set: { if !$0 { pendingDelete = nil } }
+        )
+    }
+
+    private var isConfirmingAudioDelete: Binding<Bool> {
+        Binding(
+            get: { pendingAudioDelete != nil },
+            set: { if !$0 { pendingAudioDelete = nil } }
         )
     }
 
@@ -237,9 +262,11 @@ struct MeetingsView: View {
                 settings: appState.settings,
                 proAccess: appState.proAccess,
                 notesRuns: appState.meetingNotesRuns,
+                transcriptRuns: appState.meetingTranscriptRuns,
                 tab: $tab,
                 onCopy: { appState.textOutput.copy($0) },
                 onDelete: { pendingDelete = $0 },
+                onDeleteAudio: { pendingAudioDelete = $0 },
                 onOpenModels: { openModels() },
                 onRenamed: { saved in
                     if let index = meetings.firstIndex(where: { $0.id == saved.id }) {
@@ -336,15 +363,40 @@ struct MeetingsView: View {
         }
     }
 
-    private static func removeFolder(of id: UUID) async {
+    /// "Usuń tylko nagranie": the track folder goes, the row stays with `hasAudio` off (the
+    /// details drop the play stamps). Never the meeting being recorded or still processed: the
+    /// speaker labels read its track.
+    private func deleteAudio(_ id: UUID) {
+        guard id != appState.meetingRecorder.currentMeetingID else { return }
+        let database = appState.database
+        let removesFiles = !appState.isDesignPreview
+        Task {
+            // A folder that is still there keeps `hasAudio`, so the files never stay unreachable.
+            if removesFiles, !(await Self.removeFolder(of: id)) {
+                return
+            }
+            do {
+                try await database.setMeetingAudioRemoved(ids: [id])
+            } catch {
+                Log.data.error("Meeting audio row could not be updated: \(error.localizedDescription, privacy: .public)")
+            }
+            deletions += 1
+        }
+    }
+
+    /// True when the folder is gone (or was never there).
+    @discardableResult
+    private static func removeFolder(of id: UUID) async -> Bool {
         let folder = AppPaths.meetingFolder(id)
-        await Task.detached(priority: .utility) {
+        return await Task.detached(priority: .utility) {
             do {
                 try FileManager.default.removeItem(at: folder)
+                return true
             } catch CocoaError.fileNoSuchFile {
-                return
+                return true
             } catch {
                 Log.data.error("Meeting folder could not be removed: \(error.localizedDescription, privacy: .public)")
+                return false
             }
         }.value
     }

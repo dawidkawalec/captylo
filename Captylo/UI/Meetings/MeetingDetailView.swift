@@ -78,9 +78,13 @@ struct MeetingDetailView: View {
     let proAccess: ProAccess
     /// "Wygeneruj ponownie" runs; the section reloads when one finishes.
     let notesRuns: MeetingNotesRuns
+    /// "Popraw" above the transcript (Pro): cloud again, AI fix, restore.
+    let transcriptRuns: MeetingTranscriptRuns
     @Binding var tab: Tab
     let onCopy: (String) -> Void
     let onDelete: (UUID) -> Void
+    /// "Usuń tylko nagranie": the section confirms, removes the track files and reloads.
+    let onDeleteAudio: (UUID) -> Void
     /// Opens Modele: "Dodaj klucz" under a missing-key failure of the AI notes, "Otwórz Modele"
     /// when the speech model fails while recording.
     let onOpenModels: () -> Void
@@ -107,9 +111,11 @@ struct MeetingDetailView: View {
         settings: AppSettings,
         proAccess: ProAccess,
         notesRuns: MeetingNotesRuns,
+        transcriptRuns: MeetingTranscriptRuns,
         tab: Binding<Tab>,
         onCopy: @escaping (String) -> Void,
         onDelete: @escaping (UUID) -> Void,
+        onDeleteAudio: @escaping (UUID) -> Void,
         onOpenModels: @escaping () -> Void,
         onRenamed: @escaping (MeetingRecord) -> Void,
         startsEditingTitle: Bool = false
@@ -121,9 +127,11 @@ struct MeetingDetailView: View {
         self.settings = settings
         self.proAccess = proAccess
         self.notesRuns = notesRuns
+        self.transcriptRuns = transcriptRuns
         _tab = tab
         self.onCopy = onCopy
         self.onDelete = onDelete
+        self.onDeleteAudio = onDeleteAudio
         self.onOpenModels = onOpenModels
         self.onRenamed = onRenamed
         self.startsEditingTitle = startsEditingTitle
@@ -195,6 +203,12 @@ struct MeetingDetailView: View {
         .onChange(of: meetingID) { _, _ in
             notice = nil
             closePlayback()
+        }
+        .onChange(of: meeting?.hasAudio) { _, hasAudio in
+            // "Usuń tylko nagranie" (or the retention) took the files the player reads.
+            if hasAudio == false {
+                closePlayback()
+            }
         }
         .onDisappear {
             notesDraft.flush()
@@ -454,6 +468,13 @@ struct MeetingDetailView: View {
             }
             Divider()
             Button(role: .destructive) {
+                onDeleteAudio(meeting.id)
+            } label: {
+                Label("Usuń tylko nagranie", systemImage: "waveform.slash")
+            }
+            // Processing or a transcript run: the speaker labels or the cloud may be reading the track.
+            .disabled(isLive || !meeting.hasAudio || meeting.status == .processing || transcriptRuns.kind(meeting.id) != nil)
+            Button(role: .destructive) {
                 onDelete(meeting.id)
             } label: {
                 Label("Usuń spotkanie", systemImage: "trash")
@@ -503,14 +524,100 @@ struct MeetingDetailView: View {
         case .notes:
             EmptyView()
         case .transcript:
-            MeetingTranscriptView(
-                meeting: meeting,
-                segments: segments,
-                onPlay: meeting.hasAudio ? { track, start in play(track, from: start) } : nil,
-                onRename: { label, name in rename(speaker: label, to: name) }
-            )
+            VStack(alignment: .leading, spacing: 14) {
+                transcriptBar(meeting)
+                MeetingTranscriptView(
+                    meeting: meeting,
+                    segments: segments,
+                    onPlay: meeting.hasAudio ? { track, start in play(track, from: start) } : nil,
+                    onRename: { label, name in rename(speaker: label, to: name) }
+                )
+            }
         case .aiNotes:
             aiNotes(meeting)
+        }
+    }
+
+    /// Where the transcript comes from ("Transkrypt z Maca" / "z chmury", "poprawiony przez AI"),
+    /// the run in progress or the last failure, and in Pro the "Popraw" menu. Nothing while the
+    /// post-processors still work on the meeting.
+    @ViewBuilder
+    private func transcriptBar(_ meeting: MeetingRecord) -> some View {
+        let running = transcriptRuns.kind(meeting.id)
+        let busy = running != nil || meeting.status == .processing
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                if let running {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(GlassColor.textPrimary)
+                    Text(verbatim: Self.runningText(running))
+                        .font(GlassFont.caption)
+                        .foregroundStyle(GlassColor.textSecondary)
+                } else {
+                    Text(verbatim: Self.sourceText(meeting))
+                        .font(GlassFont.caption)
+                        .foregroundStyle(GlassColor.textSecondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                if proAccess.isPro, !segments.isEmpty || meeting.hasAudio {
+                    transcriptMenu(meeting)
+                        .disabled(busy)
+                }
+            }
+            if running == nil, let error = meeting.transcriptError {
+                ToolStatusLine(text: error, tone: .error)
+            }
+        }
+    }
+
+    private func transcriptMenu(_ meeting: MeetingRecord) -> some View {
+        let id = meeting.id
+        return Menu {
+            Button {
+                transcriptRuns.start(.aiFix, meetingID: id)
+            } label: {
+                Label("Popraw przez AI", systemImage: "wand.and.stars")
+            }
+            .disabled(segments.isEmpty)
+            Button {
+                transcriptRuns.start(.cloud, meetingID: id)
+            } label: {
+                Label("Transkrybuj ponownie w chmurze", systemImage: "cloud")
+            }
+            .disabled(!meeting.hasAudio)
+            if meeting.transcriptAIModel != nil || segments.contains(where: { $0.originalText != nil }) {
+                Divider()
+                Button {
+                    transcriptRuns.start(.restore, meetingID: id)
+                } label: {
+                    Label("Przywróć transkrypt sprzed poprawek AI", systemImage: "arrow.uturn.backward")
+                }
+            }
+        } label: {
+            MeetingMenuLabel(title: Text("Popraw"), systemImage: "wand.and.stars")
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+
+    /// "Transkrypt z Maca" / "Transkrypt z chmury", plus "poprawiony przez AI".
+    static func sourceText(_ meeting: MeetingRecord) -> String {
+        let source = meeting.transcriptModel == nil
+            ? String(localized: "Transkrypt z Maca")
+            : String(localized: "Transkrypt z chmury")
+        guard meeting.transcriptAIModel != nil else { return source }
+        return source + ", " + String(localized: "poprawiony przez AI")
+    }
+
+    static func runningText(_ kind: MeetingTranscriptRuns.Kind) -> String {
+        switch kind {
+        case .cloud: return String(localized: "Transkrybuję w chmurze...")
+        case .aiFix: return String(localized: "AI poprawia transkrypt...")
+        case .restore: return String(localized: "Przywracam transkrypt...")
         }
     }
 

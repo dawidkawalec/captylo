@@ -31,9 +31,15 @@ release: gen
 	@echo "Release build copied to ~/Downloads/$(APP_NAME)"
 
 # Re-sign with the stable "Captylo Dev" identity so Microphone/Accessibility grants survive rebuilds.
+# codesign only finds the identity through the keychain search list, so the signing keychain joins
+# the list for this one call and the previous list comes back right after (also on failure or
+# Ctrl-C): a keychain left in the list shows up as a client certificate in VPN and browser prompts.
 sign:
 	@if security find-identity -p codesigning "$(SIGN_KEYCHAIN)" 2>/dev/null | grep -q '"$(SIGN_NAME)"'; then \
 		security unlock-keychain -p "$$(cat "$(SIGN_PASSWORD_FILE)")" "$(SIGN_KEYCHAIN)"; \
+		ORIGINAL="$$(security list-keychains -d user | tr -d '"' | xargs)"; \
+		trap 'security list-keychains -d user -s $$ORIGINAL' EXIT; \
+		security list-keychains -d user -s $$ORIGINAL "$(SIGN_KEYCHAIN)"; \
 		codesign --force --options runtime --timestamp=none --entitlements "$(CURDIR)/Captylo/Captylo.entitlements" \
 			--sign "$(SIGN_NAME)" --keychain "$(SIGN_KEYCHAIN)" "$(APP_PATH)" && \
 		echo "Signed with $(SIGN_NAME)"; \

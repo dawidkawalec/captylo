@@ -6118,9 +6118,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Couldn't save the title." } }
       }
     },
-    "Nie słyszę rozmówców. Captylo potrzebuje dostępu do dźwięku systemu.": {
+    "Na razie nie słyszę rozmówców. Jeśli ktoś już mówi, Captylo potrzebuje dostępu do dźwięku systemu.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "I can't hear the other side. Captylo needs access to system audio." } }
+        "en": { "stringUnit": { "state": "translated", "value": "I can't hear the other side yet. If someone is already talking, Captylo needs access to system audio." } }
       }
     },
     "Otwórz Ustawienia systemowe": {
@@ -6338,9 +6338,134 @@
         "en": { "stringUnit": { "state": "translated", "value": "Pro mode (dev)" } }
       }
     },
-    "Tylko w wersji deweloperskiej: włącza notatki AI i rozpoznawanie mówców bez konta.": {
+    "Tylko w wersji deweloperskiej: włącza bez konta notatki AI, rozpoznawanie mówców, transkrypt z chmury i poprawki AI.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Development builds only: turns on AI notes and speaker labels without an account." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Development builds only: turns on AI notes, speaker labels, the cloud transcript and AI fixes without an account." } }
+      }
+    },
+    "AI poprawia transkrypt...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI is fixing the transcript..." } }
+      }
+    },
+    "Dokładniejszy transkrypt z chmury": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "More accurate transcript from the cloud" } }
+      }
+    },
+    "Jak w Modelach (%@)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Same as in Models (%@)" } }
+      }
+    },
+    "Model AI do spotkań": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI model for meetings" } }
+      }
+    },
+    "Pliki audio znikną z tego Maca. Transkrypt i notatki zostaną, ale spotkania nie da się już odsłuchać.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The audio files will be removed from this Mac. The transcript and notes stay, but you won't be able to play the meeting back." } }
+      }
+    },
+    "Po spotkaniu AI poprawia źle rozpoznane słowa, nazwy i interpunkcję. Niczego nie skraca, a oryginał da się przywrócić.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "After a meeting, AI fixes misheard words, names and punctuation. It never shortens anything, and the original can be restored." } }
+      }
+    },
+    "Po spotkaniu wysyła nagranie do chmury i zastępuje nim transkrypt z Maca. Potrzebny klucz chmury w Modelach.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "After a meeting, sends the recording to the cloud and replaces the transcript made on this Mac. Needs the cloud key in Models." } }
+      }
+    },
+    "Popraw": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Improve" } }
+      }
+    },
+    "Popraw przez AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fix with AI" } }
+      }
+    },
+    "Poprawiaj transkrypt przez AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fix the transcript with AI" } }
+      }
+    },
+    "Poprawki AI: ": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI fixes: " } }
+      }
+    },
+    "Przywracam transkrypt...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Restoring the transcript..." } }
+      }
+    },
+    "Przywróć transkrypt sprzed poprawek AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Restore the transcript from before the AI fixes" } }
+      }
+    },
+    "Skrót %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Shortcut %@" } }
+      }
+    },
+    "Transkrybuj ponownie w chmurze": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Transcribe again in the cloud" } }
+      }
+    },
+    "Transkrybuję w chmurze...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Transcribing in the cloud..." } }
+      }
+    },
+    "Transkrypt z Maca": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Transcript from this Mac" } }
+      }
+    },
+    "Transkrypt z chmury": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Transcript from the cloud" } }
+      }
+    },
+    "Transkrypt z chmury i poprawki AI są w Captylo Pro.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The cloud transcript and AI fixes are part of Captylo Pro." } }
+      }
+    },
+    "Transkrypt z chmury: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cloud transcript: %@" } }
+      }
+    },
+    "Usunąć nagranie?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete the recording?" } }
+      }
+    },
+    "Usuń nagranie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete recording" } }
+      }
+    },
+    "Usuń tylko nagranie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete only the recording" } }
+      }
+    },
+    "Zaczyna i kończy nagrywanie spotkania z każdej aplikacji.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Starts and ends a meeting recording from any app." } }
+      }
+    },
+    "poprawiony przez AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "fixed by AI" } }
       }
     },
     "Dostęp do dźwięku systemu": {

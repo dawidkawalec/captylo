@@ -45,6 +45,20 @@ struct ElevenLabsSTT: Sendable {
     /// built on the main thread.
     @concurrent
     func transcribe(_ request: STTRequest) async throws -> String {
+        try Self.parseText(await upload(request, options: .dictation))
+    }
+
+    /// A meeting track: the words with their times (seconds from the start of the file), for
+    /// the transcript that replaces the live one. `request.wav` may hold any format Scribe reads
+    /// (`options.mimeType`).
+    @concurrent
+    func transcribeWords(_ request: STTRequest, mimeType: String) async throws -> [Word] {
+        try Self.parseWords(await upload(request, options: UploadOptions(mimeType: mimeType, timestamps: "word")))
+    }
+
+    /// The key lookup, the upload and one retry on a fresh session after a transport failure;
+    /// returns the body of a 2xx answer.
+    private func upload(_ request: STTRequest, options: UploadOptions) async throws -> Data {
         let key: String
         switch await keyProvider() {
         case .timedOut:
@@ -55,7 +69,7 @@ struct ElevenLabsSTT: Sendable {
             key = normalized
         }
         try Task.checkCancellation()
-        let (urlRequest, body) = Self.makeUpload(request, key: key)
+        let (urlRequest, body) = Self.makeUpload(request, key: key, options: options)
         let deadline = self.deadline(request.audioSeconds)
         do {
             return try await perform(urlRequest, body: body, on: session, deadline: deadline)
@@ -86,7 +100,7 @@ struct ElevenLabsSTT: Sendable {
     /// One upload raced against `deadline` seconds (brief 5.2). `URLRequest.timeoutInterval` is only
     /// an idle timeout and the session's resource timeout is a loose cap, so the total deadline is
     /// enforced here; the loser is cancelled.
-    private func perform(_ request: URLRequest, body: Data, on session: URLSession, deadline: TimeInterval) async throws -> String {
+    private func perform(_ request: URLRequest, body: Data, on session: URLSession, deadline: TimeInterval) async throws -> Data {
         let data: Data
         let response: URLResponse
         do {
@@ -117,31 +131,40 @@ struct ElevenLabsSTT: Sendable {
             Log.transcription.error("ElevenLabs HTTP \(http.statusCode): \(Self.shortBody(data), privacy: .public)")
             throw failure
         }
-        return try Self.parseText(data)
+        return data
     }
 
     // MARK: - Request building (pure)
 
+    /// What differs between a dictation take and a meeting track.
+    struct UploadOptions: Sendable, Equatable {
+        var mimeType = "audio/wav"
+        /// `timestamps_granularity`: "none" for dictation, "word" for meetings.
+        var timestamps = "none"
+
+        static let dictation = UploadOptions()
+    }
+
     /// Multipart POST with the body in `httpBody` (gotcha 74: CRLF everywhere, closing boundary once).
-    static func makeRequest(_ request: STTRequest, key: String) -> URLRequest {
-        var (urlRequest, body) = makeUpload(request, key: key)
+    static func makeRequest(_ request: STTRequest, key: String, options: UploadOptions = .dictation) -> URLRequest {
+        var (urlRequest, body) = makeUpload(request, key: key, options: options)
         urlRequest.httpBody = body
         return urlRequest
     }
 
     /// The request without a body plus the multipart body, built once, for `upload(for:from:)`.
-    static func makeUpload(_ request: STTRequest, key: String) -> (URLRequest, Data) {
+    static func makeUpload(_ request: STTRequest, key: String, options: UploadOptions = .dictation) -> (URLRequest, Data) {
         let boundary = "Boundary-\(UUID().uuidString)"
         var form = Multipart(boundary: boundary)
         form.addField("model_id", request.model.isEmpty ? modelID : request.model)
-        form.addFile(name: "file", fileName: request.fileName, mimeType: "audio/wav", data: request.wav)
+        form.addFile(name: "file", fileName: request.fileName, mimeType: options.mimeType, data: request.wav)
         if let language = request.language, !language.isEmpty, language != TranscriptionLanguages.auto {
             form.addField("language_code", language)
         }
         form.addField("tag_audio_events", "false")
         form.addField("temperature", "0.0")
         form.addField("no_verbatim", "true")
-        form.addField("timestamps_granularity", "none")
+        form.addField("timestamps_granularity", options.timestamps)
         for term in keyterms(from: request.vocabulary) {
             form.addField("keyterms", term)
         }
@@ -225,6 +248,39 @@ struct ElevenLabsSTT: Sendable {
         let text = (decoded.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { throw STTError.empty }
         return text
+    }
+
+    /// One recognized word of a `timestamps_granularity=word` answer, times in seconds.
+    struct Word: Sendable, Equatable, Decodable {
+        var text: String
+        var start: Double
+        var end: Double
+    }
+
+    /// Reads `$.words`, keeping only `"type": "word"` entries (spacing and audio events go).
+    /// An answer without words is an empty list: the track may be silent.
+    static func parseWords(_ data: Data) throws -> [Word] {
+        struct Entry: Decodable {
+            let text: String?
+            let start: Double?
+            let end: Double?
+            let type: String?
+        }
+        struct Response: Decodable {
+            let words: [Entry]?
+        }
+        let decoded: Response
+        do {
+            decoded = try JSONDecoder().decode(Response.self, from: data)
+        } catch {
+            throw invalidResponse
+        }
+        return (decoded.words ?? []).compactMap { entry in
+            guard entry.type == nil || entry.type == "word",
+                  let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty,
+                  let start = entry.start, let end = entry.end else { return nil }
+            return Word(text: text, start: start, end: max(start, end))
+        }
     }
 
     static func shortBody(_ data: Data) -> String {

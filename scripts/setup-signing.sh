@@ -7,8 +7,10 @@
 # so the grants survive rebuilds. Local development only: distribution needs a
 # Developer ID certificate and notarization.
 #
-# The identity lives in its own keychain (captylo-dev.keychain-db) that is added
-# to the user keychain search list. Its password is kept outside the repo.
+# The identity lives in its own keychain (captylo-dev.keychain-db), kept OUT of the
+# user keychain search list: `make sign` adds it only for the codesign call, because
+# a keychain in the list offers its certificate in VPN and browser client-certificate
+# prompts. Its password is kept outside the repo.
 set -euo pipefail
 
 NAME="Captylo Dev"
@@ -52,12 +54,6 @@ security set-keychain-settings "$KC"
 security unlock-keychain -p "$PW" "$KC"
 security import "$WORK/id.p12" -k "$KC" -P "$PW" -T /usr/bin/codesign >/dev/null
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$PW" "$KC" >/dev/null
-
-EXISTING=$(security list-keychains -d user | tr -d '"' | xargs)
-if ! echo "$EXISTING" | grep -q captylo-dev; then
-  # shellcheck disable=SC2086
-  security list-keychains -d user -s $EXISTING "$KC"
-fi
 
 security find-identity -p codesigning "$KC"
 echo "Done. Run 'make release' and grant Microphone + Accessibility once more."

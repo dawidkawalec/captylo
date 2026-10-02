@@ -38,13 +38,12 @@ actor MeetingSummarizer {
     /// Fewer spoken words than this (echo excluded) is not a conversation worth notes.
     static let minimumWords = 5
 
-    private let client: OpenRouterClient
-    private let session: URLSession
+    private let chat: MeetingChat
     private let keyProvider: @Sendable () async -> String?
     private let modelProvider: @Sendable () async -> String
-    /// Model id -> how to send `reasoning` (mandatory-reasoning models reject `enabled: false`).
-    private let reasoningProvider: @Sendable (String) -> ReasoningPolicy
 
+    /// - Parameter reasoning: model id -> how to send `reasoning` (mandatory-reasoning models
+    ///   reject `enabled: false`).
     init(
         client: OpenRouterClient = OpenRouterClient(),
         session: URLSession = HTTP.meetingLLMSession,
@@ -52,11 +51,9 @@ actor MeetingSummarizer {
         model: @escaping @Sendable () async -> String,
         reasoning: @escaping @Sendable (String) -> ReasoningPolicy = { _ in .disabled }
     ) {
-        self.client = client
-        self.session = session
+        chat = MeetingChat(client: client, session: session, reasoning: reasoning)
         keyProvider = key
         modelProvider = model
-        reasoningProvider = reasoning
     }
 
     func summarize(meeting: MeetingRecord, segments: [MeetingSegmentRecord], template: MeetingTemplate) async throws -> (markdown: String, model: String) {
@@ -68,55 +65,15 @@ actor MeetingSummarizer {
         let model = await modelProvider()
         let system = MeetingNotesPrompt.system(template: template)
         let user = MeetingNotesPrompt.user(meeting: meeting, segments: spoken)
-        let policy = reasoningProvider(model)
         let started = ContinuousClock.now
 
-        var (data, status) = try await send(request(model: model, system: system, user: user, key: key, policy: policy))
-        // A model missing from the cached list may still require reasoning: one retry with minimal effort.
-        if policy == .disabled, Enhancer.isReasoningRejection(status: status, body: data) {
-            Log.enhancement.notice("\(model, privacy: .public) requires reasoning, retrying the meeting notes with minimal effort")
-            (data, status) = try await send(request(model: model, system: system, user: user, key: key, policy: .minimal(effort: "low")))
-        }
-        guard (200..<300).contains(status) else {
-            Log.enhancement.error("Meeting notes failed: HTTP \(status) \(HTTP.shortBody(data), privacy: .public)")
-            throw MeetingSummaryError.server(status)
-        }
-        let (content, finishReason) = try client.parseChat(data)
-        let text = Enhancer.stripReasoning(content ?? "")
-        guard !text.isEmpty else { throw MeetingSummaryError.empty }
-        if finishReason == "length" {
+        let reply = try await chat.complete(model: model, key: key, system: system, user: user, maxTokens: Self.maxTokens)
+        if reply.finishReason == "length" {
             // Cut off notes still beat none; the last section may be incomplete.
             Log.enhancement.notice("Meeting notes reached the \(Self.maxTokens) token cap")
         }
         let ms = Int((ContinuousClock.now - started) / .milliseconds(1))
         Log.enhancement.info("Meeting notes ok in \(ms) ms with \(model, privacy: .public)")
-        return (text, model)
-    }
-
-    // MARK: Transport
-
-    private func request(model: String, system: String, user: String, key: String, policy: ReasoningPolicy) -> URLRequest {
-        let base = Self.maxTokens + (Enhancer.isReasoningModel(model) ? Enhancer.reasoningAllowance : 0)
-        return client.chatRequest(
-            model: model,
-            system: system,
-            transcript: user,
-            maxTokens: Enhancer.tokens(base, for: policy),
-            key: key,
-            reasoning: policy
-        )
-    }
-
-    /// The body and status of one attempt; a timeout becomes `.timedOut`, any other transport
-    /// error the app's network message.
-    private func send(_ request: URLRequest) async throws -> (Data, Int) {
-        do {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse else { throw OpenRouterError.decoding }
-            return (data, http.statusCode)
-        } catch let error as URLError {
-            if error.code == .timedOut { throw MeetingSummaryError.timedOut }
-            throw OpenRouterError.network(error.localizedDescription)
-        }
+        return (reply.text, model)
     }
 }

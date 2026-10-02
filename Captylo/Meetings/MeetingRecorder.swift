@@ -156,15 +156,19 @@ final class MeetingRecorder {
 
     // MARK: Launch recovery
 
-    /// Launch step: a meeting left "recording" or "processing" by a crash or quit becomes
-    /// "interrupted" with the segments it saved. `start` waits for it, so a meeting started
+    /// Launch step: a meeting left "recording" by a crash or quit becomes "interrupted" with the
+    /// segments it saved (echo marked, length from its track files), one left "processing" becomes
+    /// "completed" (`Database.markInterruptedMeetings`). `start` waits for it, so a meeting started
     /// right after launch is never swept up with them. Runs once.
     func recoverInterruptedMeetings() {
         guard recovery == nil else { return }
         let database = env.database
+        let trackURL = env.trackURL
         recovery = Task {
             do {
-                let ids = try await database.markInterruptedMeetings()
+                let ids = try await database.markInterruptedMeetings { id in
+                    MeetingTrack.allCases.map { TrackFileWriter.recordedSeconds(at: trackURL(id, $0)) }.max() ?? 0
+                }
                 if !ids.isEmpty {
                     Log.data.notice("Marked \(ids.count) interrupted meeting(s)")
                 }

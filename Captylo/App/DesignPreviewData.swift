@@ -345,6 +345,8 @@ enum DesignPreviewData {
         ]
         meeting.notes = meeting.noteLines.map(\.text).joined(separator: "\n")
         meeting.speakerNames = ["1": "Anna"]
+        meeting.transcriptModel = STTEngine.elevenLabs.modelName
+        meeting.transcriptAIModel = "google/gemini-2.5-flash-lite"
         meeting.summaryTemplateID = BuiltInMeetingTemplates.general.id
         meeting.summaryModel = "openai/gpt-4.1-mini"
         meeting.summary = """

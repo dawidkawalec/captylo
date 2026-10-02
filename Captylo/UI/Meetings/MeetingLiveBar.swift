@@ -119,7 +119,7 @@ struct MeetingLiveBar: View {
             MainBanner(
                 symbol: "speaker.slash",
                 tone: .warning,
-                text: String(localized: "Nie słyszę rozmówców. Captylo potrzebuje dostępu do dźwięku systemu."),
+                text: String(localized: "Na razie nie słyszę rozmówców. Jeśli ktoś już mówi, Captylo potrzebuje dostępu do dźwięku systemu."),
                 surface: .raised
             ) {
                 Button("Otwórz Ustawienia systemowe") {

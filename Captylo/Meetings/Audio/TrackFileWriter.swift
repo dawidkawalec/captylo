@@ -38,6 +38,13 @@ final class TrackFileWriter: @unchecked Sendable {
 
     var sampleCount: Int { lock.withLockUnchecked { $0.count } }
 
+    /// Seconds of audio in a track file on disk, 0 when it is missing or unreadable.
+    static func recordedSeconds(at url: URL) -> Double {
+        guard let file = try? AVAudioFile(forReading: url) else { return 0 }
+        let rate = file.processingFormat.sampleRate
+        return rate > 0 ? Double(file.length) / rate : 0
+    }
+
     func append(_ samples: [Float]) {
         guard !samples.isEmpty,
               let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samples.count)),

@@ -13,4 +13,7 @@ struct MeetingSegmentRecord: Codable, Sendable, Equatable, Identifiable {
     /// Diarization label ("1", "2"...) for `.them`; nil = the track's default label.
     var speaker: String? = nil
     var isEcho: Bool = false
+    /// The text before the AI fixed it ("Poprawiaj transkrypt przez AI"); nil when the AI never
+    /// changed this line. "Przywróć transkrypt" puts it back.
+    var originalText: String? = nil
 }

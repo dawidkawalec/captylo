@@ -43,6 +43,10 @@ final class AppSettings {
         case meetingsAutoDetect = "meetings.autoDetect"
         case meetingsConsentReminder = "meetings.consentReminder"
         case meetingAudioRetention = "meetings.audioRetention"
+        case meetingsShortcut = "meetings.shortcut"
+        case meetingsCloudTranscript = "meetings.cloudTranscript"
+        case meetingsAICorrection = "meetings.aiCorrection"
+        case meetingsAIModel = "meetings.aiModel"
     }
 
     /// Every persisted key, for tests and diagnostics.
@@ -357,6 +361,38 @@ final class AppSettings {
             return MeetingAudioRetention(rawValue: string(.meetingAudioRetention, default: MeetingAudioRetention.days7.rawValue)) ?? .days7
         }
         set { withMutation(keyPath: \.meetingAudioRetention) { defaults.set(newValue.rawValue, forKey: Key.meetingAudioRetention.rawValue) } }
+    }
+
+    /// "Skrót ⌃⌥⌘M": the system-wide shortcut that starts and ends a meeting recording.
+    var meetingsShortcut: Bool {
+        get { track(\.meetingsShortcut); return bool(.meetingsShortcut, default: true) }
+        set { withMutation(keyPath: \.meetingsShortcut) { defaults.set(newValue, forKey: Key.meetingsShortcut.rawValue) } }
+    }
+
+    /// "Dokładniejszy transkrypt z chmury" (Pro): after a meeting both tracks go to the cloud
+    /// engine and its transcript replaces the live one.
+    var meetingsCloudTranscript: Bool {
+        get { track(\.meetingsCloudTranscript); return bool(.meetingsCloudTranscript, default: false) }
+        set { withMutation(keyPath: \.meetingsCloudTranscript) { defaults.set(newValue, forKey: Key.meetingsCloudTranscript.rawValue) } }
+    }
+
+    /// "Poprawiaj transkrypt przez AI" (Pro): after a meeting an AI model fixes misheard words,
+    /// names and punctuation, line by line.
+    var meetingsAICorrection: Bool {
+        get { track(\.meetingsAICorrection); return bool(.meetingsAICorrection, default: false) }
+        set { withMutation(keyPath: \.meetingsAICorrection) { defaults.set(newValue, forKey: Key.meetingsAICorrection.rawValue) } }
+    }
+
+    /// "Model AI do spotkań": the model of the transcript fixes and the AI notes; empty = the
+    /// model chosen in Modele (`aiModel`). Read through `meetingAIModelID`.
+    var meetingsAIModel: String {
+        get { track(\.meetingsAIModel); return string(.meetingsAIModel, default: "") }
+        set { withMutation(keyPath: \.meetingsAIModel) { defaults.set(newValue, forKey: Key.meetingsAIModel.rawValue) } }
+    }
+
+    /// The model the meeting AI calls use: `meetingsAIModel`, or Modele's when it is empty.
+    var meetingAIModelID: String {
+        meetingsAIModel.isEmpty ? aiModel : meetingsAIModel
     }
 
     var menuBarOnly: Bool {

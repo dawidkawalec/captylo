@@ -27,6 +27,9 @@ final class Meeting {
     var hasAudio: Bool = true
     /// JSON `[Double]` (meeting times of capture gaps).
     var interruptionsJSON: Data = Data()
+    var transcriptModel: String? = nil
+    var transcriptAIModel: String? = nil
+    var transcriptError: String? = nil
     /// Folded text of every segment that is not echo (`MeetingSearch`), for search without a join.
     var searchText: String = ""
     /// Folded title and notes (`MeetingSearch.titleNotes`), kept in step by `apply`.
@@ -53,6 +56,9 @@ final class Meeting {
         speakerNamesJSON = Self.encode(record.speakerNames)
         hasAudio = record.hasAudio
         interruptionsJSON = Self.encode(record.interruptions)
+        transcriptModel = record.transcriptModel
+        transcriptAIModel = record.transcriptAIModel
+        transcriptError = record.transcriptError
         titleNotesSearchText = MeetingSearch.titleNotes(title: record.title, notes: record.notes)
     }
 
@@ -72,7 +78,10 @@ final class Meeting {
             summaryError: summaryError,
             speakerNames: Self.decode([String: String].self, from: speakerNamesJSON) ?? [:],
             hasAudio: hasAudio,
-            interruptions: Self.decode([Double].self, from: interruptionsJSON) ?? []
+            interruptions: Self.decode([Double].self, from: interruptionsJSON) ?? [],
+            transcriptModel: transcriptModel,
+            transcriptAIModel: transcriptAIModel,
+            transcriptError: transcriptError
         )
     }
 
@@ -99,6 +108,7 @@ final class MeetingSegment {
     var wordsJSON: Data = Data()
     var speaker: String? = nil
     var isEcho: Bool = false
+    var originalText: String? = nil
 
     init(_ record: MeetingSegmentRecord) {
         id = record.id
@@ -115,6 +125,7 @@ final class MeetingSegment {
         wordsJSON = Meeting.encode(record.words)
         speaker = record.speaker
         isEcho = record.isEcho
+        originalText = record.originalText
     }
 
     var record: MeetingSegmentRecord {
@@ -127,7 +138,8 @@ final class MeetingSegment {
             text: text,
             words: Meeting.decode([MeetingWord].self, from: wordsJSON) ?? [],
             speaker: speaker,
-            isEcho: isEcho
+            isEcho: isEcho,
+            originalText: originalText
         )
     }
 }

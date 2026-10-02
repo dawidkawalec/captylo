@@ -7,6 +7,7 @@ enum ProFeature: Sendable {
     case speakerLabels
     case meetingAsk
     case cloudMeetingTranscription
+    case meetingTranscriptCorrection
 }
 
 /// The single Pro check. M1 has no accounts yet: Pro is the DEBUG "Tryb Pro (dev)" switch or

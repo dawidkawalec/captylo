@@ -68,6 +68,44 @@ extension Database {
         try modelContext.save()
     }
 
+    /// The cloud transcript of one track replaces its live segments (speaker labels and AI fixes
+    /// of that track go with them), in one save, and the search text follows.
+    func replaceSegments(meetingID: UUID, track: MeetingTrack, with segments: [MeetingSegmentRecord]) throws {
+        let raw = track.rawValue
+        let old = try modelContext.fetch(FetchDescriptor<MeetingSegment>(
+            predicate: #Predicate { $0.meetingID == meetingID && $0.track == raw }
+        ))
+        for row in old {
+            modelContext.delete(row)
+        }
+        for segment in segments where segment.meetingID == meetingID && segment.track == track {
+            modelContext.insert(MeetingSegment(segment))
+        }
+        try rebuildSearchText(meetingID: meetingID)
+        try modelContext.save()
+    }
+
+    /// "Przywróć transkrypt": every line the AI fixed gets its earlier text back, and the meeting
+    /// no longer names the AI model. Returns how many lines changed.
+    @discardableResult
+    func restoreOriginalTranscript(meetingID: UUID) throws -> Int {
+        var restored = 0
+        for row in try fetchSegments(meetingID: meetingID) {
+            guard let original = row.originalText else { continue }
+            row.text = original
+            row.originalText = nil
+            restored += 1
+        }
+        if let meeting = try fetchMeeting(id: meetingID) {
+            meeting.transcriptAIModel = nil
+        }
+        if restored > 0 {
+            try rebuildSearchText(meetingID: meetingID)
+        }
+        try modelContext.save()
+        return restored
+    }
+
     /// Removes the meeting row and all its segments. The caller deletes the track files.
     func deleteMeeting(id: UUID) throws {
         if let row = try fetchMeeting(id: id) {
@@ -79,20 +117,43 @@ extension Database {
         try modelContext.save()
     }
 
-    /// Launch recovery: a meeting still "recording" or "processing" belongs to a run that ended
-    /// (crash, quit, power loss). It becomes "interrupted"; its saved segments stay.
-    func markInterruptedMeetings() throws -> [UUID] {
+    /// Launch recovery for meetings of a run that ended (crash, quit, power loss).
+    /// - "recording": becomes "interrupted" with the segments it saved, which get the echo marks
+    ///   the stop never made (without headphones the other side would show twice), and a length:
+    ///   the longer of `recordedLength` (the track files) and the end of the last segment.
+    /// - "processing": the stop had saved the transcript, echo marks and length, only the
+    ///   post-processors (speaker labels, AI notes) were cut short, so it becomes "completed".
+    /// Returns the ids of the interrupted meetings.
+    func markInterruptedMeetings(recordedLength: @Sendable (UUID) -> Double = { _ in 0 }) throws -> [UUID] {
         let recording = MeetingStatus.recording.rawValue
         let processing = MeetingStatus.processing.rawValue
         let rows = try modelContext.fetch(FetchDescriptor<Meeting>(
             predicate: #Predicate { $0.status == recording || $0.status == processing }
         ))
         guard !rows.isEmpty else { return [] }
+        var interrupted: [UUID] = []
         for row in rows {
+            guard row.status == recording else {
+                row.status = MeetingStatus.completed.rawValue
+                continue
+            }
             row.status = MeetingStatus.interrupted.rawValue
+            interrupted.append(row.id)
+            let segments = try fetchSegments(meetingID: row.id)
+            let records = segments.map(\.record)
+            let lastEnd = records.map(\.end).max() ?? 0
+            row.duration = max(row.duration, lastEnd, recordedLength(row.id))
+            let changes = Dictionary(EchoFilter.mark(records).map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+            guard !changes.isEmpty else { continue }
+            for segment in segments {
+                if let changed = changes[segment.id] {
+                    segment.apply(changed)
+                }
+            }
+            try rebuildSearchText(meetingID: row.id)
         }
         try modelContext.save()
-        return rows.map(\.id)
+        return interrupted
     }
 
     /// Audio retention: the rows no longer have track files on disk.
@@ -131,7 +192,7 @@ extension Database {
         descriptor.propertiesToFetch = [
             \.id, \.createdAt, \.title, \.status, \.duration, \.appName, \.notes, \.noteLinesJSON,
             \.summary, \.summaryTemplateID, \.summaryModel, \.summaryError, \.speakerNamesJSON,
-            \.hasAudio, \.interruptionsJSON,
+            \.hasAudio, \.interruptionsJSON, \.transcriptModel, \.transcriptAIModel, \.transcriptError,
         ]
         return try modelContext.fetch(descriptor).map(\.record)
     }

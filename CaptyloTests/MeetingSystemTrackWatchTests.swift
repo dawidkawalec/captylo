@@ -178,10 +178,31 @@ struct MeetingSystemTrackWatchTests {
     @Test func noAccessAndFirstAudioComeFromTheWatchdog() {
         var driver = Driver()
         let reports = driver.zeros(64)
-        #expect(reports.map(\.noAccess) == Array(repeating: false, count: 3) + [true] + Array(repeating: false, count: 60))
-        #expect(!reports.contains { $0.rebuild || $0.warning != nil || $0.gap != nil })
+        #expect(reports.map(\.noAccess) == Array(repeating: false, count: 29) + [true] + Array(repeating: false, count: 34))
+        #expect(!reports.contains { $0.warning != nil || $0.gap != nil })
         #expect(driver.voice() == SystemTrackWatch.Report(firstAudio: true))
         #expect(!driver.voice().needsAction)
+    }
+
+    /// A tap made before the grant can stay on zeros after "Allow": before any audio the tap is
+    /// rebuilt after 8 s of zeros while something plays, then after 12, 20, 40 and every 120 s.
+    @Test func zerosBeforeAnyAudioRebuildTheTapWithBackoff() {
+        var driver = Driver()
+        let reports = driver.zeros(400)
+        let seconds = reports.enumerated().filter { $0.element.rebuild }.map { $0.offset + 1 }
+        #expect(seconds == [8, 20, 40, 80, 200, 320])
+        #expect(!reports.contains { $0.warning != nil || $0.gap != nil })
+    }
+
+    /// Zeros while nothing plays start the count again, and audio ends the pre-audio rebuilds.
+    @Test func preAudioRebuildsRestartWhenNothingPlaysAndStopWithAudio() {
+        var driver = Driver()
+        driver.zeros(7)
+        driver.zeros(1, playing: false)
+        #expect(!driver.zeros(7).contains { $0.rebuild })
+        #expect(driver.zeros(1).first?.rebuild == true)
+        driver.voice()
+        #expect(!driver.zeros(29).contains { $0.rebuild })
     }
 
     @Test func zerosWhileNothingPlaysNeverRebuild() {

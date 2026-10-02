@@ -9,7 +9,7 @@ enum MeetingExport {
     static func markdown(_ meeting: MeetingRecord, segments: [MeetingSegmentRecord]) -> String {
         var parts: [String] = ["# \(meeting.title)"]
         let date = meeting.createdAt.formatted(date: .long, time: .shortened)
-        parts.append("\(date) · \(MeetingTime.clock(meeting.duration))")
+        parts.append("\(date) · \(MeetingTime.clock(length(meeting, segments: segments)))")
         let notes = meeting.notes.trimmingCharacters(in: .whitespacesAndNewlines)
         if !notes.isEmpty {
             parts.append("## \(String(localized: "Moje notatki"))\n\n\(notes)")
@@ -43,6 +43,12 @@ enum MeetingExport {
     }
 
     static let maxNameLength = 80
+
+    /// The meeting's length; a meeting cut short before it stored one (older interrupted rows)
+    /// lasts at least until the end of its last segment.
+    static func length(_ meeting: MeetingRecord, segments: [MeetingSegmentRecord]) -> Double {
+        max(meeting.duration, segments.map(\.end).max() ?? 0)
+    }
 
     /// Moves every heading one level down ("## Zadania" -> "### Zadania") so the AI notes nest
     /// under the export's own "##" heading. Fenced code and level-six headings stay as they are.
@@ -103,7 +109,7 @@ enum MeetingExport {
             createdAt: meeting.createdAt,
             title: meeting.title,
             status: meeting.status,
-            duration: meeting.duration,
+            duration: length(meeting, segments: segments),
             appName: meeting.appName,
             hasAudio: meeting.hasAudio,
             tracks: MeetingTrack.allCases.map { Document.Track(id: $0, file: $0.fileName) },

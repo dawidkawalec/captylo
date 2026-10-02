@@ -67,6 +67,8 @@ final class AppState {
     /// "Wygeneruj ponownie" in the "Notatki AI" tab: `meetingNotes.regenerate` with the picked
     /// template. Itself `@Observable` (which meetings are being written, finished runs).
     @ObservationIgnored let meetingNotesRuns: MeetingNotesRuns
+    /// The transcript actions in the details (cloud again, AI fix, restore). Itself `@Observable`.
+    @ObservationIgnored let meetingTranscriptRuns: MeetingTranscriptRuns
     /// "Zachowuj nagrania spotkań": the last post-processor, and a sweep at launch.
     @ObservationIgnored let meetingRetention: MeetingRetention
     /// "Wykrywaj spotkania": asks to record when a call starts and to stop when it ends.
@@ -116,6 +118,8 @@ final class AppState {
     /// `Enhancer.modelProvider` runs off the main actor, so it reads this snapshot of `settings.aiModel`.
     @ObservationIgnored private let aiModelSnapshot: OSAllocatedUnfairLock<String>
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
+    /// ⌃⌥⌘M, registered while "Skrót ⌃⌥⌘M" is on (`applyMeetingShortcut`).
+    @ObservationIgnored private var meetingShortcut: GlobalShortcut?
     @ObservationIgnored private var servicesStarted = false
 
     init(settings: AppSettings = AppSettings(), overrides: AppStateOverrides = .live) {
@@ -184,29 +188,50 @@ final class AppState {
         // Meetings: nothing records until the user starts a meeting (the design preview and the
         // test host never do), and never without the speech model on disk. The VAD loads once,
         // on the first meeting, and serves both tracks. After a meeting stops, in the background:
-        // speaker labels (Pro, macOS 15+; the diarizer loads on first use), then AI notes (Pro)
-        // with the user's AI key and model, so the notes see "Mówca N".
+        // the cloud transcript (Pro, setting) replaces the live one, then speaker labels (Pro,
+        // macOS 15+; the diarizer loads on first use), the AI fixes of the transcript (Pro,
+        // setting) and the AI notes (Pro), both with the user's AI key and the meetings model,
+        // so the notes see "Mówca N" and the fixed text.
         let access = ProAccess(settings: settings, pinned: overrides.pinnedPro)
         proAccess = access
         let meetingVAD = SpeechDetectorCache { try await FluidSpeechDetector.load() }
+        let dictionaryStore = dictionary
+        let meetingVocabulary: @Sendable () async -> [String] = { @MainActor in dictionaryStore.data.vocabulary }
+        let meetingModel: @Sendable () async -> String = { @MainActor in settings.meetingAIModelID }
+        let openRouterKey: @Sendable () async -> String? = {
+            // Off the hot path: a longer wait than dictation, still bounded if an ACL prompt hangs.
+            switch await keyStore.load(KeyStore.Account.openRouter, timeout: .seconds(10)) {
+            case .value(let key): return key
+            case .timedOut:
+                Log.enhancement.error("Meeting AI: Keychain read did not finish in time")
+                return nil
+            }
+        }
+        let cloudSTT = elevenLabs
+        let meetingCloud = MeetingCloudTranscription(
+            database: database,
+            isEnabled: { @MainActor in access.allows(.cloudMeetingTranscription) && settings.meetingsCloudTranscript },
+            trackURL: { id, track in AppPaths.meetingTrackURL(id, track: track) },
+            language: { @MainActor in settings.transcriptionLanguage },
+            vocabulary: meetingVocabulary,
+            transcribe: { request, mimeType in try await cloudSTT.transcribeWords(request, mimeType: mimeType) }
+        )
         let speakerLabels = SpeakerLabelProcessor(
             database: database,
             diarizer: FluidSpeakerDiarizer(),
             isAllowed: { await access.allows(.speakerLabels) },
             trackURL: { id, track in AppPaths.meetingTrackURL(id, track: track) }
         )
+        let meetingCorrection = MeetingCorrectionProcessor(
+            database: database,
+            corrector: MeetingTranscriptCorrector(client: openRouter, key: openRouterKey, model: meetingModel, reasoning: reasoningPolicy),
+            isEnabled: { @MainActor in access.allows(.meetingTranscriptCorrection) && settings.meetingsAICorrection },
+            vocabulary: meetingVocabulary
+        )
         let meetingSummarizer = MeetingSummarizer(
             client: openRouter,
-            key: {
-                // Off the hot path: a longer wait than dictation, still bounded if an ACL prompt hangs.
-                switch await keyStore.load(KeyStore.Account.openRouter, timeout: .seconds(10)) {
-                case .value(let key): return key
-                case .timedOut:
-                    Log.enhancement.error("Meeting notes: Keychain read did not finish in time")
-                    return nil
-                }
-            },
-            model: { modelSnapshot.withLock { $0 } },
+            key: openRouterKey,
+            model: meetingModel,
             reasoning: reasoningPolicy
         )
         let meetingNotes = MeetingNotesProcessor(
@@ -218,6 +243,25 @@ final class AppState {
         meetingNotesRuns = MeetingNotesRuns { id, templateID in
             guard await access.allows(.meetingAINotes) else { return }
             await meetingNotes.regenerate(meetingID: id, templateID: templateID)
+        }
+        meetingTranscriptRuns = MeetingTranscriptRuns { id, kind in
+            switch kind {
+            case .cloud:
+                guard await access.allows(.cloudMeetingTranscription) else { return }
+                // The new "Rozmówcy" lines have no speaker labels yet.
+                if await meetingCloud.run(meetingID: id) {
+                    await speakerLabels.process(meetingID: id)
+                }
+            case .aiFix:
+                guard await access.allows(.meetingTranscriptCorrection) else { return }
+                await meetingCorrection.run(meetingID: id)
+            case .restore:
+                do {
+                    try await database.restoreOriginalTranscript(meetingID: id)
+                } catch {
+                    Log.data.error("Meeting transcript could not be restored: \(error.localizedDescription, privacy: .public)")
+                }
+            }
         }
         // Last: the speaker labels read the track files, the AI notes do not need them.
         let meetingRetention = MeetingRetention(
@@ -239,7 +283,7 @@ final class AppState {
             expectingSystemAudio: { CoreAudioProcesses.anyOtherProcessPlaying() },
             language: { settings.transcriptionLanguage },
             setMuteSuppressed: { mute.isSuppressed = $0 },
-            postProcessors: [speakerLabels, meetingNotes, meetingRetention],
+            postProcessors: [meetingCloud, speakerLabels, meetingCorrection, meetingNotes, meetingRetention],
             outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() },
             speechModelReady: { ParakeetEngine.isDownloaded }
         ))
@@ -352,7 +396,6 @@ final class AppState {
                 presenter.openMain(section: .modele)
             }
         )
-        let dictionaryStore = dictionary
         historyActions = HistoryActions(
             database: database,
             output: textOutput,
@@ -475,6 +518,7 @@ final class AppState {
 
         windowPresenter.start()
         oldAppDetector.start()
+        applyMeetingShortcut()
         // Always polling: it reads "Wykrywaj spotkania" every time and idles while it is off,
         // so switching it on in Ustawienia works without a relaunch.
         meetingDetector.start()
@@ -498,6 +542,7 @@ final class AppState {
         dictationController.abortForTermination()
         textOutput.flushPendingRestore()
         hotkeyTap.uninstall()
+        meetingShortcut?.unregister()
         accessibility.stop()
         if let wakeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
@@ -507,6 +552,35 @@ final class AppState {
 
     func bumpStats() {
         stats.bump()
+    }
+
+    /// ⌃⌥⌘M and "Nagraj spotkanie" in the menu bar: ends the meeting that records, otherwise
+    /// opens Spotkania first (a meeting never records without its live bar on screen) and starts one.
+    func toggleMeetingRecording() {
+        let recorder = meetingRecorder
+        if recorder.isRecording {
+            Task { await recorder.stop() }
+            return
+        }
+        guard recorder.phase == .idle, !recorder.isStarting else { return }
+        windowPresenter.openMain(section: .spotkania)
+        Task { await recorder.start() }
+    }
+
+    /// Registers or drops ⌃⌥⌘M to match the setting. Only after `startServices`: the design
+    /// preview and the test host never take the combo from the running app.
+    private func applyMeetingShortcut() {
+        guard servicesStarted else { return }
+        if settings.meetingsShortcut {
+            if meetingShortcut == nil {
+                meetingShortcut = GlobalShortcut(GlobalShortcut.meeting) { [weak self] in
+                    self?.toggleMeetingRecording()
+                }
+            }
+            meetingShortcut?.register()
+        } else {
+            meetingShortcut?.unregister()
+        }
     }
 
     /// Finder "Otwórz za pomocą" (gotcha 63). A cold start stashes the URLs until
@@ -548,6 +622,7 @@ final class AppState {
             _ = settings.aiModel
             _ = settings.paragraphs
             _ = settings.menuBarOnly
+            _ = settings.meetingsShortcut
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -569,6 +644,7 @@ final class AppState {
             dictionary.setParagraphs(settings.paragraphs)
         }
         windowPresenter.applyDockPolicy()
+        applyMeetingShortcut()
     }
 
     private func showStoreFallbackAlert() {

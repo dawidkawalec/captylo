@@ -186,12 +186,38 @@ struct MeetingDatabaseTests {
         try await db.createMeeting(live)
         try await db.createMeeting(processing)
         try await db.appendSegment(MeetingSegmentRecord(meetingID: live.id, track: .me, start: 0, end: 2, text: "zdążyłem"))
-        #expect(Set(try await db.markInterruptedMeetings()) == [live.id, processing.id])
+        #expect(try await db.markInterruptedMeetings() == [live.id])
         #expect(try await db.meeting(id: live.id)?.status == .interrupted)
-        #expect(try await db.meeting(id: processing.id)?.status == .interrupted)
+        // Its transcript, echo marks and length were saved by the stop: only the extras were cut.
+        #expect(try await db.meeting(id: processing.id)?.status == .completed)
         #expect(try await db.meeting(id: done.id)?.status == .completed)
         #expect(try await db.segments(meetingID: live.id).count == 1)
         #expect(try await db.markInterruptedMeetings().isEmpty)
+    }
+
+    /// The stop never ran: the echo the live view hid gets its mark (and leaves the search
+    /// text), and the length comes from the longer of the track files and the last segment.
+    @Test func anInterruptedMeetingGetsItsEchoMarksAndLength() async throws {
+        let db = try Self.db()
+        let live = Self.meeting(title: "bez słuchawek")
+        try await db.createMeeting(live)
+        let them = MeetingSegmentRecord(meetingID: live.id, track: .them, start: 10, end: 14, text: "wyślę ofertę jutro rano")
+        let echo = MeetingSegmentRecord(meetingID: live.id, track: .me, start: 10.4, end: 14.2, text: "wyślę ofertę jutro rano")
+        let mine = MeetingSegmentRecord(meetingID: live.id, track: .me, start: 20, end: 23, text: "dziękuję bardzo za spotkanie")
+        for segment in [them, echo, mine] {
+            try await db.appendSegment(segment)
+        }
+        #expect(try await db.markInterruptedMeetings { _ in 21.5 } == [live.id])
+        let saved = try await db.segments(meetingID: live.id)
+        #expect(saved.first { $0.id == echo.id }?.isEcho == true)
+        #expect(saved.first { $0.id == mine.id }?.isEcho == false)
+        #expect(try await db.meeting(id: live.id)?.duration == 23)
+
+        let other = Self.meeting(title: "dłuższe pliki")
+        try await db.createMeeting(other)
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: other.id, track: .me, start: 0, end: 5, text: "halo"))
+        _ = try await db.markInterruptedMeetings { _ in 61 }
+        #expect(try await db.meeting(id: other.id)?.duration == 61)
     }
 
     @Test func audioRetentionQueries() async throws {

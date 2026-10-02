@@ -17,6 +17,12 @@ import Foundation
 ///   cannot be heard) until real audio comes back or nothing plays anymore. A run that ends while
 ///   warning, without audio, is a gap too (`finish`), and so is a run whose rebuild failed
 ///   (`rebuildFailed`): the other side may be missing from there on.
+///
+/// Before any real audio, zeros while another app plays are either a call nobody spoke in yet,
+/// a denied grant, or a tap created before the grant (the first meeting: it can stay on zeros
+/// after "Allow"). The tap is rebuilt after `preAudioRebuildIntervals` (8 s, then 12 s, 20 s, 40 s
+/// and every 120 s more), which costs nothing in a quiet call, and "no access" is only reported
+/// after `noAccessAfter` (30 s), so a call that starts in silence does not raise it at once.
 struct SystemTrackWatch: Sendable {
     /// What the recorder has to do after a buffer; usually nothing.
     struct Report: Equatable, Sendable {
@@ -36,6 +42,11 @@ struct SystemTrackWatch: Sendable {
 
     /// Seconds of zeros before each rebuild of one run; the last one repeats.
     static let rebuildIntervals: [Double] = [30, 30, 60, 120]
+    /// Before any real audio: seconds of zeros (while another app plays) before each rebuild;
+    /// the last one repeats.
+    static let preAudioRebuildIntervals: [Double] = [8, 12, 20, 40, 120]
+    /// Zeros from the start while another app plays, in seconds, before "no access" is reported.
+    static let noAccessAfter: Double = 30
     /// Real audio this soon after the rebuilt tap's first buffer means the rebuild fixed a stall.
     static let recoveryWindow: Double = 3
 
@@ -55,8 +66,12 @@ struct SystemTrackWatch: Sendable {
         var gapKept = false
     }
 
-    private var dog = SilenceWatchdog()
+    private var dog = SilenceWatchdog(noAccessAfter: SystemTrackWatch.noAccessAfter)
     private var run: Run?
+    /// Before any real audio: zero samples while another app plays, since the last time nothing played.
+    private var preAudioZeros = 0
+    private var preAudioRebuilds = 0
+    private var nextPreAudioRebuild = SystemTrackWatch.preAudioRebuildIntervals[0]
 
     /// One buffer from source session `session` (a rebuilt tap is a new session), recorded by `now`.
     /// `expectingAudio` is only asked for silent buffers: another app plays output.
@@ -74,10 +89,20 @@ struct SystemTrackWatch: Sendable {
                 end(run, heardAudio: !silent, session: session, into: &report)
                 self.run = nil
             }
+            resetPreAudio()
             return report
         }
         // Before any real audio this is the watchdog's "no access" case, not a stall.
-        guard heardBefore else { return report }
+        guard heardBefore else {
+            preAudioZeros += samples.count
+            if Double(preAudioZeros) / Double(SampleBuffer.sampleRate) >= nextPreAudioRebuild {
+                report.rebuild = true
+                preAudioRebuilds += 1
+                let intervals = Self.preAudioRebuildIntervals
+                nextPreAudioRebuild += intervals[min(preAudioRebuilds, intervals.count - 1)]
+            }
+            return report
+        }
 
         let duration = Double(samples.count) / Double(SampleBuffer.sampleRate)
         var current = run ?? Run(startedAt: now.addingTimeInterval(-duration))
@@ -113,6 +138,12 @@ struct SystemTrackWatch: Sendable {
     mutating func rebuildFailed() -> Date? {
         guard let current = run, current.rebuilds > 0 else { return nil }
         return keepGap()
+    }
+
+    private mutating func resetPreAudio() {
+        preAudioZeros = 0
+        preAudioRebuilds = 0
+        nextPreAudioRebuild = Self.preAudioRebuildIntervals[0]
     }
 
     private mutating func keepGap() -> Date? {

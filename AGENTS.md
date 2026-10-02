@@ -14,7 +14,7 @@ Minimalist macOS dictation app: hold a hotkey, speak, the text lands at the curs
 - **Project**: XcodeGen `project.yml` → generated `Captylo.xcodeproj` (git-ignored, never hand-edit)
 - **Speech**: FluidAudio 0.17.4 (Parakeet TDT 0.6b v3), ElevenLabs `scribe_v2` → `Captylo/Transcription/`
 - **AI cleanup**: OpenRouter chat completions, model picked by the user → `Captylo/Enhancement/`
-- **Meetings (notetaker)**: mic + Core Audio system tap as two tracks, live Parakeet per track, call detection, AI notes and speaker labels (Pro) → `Captylo/Meetings/`, views in `Captylo/UI/Meetings/` (section "Spotkania (notetaker)" in [docs/architecture.md](docs/architecture.md))
+- **Meetings (notetaker)**: mic + Core Audio system tap as two tracks, live Parakeet per track, call detection, ⌃⌥⌘M; in Pro after the meeting: cloud transcript (Scribe), AI fixes of the transcript, speaker labels, AI notes → `Captylo/Meetings/`, views in `Captylo/UI/Meetings/` (section "Spotkania (notetaker)" in [docs/architecture.md](docs/architecture.md))
 - **Data**: SwiftData store (dictations, meetings, meeting segments) + `dictionary.json` + WAV recordings + meeting CAF tracks → `Captylo/Data/`, `Captylo/Text/`
 - **Tests**: Swift Testing → `CaptyloTests/`
 - **Website**: static landing page → `site/` (captylo.com)

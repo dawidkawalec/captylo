@@ -26,16 +26,19 @@ struct MenuBarMenu: View {
         }
 
         let meetings = appState.meetingRecorder
+        // Shows ⌃⌥⌘M while the global shortcut is on (it works with the menu closed too).
+        let meetingShortcut = settings.meetingsShortcut ? KeyboardShortcut("m", modifiers: [.command, .option, .control]) : nil
         if meetings.isRecording {
             Button("Zakończ spotkanie") {
-                Task { await meetings.stop() }
+                appState.toggleMeetingRecording()
             }
+            .keyboardShortcut(meetingShortcut)
         } else {
             // Spotkania first: a meeting never records without its live bar on screen.
             Button("Nagraj spotkanie") {
-                appState.windowPresenter.openMain(section: .spotkania)
-                Task { await meetings.start() }
+                appState.toggleMeetingRecording()
             }
+            .keyboardShortcut(meetingShortcut)
             .disabled(meetings.phase != .idle || meetings.isStarting)
         }
 

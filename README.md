@@ -16,7 +16,7 @@ Captylo is a minimalist, open source dictation app for macOS. Hold a hotkey, spe
 - Dictionary: vocabulary hints and replacement rules for names and terms.
 - History with audio playback, search and CSV export; dashboard with words, sessions and time saved.
 - File transcription: drop an audio or video file or use "Otwórz za pomocą" in Finder.
-- Meeting notes: records the call (mic + system audio, no bot) and transcribes it live on your Mac; AI notes and speaker labels in Pro.
+- Meeting notes: records the call (mic + system audio, no bot) and transcribes it live on your Mac (⌃⌥⌘M starts and ends it); in Pro: a more accurate cloud transcript, AI fixes of misheard words (the original can be restored), speaker labels and AI notes.
 - Menu bar menu, Polish UI with English translations.
 
 ## Requirements
@@ -73,7 +73,7 @@ Transcription runs locally on your Mac by default: recordings and text never lea
 
 Learning from your corrections ("Ucz się z moich poprawek", Settings) stays on your Mac too: after a paste Captylo reads back only that text field for a short while, never password fields, password managers or terminals, and keeps what it learned in `learning.json` next to the dictionary. With an AI mode on, a few before/after pairs go to the same AI to update your style description. Every lesson can be undone in Słownik, and the switch turns it all off.
 
-Meetings are recorded and transcribed on your Mac as well; the audio files can be deleted automatically (Settings > Spotkania) while transcripts and notes stay. Only AI notes send the transcript, to the same AI as the AI modes. Meeting detection only checks which apps use the microphone and, for browsers, whether a window title names a call service; it stores nothing and never records without asking.
+Meetings are recorded and transcribed on your Mac as well; the audio files can be deleted automatically (Settings > Spotkania) while transcripts and notes stay. Three optional Pro features send meeting data: the cloud transcript sends the meeting audio to the same cloud as cloud transcription, and the AI fixes and AI notes send the transcript to the AI you picked for meetings. The cloud transcript and the AI fixes are off until you turn them on in Settings. Meeting detection only checks which apps use the microphone and, for browsers, whether a window title names a call service; it stores nothing and never records without asking.
 
 ## Pricing
 

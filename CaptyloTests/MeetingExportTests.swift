@@ -33,6 +33,17 @@ struct MeetingExportTests {
         #expect(!md.contains("ukryte echo"))
     }
 
+    /// An older interrupted row has no stored length: the export does not say 0:00.
+    @Test func aMeetingWithoutALengthLastsUntilItsLastSegment() throws {
+        var (meeting, segments) = sample()
+        meeting.status = .interrupted
+        meeting.duration = 0
+        #expect(MeetingExport.length(meeting, segments: segments) == 70)
+        #expect(MeetingExport.markdown(meeting, segments: segments).contains(" · 1:10"))
+        let json = try JSONSerialization.jsonObject(with: MeetingExport.json(meeting, segments: segments)) as? [String: Any]
+        #expect(json?["duration"] as? Double == 70)
+    }
+
     @Test func markdownNestsAIHeadingsAndOrdersTheTranscript() throws {
         let (meeting, segments) = sample()
         let md = MeetingExport.markdown(meeting, segments: segments.reversed())

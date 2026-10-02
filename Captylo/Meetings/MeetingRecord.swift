@@ -24,6 +24,13 @@ struct MeetingRecord: Sendable, Equatable, Identifiable {
     var hasAudio: Bool = true
     /// Meeting times where capture had a gap ("przerwa w nagraniu").
     var interruptions: [Double] = []
+    /// The cloud model whose transcript replaced the live one ("scribe_v2"); nil = transcribed
+    /// on this Mac while recording.
+    var transcriptModel: String? = nil
+    /// The AI model that last fixed the transcript; nil = not fixed (or restored).
+    var transcriptAIModel: String? = nil
+    /// Why the last cloud transcript or AI fix failed (Polish); nil when it worked.
+    var transcriptError: String? = nil
 
     /// What the title field in the details saves: `typed` on one line and trimmed, or nil when
     /// that is empty or the title it already has (nothing to save).

@@ -181,9 +181,16 @@ struct MeetingRecorderTests {
         let system = FakeAudioSource()
         let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
         await recorder.start()
-        for _ in 0..<5 { system.push(silence()) }
+        // A quiet start of a call is no alarm yet.
+        system.push(silence(seconds: 5))
         try await Task.sleep(for: .milliseconds(100))
+        #expect(recorder.systemAudioIssue == nil)
+        system.push(silence(seconds: 26))
+        await waitUntil { recorder.systemAudioIssue == .noAccess }
         #expect(recorder.systemAudioIssue == .noAccess)
+        // The tap made before the grant was rebuilt on the way (8 s of zeros).
+        await waitUntil { system.startCount == 2 }
+        #expect(system.startCount == 2)
         await recorder.stop()
     }
 
@@ -194,9 +201,10 @@ struct MeetingRecorderTests {
         let system = FakeAudioSource()
         let recorder = MeetingRecorder(environment: environment(mic: FakeAudioSource(), system: system, spy: MuteSpy(), db: db, expecting: true))
         await recorder.start()
-        for _ in 0..<5 { system.push(silence()) }
+        system.push(silence(seconds: 31))
         await waitUntil { recorder.systemAudioIssue == .noAccess }
         #expect(recorder.systemAudioIssue == .noAccess)
+        await waitUntil { system.isRunning }
         system.push(speech())
         await waitUntil { recorder.systemAudioIssue == nil }
         #expect(recorder.systemAudioIssue == nil)

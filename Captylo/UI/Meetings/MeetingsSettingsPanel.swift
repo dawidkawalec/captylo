@@ -28,6 +28,15 @@ struct MeetingsSettingsPanel: View {
                 systemImage: "megaphone",
                 isOn: $settings.meetingsConsentReminder
             )
+            GlassToggleRow(
+                "Skrót \(GlobalShortcut.meeting.display)",
+                subtitle: "Zaczyna i kończy nagrywanie spotkania z każdej aplikacji.",
+                systemImage: "command",
+                isOn: $settings.meetingsShortcut
+            )
+            GlassRowSeparator()
+                .padding(.vertical, 6)
+            MeetingTranscriptSettings(settings: settings, models: appState.openRouterModels, isPro: appState.proAccess.isPro)
             GlassRowSeparator()
                 .padding(.vertical, 6)
             GlassRow(
@@ -49,12 +58,116 @@ struct MeetingsSettingsPanel: View {
                 .padding(.vertical, 6)
             GlassToggleRow(
                 "Tryb Pro (dev)",
-                subtitle: "Tylko w wersji deweloperskiej: włącza notatki AI i rozpoznawanie mówców bez konta.",
+                subtitle: "Tylko w wersji deweloperskiej: włącza bez konta notatki AI, rozpoznawanie mówców, transkrypt z chmury i poprawki AI.",
                 systemImage: "hammer",
                 isOn: $settings.devPro
             )
             #endif
         }
+    }
+}
+
+// MARK: - Transcript after the meeting
+
+/// Pro: "Dokładniejszy transkrypt z chmury", "Poprawiaj transkrypt przez AI" and "Model AI do
+/// spotkań" (the fixes and the AI notes; "Jak w Modelach" by default, quick picks below). In Free
+/// the switches are off and say it is Pro.
+@MainActor
+private struct MeetingTranscriptSettings: View {
+    @Bindable var settings: AppSettings
+    let models: OpenRouterModels
+    let isPro: Bool
+
+    var body: some View {
+        GlassToggleRow(
+            "Dokładniejszy transkrypt z chmury",
+            subtitle: "Po spotkaniu wysyła nagranie do chmury i zastępuje nim transkrypt z Maca. Potrzebny klucz chmury w Modelach.",
+            systemImage: "cloud",
+            isOn: proBinding($settings.meetingsCloudTranscript)
+        )
+        .disabled(!isPro)
+        GlassToggleRow(
+            "Poprawiaj transkrypt przez AI",
+            subtitle: "Po spotkaniu AI poprawia źle rozpoznane słowa, nazwy i interpunkcję. Niczego nie skraca, a oryginał da się przywrócić.",
+            systemImage: "wand.and.stars",
+            isOn: proBinding($settings.meetingsAICorrection)
+        )
+        .disabled(!isPro)
+        GlassRow(
+            title: Text("Model AI do spotkań"),
+            subtitle: Text(verbatim: selectionTitle),
+            systemImage: "brain"
+        ) {
+            Menu {
+                Button {
+                    settings.meetingsAIModel = ""
+                } label: {
+                    choiceLabel(Text("Jak w Modelach (\(name(of: settings.aiModel)))"), selected: settings.meetingsAIModel.isEmpty)
+                }
+                Divider()
+                ForEach(choices, id: \.self) { id in
+                    Button {
+                        settings.meetingsAIModel = id
+                    } label: {
+                        choiceLabel(Text(verbatim: name(of: id)), selected: settings.meetingsAIModel == id)
+                    }
+                }
+            } label: {
+                MeetingMenuLabel(title: Text("Zmień"), systemImage: "slider.horizontal.3")
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .accessibilityLabel(Text("Model AI do spotkań"))
+        }
+        .task {
+            await models.refresh()
+        }
+        if !isPro {
+            ToolStatusLine(text: String(localized: "Transkrypt z chmury i poprawki AI są w Captylo Pro."))
+                .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+                .padding(.bottom, 4)
+        }
+    }
+
+    /// The cheapest quick pick first (long transcripts), then the rest, plus a custom choice.
+    private var choices: [String] {
+        var ids = [Self.cheapModelID] + OpenRouterModel.quickPickIDs.filter { $0 != Self.cheapModelID }
+        if !settings.meetingsAIModel.isEmpty, !ids.contains(settings.meetingsAIModel) {
+            ids.append(settings.meetingsAIModel)
+        }
+        return ids
+    }
+
+    static let cheapModelID = "google/gemini-2.5-flash-lite"
+
+    private var selectionTitle: String {
+        settings.meetingsAIModel.isEmpty
+            ? String(localized: "Jak w Modelach (\(name(of: settings.aiModel)))")
+            : name(of: settings.meetingsAIModel)
+    }
+
+    private func name(of id: String) -> String {
+        models.models.first { $0.id == id }?.name ?? id
+    }
+
+    private func choiceLabel(_ title: Text, selected: Bool) -> some View {
+        Label {
+            title
+        } icon: {
+            if selected {
+                Image(systemName: "checkmark")
+            }
+        }
+    }
+
+    /// Free shows the switch off whatever is stored.
+    private func proBinding(_ binding: Binding<Bool>) -> Binding<Bool> {
+        Binding(
+            get: { isPro && binding.wrappedValue },
+            set: { binding.wrappedValue = $0 }
+        )
     }
 }
 
