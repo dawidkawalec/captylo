@@ -40,8 +40,10 @@ struct MeetingDetectionTests {
     /// Reads this Mac: must answer without hanging, one entry per app (helpers merged). Which
     /// calls run depends on the machine.
     @Test func liveScanAnswersWithOneEntryPerApp() async {
-        let apps = await MeetingDetector.liveScan(keeping: [])
-        #expect(apps.count == Set(apps.map(\.name)).count)
+        let scan = await MeetingDetector.liveScan(keeping: [])
+        #expect(scan.apps.count == Set(scan.apps.map(\.name)).count)
+        // Nothing is kept, so no kept browser can be missing its call window.
+        #expect(scan.browsersWithoutCallWindow.isEmpty)
     }
 
     @Test func startsAfterFiveSecondsOfMicUseAndEndsAfterFortyFive() {
@@ -83,6 +85,42 @@ struct MeetingDetectionTests {
         #expect(tracker.update(apps: [meet], at: 10) == [.started(meet)])
         #expect(tracker.update(apps: [], at: 55) == [.ended(zoom), .ended(meet)])
     }
+
+    /// The process is gone: nothing can hold the mic, so the call ends without the 45 s wait.
+    @Test func aQuitAppEndsItsCallAtOnce() {
+        var tracker = DetectionTracker(startAfter: 5, endAfter: 45)
+        _ = tracker.update(apps: [zoom], at: 0)
+        #expect(tracker.update(apps: [zoom], at: 6) == [.started(zoom)])
+        #expect(tracker.update(apps: [], at: 8, quit: ["Zoom"]) == [.ended(zoom)])
+        // Ended once: the wait that would have ended it reports nothing more.
+        #expect(tracker.update(apps: [], at: 60).isEmpty)
+        // Relaunched and back in a call: a new call with its own 5 s.
+        _ = tracker.update(apps: [zoom], at: 62)
+        #expect(tracker.update(apps: [zoom], at: 68) == [.started(zoom)])
+    }
+
+    @Test func aQuitBeforeTheCallCountedIsNoEvent() {
+        var tracker = DetectionTracker(startAfter: 5, endAfter: 45)
+        _ = tracker.update(apps: [zoom], at: 0)
+        #expect(tracker.update(apps: [], at: 2, quit: ["Zoom"]).isEmpty)
+        #expect(tracker.update(apps: [], at: 50, quit: ["Teams"]).isEmpty)
+        _ = tracker.update(apps: [zoom], at: 52)
+        #expect(tracker.update(apps: [zoom], at: 55).isEmpty)
+        #expect(tracker.update(apps: [zoom], at: 57) == [.started(zoom)])
+    }
+
+    /// A poll can shorten the wait (the recording's calendar event is long over): it applies to
+    /// that poll only.
+    @Test func aShorterEndWaitAppliesToThePollThatAsksForIt() {
+        var tracker = DetectionTracker(startAfter: 5, endAfter: 45)
+        _ = tracker.update(apps: [zoom], at: 0)
+        _ = tracker.update(apps: [zoom], at: 6)
+        #expect(tracker.update(apps: [zoom], at: 10).isEmpty)
+        #expect(tracker.update(apps: [], at: 20, endAfter: 15).isEmpty)
+        #expect(tracker.update(apps: [], at: 24).isEmpty)
+        #expect(tracker.update(apps: [], at: 26, endAfter: 15) == [.ended(zoom)])
+        #expect(tracker.update(apps: [], at: 100).isEmpty)
+    }
 }
 
 // MARK: - Detector
@@ -91,6 +129,9 @@ struct MeetingDetectionTests {
 @MainActor
 final class DetectionWorld {
     var apps: [MeetingApp] = []
+    /// Browsers among `apps` that hold the mic without a call window (kept only because they
+    /// are already in a call).
+    var browsersWithoutCallWindow: Set<String> = []
     var now: Double = 0
     var enabled = true
     var openedMeetings = 0
@@ -173,7 +214,7 @@ struct MeetingDetectorFlowTests {
             openMeetings: { world.openedMeetings += 1 },
             scan: { keeping in
                 world.scans.append(keeping)
-                return world.apps
+                return CallScan(apps: world.apps, browsersWithoutCallWindow: world.browsersWithoutCallWindow)
             },
             clock: { world.now },
             currentEvent: { world.event },
@@ -218,9 +259,12 @@ struct MeetingDetectorFlowTests {
         await poll(rig, [zoom], at: 0)
         await poll(rig, [zoom], at: 2)
         #expect(rig.toasts.shown.isEmpty)
+        #expect(rig.detector.lastOfferAt == nil)
         await poll(rig, [zoom], at: 6)
         #expect(rig.toasts.shown.map(\.message) == [recordPrompt("Zoom")])
         #expect(rig.toasts.shown.first?.button == String(localized: "Nagraj"))
+        let offeredAt = try #require(rig.detector.lastOfferAt)
+        #expect(abs(offeredAt.timeIntervalSinceNow) < 5)
         await poll(rig, [zoom], at: 8)
         #expect(rig.toasts.shown.count == 1)
         #expect(!rig.recorder.isRecording)
@@ -439,6 +483,169 @@ struct MeetingDetectorFlowTests {
         await poll(rig, [zoom], at: 58)
         try await Task.sleep(for: .milliseconds(300))
         #expect(rig.recorder.isRecording)
+        await rig.recorder.stop()
+    }
+
+    // MARK: Call end
+
+    /// The call app quit: its process holds no mic, so the stop is offered at the next poll
+    /// instead of 45 s later.
+    @Test func aQuitCallAppAsksToStopAtOnce() async throws {
+        let rig = try rig()
+        try await recordZoomCall(rig)
+        await poll(rig, [zoom], at: 10)
+        rig.detector.appDidQuit(bundleID: "us.zoom.xos")
+        await poll(rig, [], at: 12)
+        #expect(rig.toasts.shown.map(\.message) == [recordPrompt("Zoom"), stopPrompt("Zoom")])
+        #expect(rig.toasts.shown.last?.button == String(localized: "Nagrywaj dalej"))
+        await waitUntil { rig.recorder.phase == .idle }
+        #expect(rig.recorder.phase == .idle)
+    }
+
+    /// A quit of an app that is not in a call (or not a call app) changes nothing.
+    @Test func aQuitOfAnotherAppIsIgnored() async throws {
+        let rig = try rig()
+        try await recordZoomCall(rig)
+        await poll(rig, [zoom], at: 10)
+        rig.detector.appDidQuit(bundleID: "com.google.Chrome")
+        rig.detector.appDidQuit(bundleID: "com.spotify.client")
+        await poll(rig, [zoom], at: 12)
+        await poll(rig, [], at: 14)
+        #expect(rig.toasts.shown.count == 1)
+        #expect(rig.recorder.isRecording)
+        await rig.recorder.stop()
+    }
+
+    /// Records a Meet call in Chrome (0..6 s) and presses "Nagraj".
+    private func recordChromeCall(_ rig: Rig) async throws {
+        await poll(rig, [chrome], at: 0)
+        await poll(rig, [chrome], at: 6)
+        let prompt = try #require(rig.toasts.shown.last)
+        prompt.action?()
+        await waitUntil { rig.recorder.isRecording }
+        #expect(rig.recorder.isRecording)
+    }
+
+    /// The user left Meet but another tab keeps the mic: after 30 s without any call window
+    /// the browser no longer counts, and the usual 45 s end the call.
+    @Test func aBrowserHoldingTheMicWithoutACallWindowIsDroppedAfterThirtySeconds() async throws {
+        let rig = try rig()
+        try await recordChromeCall(rig)
+        await poll(rig, [chrome], at: 10)
+        rig.world.browsersWithoutCallWindow = ["Chrome"]
+        await poll(rig, [chrome], at: 12)
+        await poll(rig, [chrome], at: 30)
+        // 28 s without the window: still the call (the last mic use that counts).
+        await poll(rig, [chrome], at: 40)
+        #expect(rig.toasts.shown.count == 1)
+        // 32 s without it: the browser is dropped, and the usual 45 s run from 40.
+        await poll(rig, [chrome], at: 44)
+        await poll(rig, [chrome], at: 80)
+        #expect(rig.toasts.shown.count == 1)
+        await poll(rig, [chrome], at: 86)
+        #expect(rig.toasts.shown.last?.message == stopPrompt("Chrome"))
+        await waitUntil { rig.recorder.phase == .idle }
+        #expect(rig.recorder.phase == .idle)
+    }
+
+    /// Back on the Meet tab before 30 s: the count starts over; a shorter absence never ends.
+    @Test func aCallWindowComingBackResetsTheBrowserIdleCount() async throws {
+        let rig = try rig()
+        try await recordChromeCall(rig)
+        rig.world.browsersWithoutCallWindow = ["Chrome"]
+        await poll(rig, [chrome], at: 10)
+        await poll(rig, [chrome], at: 30)
+        rig.world.browsersWithoutCallWindow = []
+        await poll(rig, [chrome], at: 32)
+        rig.world.browsersWithoutCallWindow = ["Chrome"]
+        await poll(rig, [chrome], at: 40)
+        await poll(rig, [chrome], at: 60)
+        await poll(rig, [chrome], at: 68)
+        // Back on Meet each time before 30 s: never dropped, nothing ends.
+        rig.world.browsersWithoutCallWindow = []
+        await poll(rig, [chrome], at: 69)
+        await poll(rig, [chrome], at: 120)
+        #expect(rig.toasts.shown.count == 1)
+        #expect(rig.recorder.isRecording)
+        await rig.recorder.stop()
+    }
+
+    private func overrunEvent(endedMinutesAgo: Double) -> CalendarEvent {
+        let end = Date().addingTimeInterval(-endedMinutesAgo * 60)
+        return CalendarEvent(
+            id: "ev-9", title: "Budżet Q4", start: end.addingTimeInterval(-30 * 60), end: end,
+            isAllDay: false, calendarTitle: "Praca", participants: ["Anna Kowalska"], callApp: "Zoom"
+        )
+    }
+
+    /// The recording's calendar event ended more than 5 min ago: the call ends after 15 s without
+    /// the mic (not 45) and the toast names the event.
+    @Test func aRecordingWhoseEventIsLongOverEndsAfterFifteenSeconds() async throws {
+        let rig = try rig()
+        rig.world.event = overrunEvent(endedMinutesAgo: 10)
+        try await recordZoomCall(rig)
+        #expect(rig.recorder.linkedEvent?.id == "ev-9")
+        await poll(rig, [zoom], at: 10)
+        await poll(rig, [], at: 20)
+        #expect(rig.toasts.shown.count == 1)
+        await poll(rig, [], at: 27)
+        let prompt = try #require(rig.toasts.shown.last)
+        #expect(prompt.message == String(localized: "„Budżet Q4” już się skończyło? Kończę notatki za 15 s."))
+        #expect(prompt.button == String(localized: "Nagrywaj dalej"))
+        #expect(prompt.lifetime == 0.04)
+        await waitUntil { rig.recorder.phase == .idle }
+        #expect(rig.recorder.phase == .idle)
+    }
+
+    /// An event over for less than 5 min changes nothing: meetings run late.
+    @Test func anEventJustOverKeepsTheFullWait() async throws {
+        let rig = try rig()
+        rig.world.event = overrunEvent(endedMinutesAgo: 2)
+        try await recordZoomCall(rig)
+        await poll(rig, [zoom], at: 10)
+        await poll(rig, [], at: 27)
+        await poll(rig, [], at: 40)
+        #expect(rig.toasts.shown.count == 1)
+        await poll(rig, [], at: 56)
+        #expect(rig.toasts.shown.last?.message == stopPrompt("Zoom"))
+        await waitUntil { rig.recorder.phase == .idle }
+        #expect(rig.recorder.phase == .idle)
+    }
+
+    /// "Nagrywaj dalej" on the calendar toast keeps recording like on the app toast.
+    @Test func keepRecordingCancelsTheCalendarStop() async throws {
+        let rig = try rig()
+        rig.world.event = overrunEvent(endedMinutesAgo: 10)
+        try await recordZoomCall(rig)
+        await poll(rig, [zoom], at: 10)
+        await poll(rig, [], at: 27)
+        try #require(rig.toasts.shown.count == 2)
+        rig.toasts.shown[1].action?()
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(rig.recorder.isRecording)
+        #expect(!rig.detector.isStopPending)
+        await rig.recorder.stop()
+    }
+
+    /// A manual stop during the countdown is final: the countdown is dropped and the next
+    /// recording is never touched by it.
+    @Test func aManualStopDuringTheCountdownIsFinal() async throws {
+        let rig = try rig(stopDelay: .milliseconds(200))
+        try await recordZoomCall(rig)
+        let first = try #require(rig.recorder.currentMeetingID)
+        await poll(rig, [zoom], at: 10)
+        await poll(rig, [], at: 56)
+        try #require(rig.detector.isStopPending)
+        await rig.recorder.stop()
+        await rig.recorder.start(title: "Nowe")
+        let second = try #require(rig.recorder.currentMeetingID)
+        await poll(rig, [], at: 58)
+        #expect(!rig.detector.isStopPending)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(rig.recorder.currentMeetingID == second)
+        #expect(rig.recorder.isRecording)
+        #expect(rig.recorder.lastFinishedMeetingID == first)
+        #expect(rig.toasts.shown.count == 2)
         await rig.recorder.stop()
     }
 }

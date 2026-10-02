@@ -6348,6 +6348,11 @@
         "en": { "stringUnit": { "state": "translated", "value": "Meeting in %@ over? Finishing the notes in 15 s." } }
       }
     },
+    "„%@” już się skończyło? Kończę notatki za 15 s.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "\"%@\" over already? Finishing the notes in 15 s." } }
+      }
+    },
     "Nagrywaj dalej": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Keep recording" } }

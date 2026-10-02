@@ -595,7 +595,10 @@ struct MeetingRecorderTests {
         #expect(meeting.calendarEventID == "ev-1")
         #expect(meeting.participants == ["Anna Kowalska", "Piotr Nowak"])
         #expect(meeting.appName == "Meet")
+        // The detector reads the event of the recording to end it once the event is long over.
+        #expect(recorder.linkedEvent == budget)
         await recorder.stop()
+        #expect(recorder.linkedEvent == nil)
     }
 
     /// The detector knows which app holds the mic: that name wins over the event's link.
@@ -628,6 +631,7 @@ struct MeetingRecorderTests {
         #expect(meeting.calendarEventID == nil)
         #expect(meeting.participants.isEmpty)
         #expect(meeting.appName == nil)
+        #expect(recorder.linkedEvent == nil)
         await recorder.stop()
     }
 

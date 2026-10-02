@@ -59,6 +59,9 @@ final class MeetingRecorder {
     /// live bar warns. Cleared by the stop.
     private(set) var transcriptionProblem: MeetingLiveUpdate.Problem?
     private(set) var lastFinishedMeetingID: UUID?
+    /// The calendar event the current recording is for (the one on its row); nil without one
+    /// and once the recording stops. `MeetingDetector` ends the call sooner when it is long over.
+    private(set) var linkedEvent: CalendarEvent?
     /// Bumped each time the post-processors are done with a meeting (it reads "completed" now):
     /// Spotkania reloads to show the speaker labels and the AI notes.
     private(set) var processedCount = 0
@@ -272,6 +275,7 @@ final class MeetingRecorder {
             return
         }
         phase = .recording(meetingID: record.id, startedAt: now)
+        linkedEvent = event
         showsConsentReminder = true
         watchOutputRoute()
         Log.audio.info("Meeting recording started")
@@ -435,6 +439,7 @@ final class MeetingRecorder {
         guard case .recording(let id, let startedAt) = phase else { return }
         let duration = elapsed()
         phase = .finishing(meetingID: id)
+        linkedEvent = nil
         stopWatchingOutputRoute()
         showsConsentReminder = false
         lastError = nil
@@ -532,6 +537,7 @@ final class MeetingRecorder {
         transcriber = nil
         partials = [:]
         transcriptionProblem = nil
+        linkedEvent = nil
         phase = .idle
     }
 
