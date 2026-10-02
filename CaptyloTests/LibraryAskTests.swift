@@ -45,7 +45,8 @@ struct LibraryAskTests {
 
     @Test func stopwordsLeaveOnlyTheTopicWords() {
         #expect(LibraryAskRetrieval.terms("Kiedy wyślemy ofertę dla klienta?") == ["wyslem", "ofert", "klient"])
-        #expect(LibraryAskRetrieval.terms("Co mówiła Anna o budżecie, który był ustalony?") == ["anna", "budzec", "ustalo"])
+        #expect(LibraryAskRetrieval.terms("Co mówiła Anna o budżecie, który był ustalony?") == ["ann", "budze", "ustalo"])
+        #expect(LibraryAskRetrieval.terms("Co ustaliliśmy o cenach i kosztach?") == ["ustali", "cen", "koszt"])
         #expect(LibraryAskRetrieval.terms("What did we decide about the budget?") == ["decid", "budge"])
         #expect(LibraryAskRetrieval.terms("Co to jest? Jak było?") == nil)
         #expect(LibraryAskRetrieval.terms("  ") == nil)
@@ -57,6 +58,13 @@ struct LibraryAskTests {
         #expect(LibraryAskRetrieval.isAboutTime("Co było ostatnio?"))
         #expect(LibraryAskRetrieval.isAboutTime("What did we discuss last week?"))
         #expect(!LibraryAskRetrieval.isAboutTime("Kiedy wyślemy ofertę dla klienta?"))
+        // A bare week or month is a topic, not a period ("miesiąc licencji", "za tydzień").
+        #expect(!LibraryAskRetrieval.isAboutTime("Ile kosztuje miesiąc licencji?"))
+        #expect(!LibraryAskRetrieval.isAboutTime("Co ma być gotowe za tydzień?"))
+        #expect(LibraryAskRetrieval.isAboutTime("Co było w tym miesiącu?"))
+        #expect(LibraryAskRetrieval.isAboutTime("Co było miesiąc temu?"))
+        #expect(LibraryAskRetrieval.terms("Co było miesiąc temu?") == nil)
+        #expect(LibraryAskRetrieval.terms("What happened a week ago?") == ["happen"])
     }
 
     private static var utc: Calendar {
@@ -84,8 +92,18 @@ struct LibraryAskTests {
         #expect(period("Co mówiliśmy w ostatnim tygodniu?") == ["2026-09-25T12:00:00Z", "2026-10-02T12:00:00Z"])
         #expect(period("Budżet w zeszłym miesiącu?") == ["2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z"])
         #expect(period("Budżet w tym miesiącu?") == ["2026-10-01T00:00:00Z", "2026-11-01T00:00:00Z"])
+        #expect(period("Co było w ubiegłym miesiącu?") == ["2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z"])
+        #expect(period("Plan na ten tydzień?") == ["2026-09-28T00:00:00Z", "2026-10-05T00:00:00Z"])
+        // "Temu" / "ago": the week or month before.
+        #expect(period("Co było miesiąc temu?") == ["2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z"])
+        #expect(period("Co było tydzień temu?") == ["2026-09-21T00:00:00Z", "2026-09-28T00:00:00Z"])
+        #expect(period("What did we say a month ago?") == ["2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z"])
         #expect(period("Co było ostatnio?") == nil)
         #expect(period("Jaki jest budżet?") == nil)
+        // A unit with no qualifier names no period.
+        #expect(period("Ile kosztuje miesiąc licencji?") == nil)
+        #expect(period("Co ma być gotowe za tydzień?") == nil)
+        #expect(period("How much is a month of support?") == nil)
     }
 
     @Test func meetingsPickedByDateTakeHitsFirstAndTheirClosingLines() {
@@ -366,6 +384,62 @@ struct LibraryAskTests {
         let general = try await asker.context(question: "O czym rozmawialiśmy?")
         #expect(general.sources.map(\.meeting.title) == ["Dzisiaj", "Ten tydzień", "Zeszły czwartek", "Zeszły poniedziałek", "Stare"])
         #expect(seen.withLock { $0.count } == 1)
+    }
+
+    /// Friday 2 October 2026, the topics discussed in August. A bare week or month is a topic
+    /// word, so the answer comes from any date; "temu" means the month before.
+    @Test func aBareWeekOrMonthKeepsTheTopicSearch() async throws {
+        let fixture = try Self.fixture()
+        try await Self.addMeeting(fixture, title: "Licencje", at: Self.date("2026-08-12T09:00:00Z"),
+                                  lines: ["Dzień dobry.", "Licencja kosztuje sto złotych miesięcznie.", "Dziękuję."])
+        try await Self.addMeeting(fixture, title: "Raport", at: Self.date("2026-08-20T09:00:00Z"),
+                                  lines: ["Raport musi być gotowy do piątku.", "Dobrze."])
+        try await Self.addMeeting(fixture, title: "Wrzesień", at: Self.date("2026-09-15T09:00:00Z"), lines: ["Pogoda."])
+        try await Self.addMeeting(fixture, title: "Październik", at: Self.date("2026-10-01T09:00:00Z"), lines: ["Cześć."])
+        let (asker, baseURL) = Self.asker(fixture, now: try Self.date("2026-10-02T12:00:00Z")) { _ in .json(Self.chat("x")) }
+        defer { StubURLProtocol.unregister(baseURL) }
+
+        let price = try await asker.context(question: "Ile kosztuje miesiąc licencji?")
+        #expect(!price.byDate)
+        #expect(price.sources.map(\.meeting.title) == ["Licencje"])
+
+        let due = try await asker.context(question: "Co ma być gotowe za tydzień?")
+        #expect(!due.byDate)
+        #expect(due.sources.first?.meeting.title == "Raport")
+        #expect(!due.sources.contains { $0.meeting.title == "Październik" })
+
+        let monthAgo = try await asker.context(question: "Co było miesiąc temu?")
+        #expect(monthAgo.byDate)
+        #expect(monthAgo.sources.map(\.meeting.title) == ["Wrzesień"])
+    }
+
+    /// The question names a noun in an oblique case; the meeting says it in another.
+    @Test func obliqueCasesFindTheOtherForms() async throws {
+        let fixture = try Self.fixture()
+        let base = try Self.date("2026-09-01T09:00:00Z")
+        try await Self.addMeeting(fixture, title: "Budżet", at: base, lines: [
+            "Dzień dobry.", "Budżet na reklamy to dwadzieścia tysięcy.", "Pogoda.", "Anna zatwierdzi wysokość budżetu.",
+        ])
+        try await Self.addMeeting(fixture, title: "Oferta", at: base.addingTimeInterval(86_400),
+                                  lines: ["Wyślę ofertę w piątek.", "Dobrze."])
+        try await Self.addMeeting(fixture, title: "Cennik", at: base.addingTimeInterval(2 * 86_400),
+                                  lines: ["Ceny rosną od stycznia.", "Rozumiem."])
+        try await Self.addMeeting(fixture, title: "Bez związku", at: base.addingTimeInterval(3 * 86_400),
+                                  lines: ["Zupełnie inny temat."])
+        let (asker, baseURL) = Self.asker(fixture) { _ in .json(Self.chat("x")) }
+        defer { StubURLProtocol.unregister(baseURL) }
+
+        let budget = try await asker.context(question: "Co Anna mówiła o budżecie?")
+        #expect(budget.sources.map(\.meeting.title) == ["Budżet"])
+        let budgetLines = budget.sources.first?.excerpts.flatMap { $0 }.map(\.text) ?? []
+        #expect(budgetLines.contains("Budżet na reklamy to dwadzieścia tysięcy."))
+        #expect(budgetLines.contains("Anna zatwierdzi wysokość budżetu."))
+
+        let offer = try await asker.context(question: "Co mówiliśmy o ofercie?")
+        #expect(offer.sources.map(\.meeting.title) == ["Oferta"])
+
+        let prices = try await asker.context(question: "Co ustalono o cenach?")
+        #expect(prices.sources.map(\.meeting.title) == ["Cennik"])
     }
 
     // MARK: Prompt

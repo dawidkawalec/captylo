@@ -21,20 +21,64 @@ enum LibraryAskRetrieval {
     /// next steps), sent next to its AI notes.
     static let closingLines = 12
 
-    /// Folded words that make a question about time ("ostatnio", "w zeszłym tygodniu",
-    /// "wczoraj"): the meetings are then picked by date (`period`), not only by topic. They are
-    /// never search terms.
+    /// Folded words that make a question about time ("ostatnio", "wczoraj", "temu"): the
+    /// meetings are then picked by date (`period`), not only by topic. A week or a month
+    /// (`weekWords`, `monthWords`) does so only with a qualifier next to it ("w zeszłym
+    /// tygodniu", `qualifiedUnit`); alone ("miesiąc licencji", "za tydzień") it is a topic.
+    /// None of them is ever a search term.
     static let timeWords: Set<String> = [
         // Polish
         "ostatnio", "niedawno", "ostatni", "ostatnia", "ostatnie", "ostatnim", "ostatniej",
         "ostatnich", "ostatniego", "zeszly", "zeszla", "zeszle", "zeszlym", "zeszlej", "zeszlego",
         "poprzedni", "poprzednia", "poprzednie", "poprzednim", "poprzedniej", "poprzedniego",
+        "ubiegly", "ubiegla", "ubiegle", "ubieglym", "ubieglej", "ubieglego",
         "tydzien", "tygodnia", "tygodniu", "miesiac", "miesiaca", "miesiacu", "wczoraj",
-        "przedwczoraj", "dzisiaj", "dzis", "dzisiejsze", "dzisiejszym", "dzisiejszej",
+        "przedwczoraj", "dzisiaj", "dzis", "dzisiejsze", "dzisiejszym", "dzisiejszej", "temu",
         // English
         "recent", "recently", "lately", "latest", "last", "previous", "past", "week", "month",
-        "yesterday", "today",
+        "yesterday", "today", "ago",
     ]
+
+    static let weekWords: Set<String> = ["tydzien", "tygodnia", "tygodniu", "week"]
+    static let monthWords: Set<String> = ["miesiac", "miesiaca", "miesiacu", "month"]
+
+    /// Right before a week or a month: the one of `now` ("w tym tygodniu", "this month").
+    private static let thisWords: Set<String> = ["ten", "tym", "biezacy", "biezacym", "this"]
+    /// Right before: the one before ("w zeszłym tygodniu", "last month").
+    private static let previousWords: Set<String> = [
+        "zeszly", "zeszla", "zeszle", "zeszlym", "zeszlej", "zeszlego", "poprzedni", "poprzednia",
+        "poprzednie", "poprzednim", "poprzedniej", "poprzedniego", "ubiegly", "ubiegla", "ubiegle",
+        "ubieglym", "ubieglej", "ubieglego", "last", "previous",
+    ]
+    /// Right before: the last 7 / 30 days ("w ostatnim tygodniu", "the past month").
+    private static let rollingWords: Set<String> = [
+        "ostatni", "ostatnia", "ostatnie", "ostatnim", "ostatniej", "ostatnich", "ostatniego", "past",
+    ]
+    /// Right after: the one before ("miesiąc temu", "a week ago").
+    private static let agoWords: Set<String> = ["temu", "ago"]
+
+    private enum Reach { case current, previous, rolling }
+
+    /// The first week or month in `words` with a qualifier next to it, and what the qualifier
+    /// says. Nil for a bare unit ("miesiąc licencji", "za tydzień") or none.
+    private static func qualifiedUnit(_ words: [String]) -> (unit: Calendar.Component, days: Int, reach: Reach)? {
+        for (index, word) in words.enumerated() {
+            let unit: (Calendar.Component, Int)
+            if weekWords.contains(word) {
+                unit = (.weekOfYear, 7)
+            } else if monthWords.contains(word) {
+                unit = (.month, 30)
+            } else {
+                continue
+            }
+            let before = index > 0 ? words[index - 1] : ""
+            let after = index + 1 < words.count ? words[index + 1] : ""
+            if previousWords.contains(before) || agoWords.contains(after) { return (unit.0, unit.1, .previous) }
+            if rollingWords.contains(before) { return (unit.0, unit.1, .rolling) }
+            if thisWords.contains(before) { return (unit.0, unit.1, .current) }
+        }
+        return nil
+    }
 
     /// Folded (`MeetingSearch.fold`) question words that say nothing about the topic: Polish
     /// function and question words, the verbs of "what did X say" and English basics (time
@@ -72,17 +116,22 @@ enum LibraryAskRetrieval {
         return SearchQuery.terms(words.joined(separator: " "))
     }
 
-    /// The question is about time: its meetings are picked by date.
+    /// The question is about time: its meetings are picked by date. A bare week or month does
+    /// not count ("Ile kosztuje miesiąc licencji?" stays a topic search).
     static func isAboutTime(_ question: String) -> Bool {
-        words(question).contains { timeWords.contains($0) }
+        let words = words(question)
+        let units = weekWords.union(monthWords)
+        return words.contains { timeWords.contains($0) && !units.contains($0) } || qualifiedUnit(words) != nil
     }
 
     /// The period a question names: "dziś", "wczoraj", "przedwczoraj" (that day), "w tym
     /// tygodniu" / "miesiącu" (the calendar week or month of `now`), "w zeszłym" / "poprzednim"
-    /// (the one before), "w ostatnim tygodniu" / "miesiącu" (the last 7 / 30 days up to `now`).
-    /// Nil for "ostatnio" and other questions without one: the newest meetings.
+    /// / "ubiegłym" and "tydzień" / "miesiąc temu" (the one before), "w ostatnim tygodniu" /
+    /// "miesiącu" (the last 7 / 30 days up to `now`). Nil for "ostatnio", a bare week or month
+    /// ("za tydzień") and other questions without one: the newest meetings.
     static func period(_ question: String, now: Date, calendar: Calendar) -> DateInterval? {
-        let words = Set(words(question))
+        let ordered = words(question)
+        let words = Set(ordered)
         func day(_ offset: Int) -> DateInterval? {
             calendar.date(byAdding: .day, value: offset, to: now).flatMap { calendar.dateInterval(of: .day, for: $0) }
         }
@@ -92,29 +141,15 @@ enum LibraryAskRetrieval {
         if words.contains("przedwczoraj") { return day(-2) }
         if !words.isDisjoint(with: ["wczoraj", "yesterday"]) { return day(-1) }
 
-        let unit: Calendar.Component
-        let rollingDays: Int
-        if !words.isDisjoint(with: ["tydzien", "tygodnia", "tygodniu", "week"]) {
-            unit = .weekOfYear
-            rollingDays = 7
-        } else if !words.isDisjoint(with: ["miesiac", "miesiaca", "miesiacu", "month"]) {
-            unit = .month
-            rollingDays = 30
-        } else {
-            return nil
-        }
-        let previous: Set<String> = [
-            "zeszly", "zeszla", "zeszle", "zeszlym", "zeszlej", "zeszlego", "poprzedni", "poprzednia",
-            "poprzednie", "poprzednim", "poprzedniej", "poprzedniego", "last", "previous",
-        ]
-        let rolling: Set<String> = ["ostatni", "ostatnia", "ostatnie", "ostatnim", "ostatniej", "ostatnich", "ostatniego", "past"]
-        if !words.isDisjoint(with: previous) {
+        guard let (unit, days, reach) = qualifiedUnit(ordered) else { return nil }
+        switch reach {
+        case .previous:
             return calendar.date(byAdding: unit, value: -1, to: now).flatMap { calendar.dateInterval(of: unit, for: $0) }
+        case .rolling:
+            return calendar.date(byAdding: .day, value: -days, to: now).map { DateInterval(start: $0, end: now) }
+        case .current:
+            return calendar.dateInterval(of: unit, for: now)
         }
-        if !words.isDisjoint(with: rolling) {
-            return calendar.date(byAdding: .day, value: -rollingDays, to: now).map { DateInterval(start: $0, end: now) }
-        }
-        return calendar.dateInterval(of: unit, for: now)
     }
 
     /// Weeks from Monday, the user's time zone: what "w tym tygodniu" means in Polish.

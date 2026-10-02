@@ -22,13 +22,27 @@ enum SearchQuery {
         return terms.isEmpty ? nil : terms
     }
 
-    /// Words of up to 4 characters stay as they are ("lodz"); 5 to 7 lose their last character,
-    /// usually the case ending ("oferta" -> "ofert" finds "ofertę", "ofert", "ofertą"; "budzetu" ->
-    /// "budzet"); longer words keep their first 6 ("spotkania" -> "spotka"). Crude, and it can
-    /// over-match ("budzet" also finds "budzetowy"), which is fine for search and retrieval.
+    /// Folded Polish case endings that change the end of the noun itself, longest first: the
+    /// locative "-cie" ("budzecie" -> "budze", "ofercie" -> "ofer"), "-ie" ("cenie" -> "cen",
+    /// "umowie" -> "umow"), the plural "-ach", "-ami", "-om", "-ow" ("cenach" -> "cen",
+    /// "kosztach" -> "koszt") and the instrumental "-em" ("planem" -> "plan").
+    static let caseEndings = ["cie", "ach", "ami", "ie", "om", "ow", "em"]
+
+    /// A word with a case ending (`caseEndings`, the first that leaves 3+ characters) loses it
+    /// and keeps at most its first 6 characters ("harmonogramie" -> "harmon"). Otherwise: words
+    /// of 4 characters ending in a vowel lose it ("cena" -> "cen" finds "ceny", "cenę"; "anna"
+    /// -> "ann"), other words of up to 4 stay ("lodz"); 5 to 7 lose their last character,
+    /// usually the case ending ("oferta" -> "ofert" finds "ofertę", "ofert", "ofertą"; "budzetu"
+    /// -> "budzet"); longer words keep their first 6 ("spotkania" -> "spotka"). Never under 3
+    /// characters, the trigram minimum. Crude, and it over-matches ("budze" also finds
+    /// "budzetowy", "cen" also finds "cenny"), which is fine for search and retrieval.
     static func stem(_ word: String) -> String {
+        for ending in caseEndings where word.hasSuffix(ending) && word.count - ending.count >= minimumTermLength {
+            return String(word.dropLast(ending.count).prefix(6))
+        }
         switch word.count {
-        case ...4: return word
+        case ...3: return word
+        case 4: return "aeiouy".contains(word.last ?? "x") ? String(word.dropLast()) : word
         case 5...7: return String(word.dropLast())
         default: return String(word.prefix(6))
         }
