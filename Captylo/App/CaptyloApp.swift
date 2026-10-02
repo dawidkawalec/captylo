@@ -1,6 +1,6 @@
 import SwiftUI
 
-@main
+/// Started by `CaptyloMain` (the entry point) for every run except `--mcp`.
 struct CaptyloApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 

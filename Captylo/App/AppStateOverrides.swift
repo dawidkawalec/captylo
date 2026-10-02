@@ -50,18 +50,6 @@ struct AppStateOverrides {
         isolated(suiteName: testHostSuiteName, folderPrefix: "captylo-test-host")
     }
 
-    /// Defaults suite of the `--mcp` process's own app state, wiped at every launch.
-    static let mcpServerSuiteName = "com.captylo.app.mcp-server"
-
-    /// The `--mcp` process (`MCPServer`) runs next to a running Captylo: its app state must never
-    /// open the real store read-write (a schema change would migrate it under the app), the real
-    /// index, dictionary or defaults. Same isolation as the test host; the server itself reads the
-    /// library through `MeetingLibraryReader` (read-only) and the setting from `.standard`.
-    @MainActor
-    static func mcpServer() -> (settings: AppSettings, overrides: AppStateOverrides) {
-        isolated(suiteName: mcpServerSuiteName, folderPrefix: "captylo-mcp-server")
-    }
-
     /// An in-memory store (and so an in-memory index), a temp dictionary and a wiped defaults suite.
     @MainActor
     private static func isolated(suiteName: String, folderPrefix: String) -> (settings: AppSettings, overrides: AppStateOverrides) {

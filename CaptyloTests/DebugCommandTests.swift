@@ -129,6 +129,15 @@ struct DebugCommandTests {
         #expect(DebugCommand.mcp.isHeadless)
     }
 
+    /// `--mcp` never starts AppKit (no LaunchServices check-in that would swallow a later
+    /// launch of the real app); everything else, other debug flags included, is the app.
+    @Test func launchModeServesMCPOnlyForTheMCPFlag() {
+        #expect(CaptyloMain.mode(for: ["/Applications/Captylo.app/Contents/MacOS/Captylo", "--mcp"]) == .mcpServer)
+        #expect(CaptyloMain.mode(for: ["/Applications/Captylo.app/Contents/MacOS/Captylo"]) == .app)
+        #expect(CaptyloMain.mode(for: ["Captylo", "--check"]) == .app)
+        #expect(CaptyloMain.mode(for: ["Captylo", "--rebuild-search-index"]) == .app)
+    }
+
     @Test func compareModelsRejectsMissingValues() {
         #expect(DebugCommand.parse(["Captylo", "--compare-models"]) == nil)
         #expect(DebugCommand.parse(["Captylo", "--compare-models", "--language", "pl"]) == nil)

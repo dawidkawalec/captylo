@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 
 /// The `--mcp` process's own stdin and stdout for `MCPServer`. Claimed once, as early as
-/// possible (`AppDelegate.init`, before anything else is built): the real stdout is kept on a
+/// possible (`CaptyloMain`, before anything else is built): the real stdout is kept on a
 /// private descriptor for the JSON-RPC lines only, and descriptor 1 is pointed at stderr, so a
 /// stray `print` from any library can never corrupt the protocol (MCP clients log stderr).
 struct MCPStandardIO: Sendable {
