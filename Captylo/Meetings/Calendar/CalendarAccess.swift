@@ -1,3 +1,4 @@
+import AppKit
 import EventKit
 import Foundation
 
@@ -30,4 +31,16 @@ enum CalendarAccess: Sendable, Equatable {
     }
 
     var isGranted: Bool { self == .fullAccess }
+
+    /// The Calendars pane of Privacy & Security, where a denied or write-only grant is changed.
+    static let settingsURL = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Calendars")!
+    /// Privacy & Security itself, when the settings app refuses the anchor.
+    static let fallbackURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy")!
+
+    @MainActor
+    static func openSettings() {
+        if !NSWorkspace.shared.open(settingsURL) {
+            NSWorkspace.shared.open(fallbackURL)
+        }
+    }
 }

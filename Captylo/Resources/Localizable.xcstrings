@@ -6352,6 +6352,61 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Keep recording" } }
       }
+    },
+    "Nazywa spotkanie po wydarzeniu, zapisuje uczestników i przypomina o nagraniu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Names the meeting after the event, keeps its participants and reminds you to record." } }
+      }
+    },
+    "Brak dostępu do kalendarza. Zezwól w Ustawieniach systemowych.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No calendar access. Allow it in System Settings." } }
+      }
+    },
+    "Captylo ma tylko dostęp do zapisu. Włącz pełny dostęp.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo can only add events. Turn on full access." } }
+      }
+    },
+    "Przypominaj przed spotkaniem": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remind before a meeting" } }
+      }
+    },
+    "Pokazuje „Nagraj” przed wydarzeniem z linkiem do rozmowy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Shows “Record” before an event with a call link." } }
+      }
+    },
+    "W chwili startu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "At the start" } }
+      }
+    },
+    "%lld min": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld min" } }
+      }
+    },
+    "Nadchodzące": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Upcoming" } }
+      }
+    },
+    "Trwa": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Now" } }
+      }
+    },
+    "Za %lld min: „%@” (%@). Nagrać notatki?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "In %1$lld min: “%2$@” (%3$@). Record notes?" } }
+      }
+    },
+    "Zaczyna się: „%@” (%@). Nagrać notatki?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Starting now: “%1$@” (%2$@). Record notes?" } }
+      }
     }
   },
   "version": "1.0"

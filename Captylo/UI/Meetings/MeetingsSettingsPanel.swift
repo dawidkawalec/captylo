@@ -1,12 +1,30 @@
 import SwiftUI
 
 /// "Spotkania" in Ustawienia, right after "Nagrywanie": meeting detection, the consent reminder,
-/// how long the track files stay ("Zachowuj nagrania spotkań"; transcripts and notes always
-/// stay), the system audio check and, in debug builds only, "Tryb Pro (dev)", which stands in
-/// for a licence until accounts exist.
+/// the calendar ("Kalendarz" and "Przypominaj przed spotkaniem", Free), how long the track files
+/// stay ("Zachowuj nagrania spotkań"; transcripts and notes always stay), the system audio check
+/// and, in debug builds only, "Tryb Pro (dev)", which stands in for a licence until accounts exist.
 @MainActor
 struct MeetingsSettingsPanel: View {
     @Environment(AppState.self) private var appState
+
+    /// Why the calendar cannot be read in this access state, with the way to System Settings
+    /// next to it; nil when it can (or the system prompt is still to come).
+    nonisolated static func calendarStatusText(for access: CalendarAccess) -> String? {
+        switch access {
+        case .fullAccess, .notDetermined:
+            return nil
+        case .denied, .restricted:
+            return String(localized: "Brak dostępu do kalendarza. Zezwól w Ustawieniach systemowych.")
+        case .writeOnly:
+            return String(localized: "Captylo ma tylko dostęp do zapisu. Włącz pełny dostęp.")
+        }
+    }
+
+    /// The "Przypominaj przed spotkaniem" segments: "W chwili startu", "1 min", "2 min", "5 min".
+    nonisolated static func reminderMinutesTitle(_ minutes: Int) -> String {
+        minutes == 0 ? String(localized: "W chwili startu") : String(localized: "\(minutes) min")
+    }
 
     var body: some View {
         @Bindable var settings = appState.settings
@@ -34,6 +52,7 @@ struct MeetingsSettingsPanel: View {
                 systemImage: "command",
                 isOn: $settings.meetingsShortcut
             )
+            CalendarSettings(settings: settings, calendar: appState.meetingCalendar)
             GlassRowSeparator()
                 .padding(.vertical, 6)
             MeetingTranscriptSettings(settings: settings, models: appState.openRouterModels, isPro: appState.proAccess.isPro)
@@ -64,6 +83,82 @@ struct MeetingsSettingsPanel: View {
             )
             #endif
         }
+    }
+}
+
+// MARK: - Calendar
+
+/// "Kalendarz" (names the meeting after the event, keeps the participants, reminds before a
+/// call) and "Przypominaj przed spotkaniem" with the minutes picker. Turning the calendar on
+/// asks for full access when the user has not decided yet; a denied, restricted or write-only
+/// grant is explained under the row with "Otwórz Ustawienia systemowe". The reminder row is off
+/// while the calendar is. Free: it only reads the user's own calendar.
+@MainActor
+private struct CalendarSettings: View {
+    @Bindable var settings: AppSettings
+    let calendar: MeetingCalendar
+
+    var body: some View {
+        GlassToggleRow(
+            "Kalendarz",
+            subtitle: "Nazywa spotkanie po wydarzeniu, zapisuje uczestników i przypomina o nagraniu.",
+            systemImage: "calendar",
+            isOn: calendarSwitch
+        )
+        if settings.meetingsCalendar, let text = MeetingsSettingsPanel.calendarStatusText(for: calendar.access) {
+            HStack(alignment: .center, spacing: 10) {
+                ToolStatusLine(text: text, tone: .error)
+                Button("Otwórz Ustawienia systemowe") {
+                    CalendarAccess.openSettings()
+                }
+                .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+                .fixedSize()
+            }
+            .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+            .padding(.bottom, 4)
+        }
+        GlassRow(
+            "Przypominaj przed spotkaniem",
+            subtitle: "Pokazuje „Nagraj” przed wydarzeniem z linkiem do rozmowy.",
+            systemImage: "bell"
+        ) {
+            HStack(spacing: 12) {
+                GlassSegmentedPicker(
+                    selection: $settings.meetingsCalendarReminderMinutes,
+                    segments: AppSettings.calendarReminderMinuteOptions.map {
+                        GlassSegment($0, title: Text(verbatim: MeetingsSettingsPanel.reminderMinutesTitle($0)))
+                    }
+                )
+                .disabled(!settings.meetingsCalendarReminder)
+                .accessibilityLabel(Text("Przypominaj przed spotkaniem"))
+                Toggle(isOn: $settings.meetingsCalendarReminder) {
+                    Text("Przypominaj przed spotkaniem")
+                }
+                .toggleStyle(.glassSwitch)
+                .labelsHidden()
+            }
+        }
+        .disabled(!settings.meetingsCalendar)
+        .opacity(settings.meetingsCalendar ? 1 : 0.55)
+    }
+
+    /// The switch itself. On: asks for access (the system prompt, the first time) or re-reads
+    /// it, then reads the events. Off: only a refresh, which clears the events; never a prompt.
+    private var calendarSwitch: Binding<Bool> {
+        Binding(
+            get: { settings.meetingsCalendar },
+            set: { isOn in
+                settings.meetingsCalendar = isOn
+                let calendar = self.calendar
+                Task {
+                    if isOn {
+                        await calendar.requestAccess()
+                    } else {
+                        await calendar.refresh()
+                    }
+                }
+            }
+        )
     }
 }
 

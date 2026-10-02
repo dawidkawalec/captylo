@@ -78,6 +78,9 @@ final class AppState {
     /// ones. Itself `@Observable`. Refreshes only after `startServices()`; the design preview
     /// and the test host get a fixed list instead of EventKit (`AppStateOverrides.calendarEvents`).
     @ObservationIgnored let meetingCalendar: MeetingCalendar
+    /// "Przypominaj przed spotkaniem": a toast with "Nagraj" shortly before a calendar event
+    /// with a call link. Checks only after `startServices()`.
+    @ObservationIgnored let calendarReminder: CalendarReminder
 
     // Output and UI
     @ObservationIgnored let textOutput: TextOutput
@@ -345,6 +348,16 @@ final class AppState {
             openMeetings: { presenter.openMain(section: .spotkania) },
             currentEvent: { meetingCalendar.currentEvent() }
         )
+        let detector = meetingDetector
+        calendarReminder = CalendarReminder(
+            recorder: meetingRecorder,
+            toasts: toasts,
+            events: { meetingCalendar.isEnabled ? meetingCalendar.upcoming : [] },
+            isEnabled: { settings.meetingsCalendarReminder },
+            minutesBefore: { settings.meetingsCalendarReminderMinutes },
+            lastDetectorOffer: { detector.lastOfferAt },
+            openMeetings: { presenter.openMain(section: .spotkania) }
+        )
 
         // Hotkeys: the tap comes first, the controller resolves through the relay.
         let relay = HotkeyRelay()
@@ -524,6 +537,8 @@ final class AppState {
         meetingDetector.start()
         // Same for "Kalendarz": every refresh reads the switch and idles (no EventKit read) while off.
         meetingCalendar.start()
+        // And the reminder: it reads both switches on every check.
+        calendarReminder.start()
         observeSettings()
 
         if storeIsFallback {
@@ -539,6 +554,7 @@ final class AppState {
     /// that still records gets its track files finalized; the next launch marks it interrupted.
     func stopServices() {
         meetingDetector.stop()
+        calendarReminder.stop()
         meetingCalendar.stop()
         meetingRecorder.abortForTermination()
         systemMute.restore()

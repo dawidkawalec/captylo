@@ -38,6 +38,9 @@
 #                             `transcript` (default) or `ai` ("Notatki AI")
 #   CAPTYLO_PREVIEW_FREE=1    passed through: the Free plan instead of Pro (the Pro card in
 #                             "Notatki AI")
+#   CAPTYLO_PREVIEW_CALENDAR=1  passed through: "Kalendarz" on with three invented events
+#                             (the "Nadchodzące" strip in main-spotkania, the rows on in
+#                             main-ustawienia); never the real calendar
 #   CAPTYLO_PREVIEW_AUDIO_CHECK=<r>  passed through, main-ustawienia: the "Dostęp do dźwięku
 #                             systemu" row shows a check result: `works`, `noaccess`, `nothing`
 #                             or `failed`

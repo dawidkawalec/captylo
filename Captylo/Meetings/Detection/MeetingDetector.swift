@@ -55,6 +55,9 @@ final class MeetingDetector {
     private let freshTracker: DetectionTracker
 
     private var tracker: DetectionTracker
+    /// When the last "Nagrać notatki?" offer was shown; `CalendarReminder` stays quiet about an
+    /// event right after it, so one call never gets two offers at once.
+    private(set) var lastOfferAt: Date?
     /// Apps whose call started and has not ended.
     private var inCall: Set<String> = []
     private var link: Link?
@@ -164,6 +167,7 @@ final class MeetingDetector {
         } else {
             message = String(localized: "Wygląda na spotkanie w \(app.name). Nagrać notatki?")
         }
+        lastOfferAt = Date()
         toasts.showAction(message: message, buttonTitle: String(localized: "Nagraj")) { [weak self] in
             self?.record(app, event: event)
         }
@@ -239,6 +243,7 @@ final class MeetingDetector {
         link?.apps.formUnion(inCall.intersection(present))
     }
 
+    /// `lastOfferAt` stays: an offer already shown still counts for the calendar reminder.
     private func reset() {
         tracker = freshTracker
         inCall = []

@@ -157,6 +157,24 @@ struct DesignPreviewTests {
         #expect(DesignPreviewData.scrollFraction(environment: [:]) == nil)
     }
 
+    /// `CAPTYLO_PREVIEW_CALENDAR=1`: three invented events in the next hours, soonest first, at
+    /// least one with a call link and one without, so the strip shows both looks.
+    @Test func previewShowsAnInventedCalendar() {
+        #expect(DesignPreviewData.showsCalendar(environment: ["CAPTYLO_PREVIEW_CALENDAR": "1"]))
+        #expect(!DesignPreviewData.showsCalendar(environment: ["CAPTYLO_PREVIEW_CALENDAR": "0"]))
+        #expect(!DesignPreviewData.showsCalendar(environment: [:]))
+
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        let events = DesignPreviewData.sampleCalendarEvents(now: now)
+        #expect(events.count == 3)
+        #expect(events == events.sorted { $0.start < $1.start })
+        #expect(events.allSatisfy { $0.start > now && $0.end > $0.start && !$0.isAllDay && !$0.title.isEmpty })
+        #expect(events.allSatisfy { $0.end.timeIntervalSince(now) < MeetingCalendar.lookAhead })
+        #expect(events.contains { $0.hasCallLink } && events.contains { !$0.hasCallLink })
+        #expect(Set(events.map(\.id)).count == 3)
+        #expect(UpcomingMeetingsStrip.visible(events, now: now).count == 3)
+    }
+
     @Test func sampleCustomModeIsTheUsersOwn() {
         let mode = DesignPreviewData.sampleCustomMode
         #expect(mode.builtInKey == nil)

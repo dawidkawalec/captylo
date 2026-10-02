@@ -43,7 +43,7 @@ enum DesignPreviewData {
             pinnedModelStatus: .ready,
             pinnedAccessibilityTrust: true,
             pinnedPro: !showsFreePlan(),
-            calendarEvents: [],
+            calendarEvents: showsCalendar() ? sampleCalendarEvents(now: Date()) : [],
             isDesignPreview: true
         )
         return AppState(settings: settings, overrides: overrides)
@@ -53,6 +53,13 @@ enum DesignPreviewData {
     /// Pro is pinned on otherwise.
     static func showsFreePlan(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
         environment["CAPTYLO_PREVIEW_FREE"] == "1"
+    }
+
+    /// `CAPTYLO_PREVIEW_CALENDAR=1`: "Kalendarz" on with the three invented events of
+    /// `sampleCalendarEvents` (never the user's calendar), so Spotkania shows the "Nadchodzące"
+    /// strip; off otherwise.
+    static func showsCalendar(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        environment["CAPTYLO_PREVIEW_CALENDAR"] == "1"
     }
 
     /// `CAPTYLO_PREVIEW_TAB=notes|transcript|ai`: the tab the `main-spotkania` details open on
@@ -127,6 +134,7 @@ enum DesignPreviewData {
             settings.windowBackground = style
         }
         settings.onboardingDone = true
+        settings.meetingsCalendar = showsCalendar()
         settings.aiEnabled = true
         settings.aiModel = "openai/gpt-4.1-mini"
         // Built-ins plus one custom mode; "Czyszczenie" stays active.
@@ -416,6 +424,28 @@ enum DesignPreviewData {
             (1851, 1860, .them, nil, "Na dostępach testowych. Prześlę listę osób do piątku."),
         ]
         return (meeting, segments(meeting.id, lines))
+    }
+
+    /// `CAPTYLO_PREVIEW_CALENDAR`: three invented events on five-minute marks, soonest first: a
+    /// sprint review on Meet in about 25 min with four people, a client call on Zoom in about two
+    /// hours, and a planning meeting in about four hours without a link (no "Nagraj" reminder).
+    static func sampleCalendarEvents(now: Date) -> [CalendarEvent] {
+        let mark = Date(timeIntervalSince1970: (now.timeIntervalSince1970 / 300).rounded(.up) * 300)
+        func event(_ id: String, _ title: String, in minutes: Double, lasting length: Double, participants: [String], callApp: String?) -> CalendarEvent {
+            let start = mark.addingTimeInterval(minutes * 60)
+            return CalendarEvent(
+                id: id, title: title, start: start, end: start.addingTimeInterval(length * 60),
+                isAllDay: false, calendarTitle: "Praca", participants: participants, callApp: callApp
+            )
+        }
+        return [
+            event("preview-sprint-review", "Przegląd sprintu", in: 25, lasting: 45,
+                  participants: ["Anna Kowalska", "Piotr Nowak", "Marta Wiśniewska", "Tomasz Zieliński"], callApp: "Meet"),
+            event("preview-client-offer", "Rozmowa z klientem: oferta", in: 120, lasting: 30,
+                  participants: ["Jan Lewandowski"], callApp: "Zoom"),
+            event("preview-q4-planning", "Planowanie Q4", in: 240, lasting: 90,
+                  participants: ["Anna Kowalska", "Piotr Nowak", "Marta Wiśniewska", "Tomasz Zieliński", "Jan Lewandowski", "Ewa Dąbrowska"], callApp: nil),
+        ]
     }
 
     /// `CAPTYLO_PREVIEW_LIVE`: an invented Meet call recording right now, 12:34 in, with a few

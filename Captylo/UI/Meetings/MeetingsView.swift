@@ -8,6 +8,9 @@ import SwiftUI
 /// again arrive; a reload keeps the selection, or selects the newest meeting. A title renamed in
 /// the details updates its row in place.
 ///
+/// With "Kalendarz" on, the "Nadchodzące" strip (`UpcomingMeetingsStrip`) sits under the header
+/// (and above the empty state) with today's next events and "Nagraj" on each.
+///
 /// "Nagraj spotkanie" starts the recorder and the meeting it opens is selected (also when the
 /// menu bar started it), so the live bar is on screen; while it records, the button reads
 /// "Zakończ spotkanie" in Record red. A start that failed leaves its reason under the header,
@@ -117,13 +120,21 @@ struct MeetingsView: View {
             MeetingsEmptyState(
                 onRecord: recordAction(recorder),
                 error: startFailure(recorder),
-                onOpenModels: openModelsAction(recorder)
+                onOpenModels: openModelsAction(recorder),
+                upcoming: upcomingEvents(),
+                onRecordEvent: recordEventAction(recorder)
             )
         } else {
+            let upcoming = upcomingEvents()
             VStack(spacing: 0) {
                 header(recorder)
                     .mainColumnFrame()
                     .padding(.top, 14)
+                if !upcoming.isEmpty {
+                    UpcomingMeetingsStrip(events: upcoming, onRecord: recordEventAction(recorder))
+                        .mainColumnFrame()
+                        .padding(.top, 14)
+                }
                 if let failure = startFailure(recorder) {
                     startFailureLine(failure, openModels: openModelsAction(recorder))
                         .frame(maxWidth: .infinity, alignment: .trailing)
@@ -192,6 +203,21 @@ struct MeetingsView: View {
         case .finishing:
             return nil
         }
+    }
+
+    /// The calendar events for the "Nadchodzące" strip while "Kalendarz" is on with access
+    /// (the strip's own cut: not over, next 12 h, three at most).
+    private func upcomingEvents() -> [CalendarEvent] {
+        let calendar = appState.meetingCalendar
+        guard calendar.isEnabled else { return [] }
+        return UpcomingMeetingsStrip.visible(calendar.upcoming, now: Date())
+    }
+
+    /// "Nagraj" on an upcoming event: starts the recorder on that event while idle; nil
+    /// (disabled) while a meeting records, starts or finishes.
+    private func recordEventAction(_ recorder: MeetingRecorder) -> ((CalendarEvent) -> Void)? {
+        guard recorder.phase == .idle, !recorder.isStarting else { return nil }
+        return { event in Task { await recorder.start(event: event) } }
     }
 
     /// Why the last start failed, while nothing records (`MeetingRecorder.lastError`).

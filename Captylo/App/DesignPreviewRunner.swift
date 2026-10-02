@@ -40,6 +40,10 @@ final class DesignPreviewRunner {
         }
 
         await DesignPreviewData.populate(appState.database)
+        if DesignPreviewData.showsCalendar() {
+            // The fixed events into `upcoming`: the refresh loop never runs in the preview.
+            await appState.meetingCalendar.refresh()
+        }
         #if DEBUG
         await startLiveMeetingIfAsked(target)
         refuseMeetingStartIfAsked(target)

@@ -415,6 +415,9 @@ struct MeetingDetectorFlowTests {
         let prompt = try #require(rig.toasts.shown.last)
         #expect(prompt.message == String(localized: "Wygląda na spotkanie „Budżet Q4” w Zoom. Nagrać notatki?"))
         #expect(prompt.button == String(localized: "Nagraj"))
+        // The calendar reminder reads this to stay quiet about the same call.
+        let offeredAt = try #require(rig.detector.lastOfferAt)
+        #expect(abs(offeredAt.timeIntervalSinceNow) < 5)
         // The event is the one shown, even when the calendar matches another by the click.
         rig.world.event = nil
         prompt.action?()

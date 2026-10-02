@@ -2,16 +2,23 @@ import SwiftUI
 
 /// Spotkania before the first meeting: one centered panel with what the section is for and
 /// "Nagraj spotkanie". A nil `onRecord` shows the button disabled; `error` is why the last start
-/// failed, with "Otwórz Modele" under it when `onOpenModels` is set (no speech model).
+/// failed, with "Otwórz Modele" under it when `onOpenModels` is set (no speech model). With
+/// calendar events coming up (`upcoming`), the "Nadchodzące" strip sits above the panel.
 @MainActor
 struct MeetingsEmptyState: View {
     var onRecord: (() -> Void)?
     var error: String?
     var onOpenModels: (() -> Void)?
+    var upcoming: [CalendarEvent] = []
+    var onRecordEvent: ((CalendarEvent) -> Void)?
 
     var body: some View {
-        VStack {
+        VStack(spacing: 24) {
             Spacer(minLength: 0)
+            if !upcoming.isEmpty {
+                UpcomingMeetingsStrip(events: upcoming, onRecord: onRecordEvent)
+                    .frame(maxWidth: 760)
+            }
             GlassPanel(padding: 32, alignment: .center, spacing: 12) {
                 GlassIconBadge(systemImage: MainSection.spotkania.symbol, size: 52, tint: GlassColor.accent)
                     .padding(.bottom, 4)
