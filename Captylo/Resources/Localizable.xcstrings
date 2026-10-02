@@ -5943,6 +5943,21 @@
         "en": { "stringUnit": { "state": "translated", "value": "Open System Settings" } }
       }
     },
+    "Połącz kalendarz: spotkania dostaną tytuły i uczestników z wydarzeń, a przed rozmową przypomnę o nagraniu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect your calendar: meetings get titles and participants from events, and I remind you to record before a call." } }
+      }
+    },
+    "Połącz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect" } }
+      }
+    },
+    "Nie teraz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Not now" } }
+      }
+    },
     "Nagrywam tylko Twój mikrofon: %@": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Recording only your mic: %@" } }

@@ -118,7 +118,8 @@ struct AppSettingsTests {
         #expect(raw.contains("meetings.calendarReminderMinutes"))
         #expect(raw.contains("meetings.voiceProcessing"))
         #expect(raw.contains("meetings.mcp"))
-        #expect(AppSettings.keys.count == 45)
+        #expect(raw.contains("meetings.calendarPromptDismissed"))
+        #expect(AppSettings.keys.count == 46)
     }
 
     @Test func meetingMCPDefaultsOff() throws {

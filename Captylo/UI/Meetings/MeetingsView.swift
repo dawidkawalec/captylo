@@ -10,7 +10,9 @@ import SwiftUI
 /// the details updates its row in place.
 ///
 /// With "Kalendarz" on, the "Nadchodzące" strip (`UpcomingMeetingsStrip`) sits under the header
-/// (and above the empty state) with today's next events and "Nagraj" on each.
+/// (and above the empty state) with today's next events and "Nagraj" on each. With it off (and
+/// no "Nie teraz"), `CalendarConnectRow` offers "Połącz" there; with it on but no full access, it
+/// says so and opens System Settings.
 ///
 /// "Nagraj spotkanie" starts the recorder and the meeting it opens is selected (also when the
 /// menu bar started it), so the live bar is on screen; while it records, the button reads
@@ -164,7 +166,8 @@ struct MeetingsView: View {
                 error: startFailure(recorder),
                 onOpenModels: openModelsAction(recorder),
                 upcoming: upcomingEvents(),
-                onRecordEvent: recordEventAction(recorder)
+                onRecordEvent: recordEventAction(recorder),
+                calendarRow: calendarRow()
             )
         } else {
             let upcoming = upcomingEvents()
@@ -172,6 +175,11 @@ struct MeetingsView: View {
                 header(recorder)
                     .mainColumnFrame()
                     .padding(.top, 14)
+                if let calendarRow = calendarRow() {
+                    calendarRow
+                        .mainColumnFrame()
+                        .padding(.top, 14)
+                }
                 if !upcoming.isEmpty {
                     UpcomingMeetingsStrip(events: upcoming, onRecord: recordEventAction(recorder))
                         .mainColumnFrame()
@@ -316,6 +324,26 @@ struct MeetingsView: View {
         let calendar = appState.meetingCalendar
         guard calendar.isEnabled else { return [] }
         return UpcomingMeetingsStrip.visible(calendar.upcoming, now: Date())
+    }
+
+    /// "Połącz kalendarz" (or why the calendar cannot be read) under the header, nil when the
+    /// calendar works or the user said "Nie teraz".
+    private func calendarRow() -> CalendarConnectRow? {
+        let settings = appState.settings
+        let calendar = appState.meetingCalendar
+        guard let kind = CalendarConnectRow.kind(
+            isOn: settings.meetingsCalendar,
+            dismissed: settings.meetingsCalendarPromptDismissed,
+            access: calendar.access
+        ) else { return nil }
+        return CalendarConnectRow(
+            kind: kind,
+            onConnect: {
+                settings.meetingsCalendar = true
+                Task { await calendar.requestAccess() }
+            },
+            onDismiss: { settings.meetingsCalendarPromptDismissed = true }
+        )
     }
 
     /// "Nagraj" on an upcoming event: starts the recorder on that event while idle; nil

@@ -50,6 +50,7 @@ final class AppSettings {
         case meetingsCalendar = "meetings.calendar"
         case meetingsCalendarReminder = "meetings.calendarReminder"
         case meetingsCalendarReminderMinutes = "meetings.calendarReminderMinutes"
+        case meetingsCalendarPromptDismissed = "meetings.calendarPromptDismissed"
         case meetingsVoiceProcessing = "meetings.voiceProcessing"
         case meetingsMCP = "meetings.mcp"
     }
@@ -408,6 +409,13 @@ final class AppSettings {
     var meetingsCalendar: Bool {
         get { track(\.meetingsCalendar); return bool(.meetingsCalendar, default: false) }
         set { withMutation(keyPath: \.meetingsCalendar) { defaults.set(newValue, forKey: Key.meetingsCalendar.rawValue) } }
+    }
+
+    /// "Nie teraz" on the "Połącz kalendarz" row in Spotkania: the row stays hidden (the switch
+    /// in Ustawienia still works).
+    var meetingsCalendarPromptDismissed: Bool {
+        get { track(\.meetingsCalendarPromptDismissed); return bool(.meetingsCalendarPromptDismissed, default: false) }
+        set { withMutation(keyPath: \.meetingsCalendarPromptDismissed) { defaults.set(newValue, forKey: Key.meetingsCalendarPromptDismissed.rawValue) } }
     }
 
     /// "Przypominaj przed spotkaniem": a toast shortly before an event with a call link.

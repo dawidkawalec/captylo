@@ -3,7 +3,8 @@ import SwiftUI
 /// Spotkania before the first meeting: one centered panel with what the section is for and
 /// "Nagraj spotkanie". A nil `onRecord` shows the button disabled; `error` is why the last start
 /// failed, with "Otwórz Modele" under it when `onOpenModels` is set (no speech model). With
-/// calendar events coming up (`upcoming`), the "Nadchodzące" strip sits above the panel.
+/// calendar events coming up (`upcoming`), the "Nadchodzące" strip sits above the panel, and
+/// "Połącz kalendarz" above that while the calendar is off.
 @MainActor
 struct MeetingsEmptyState: View {
     var onRecord: (() -> Void)?
@@ -11,10 +12,16 @@ struct MeetingsEmptyState: View {
     var onOpenModels: (() -> Void)?
     var upcoming: [CalendarEvent] = []
     var onRecordEvent: ((CalendarEvent) -> Void)?
+    /// "Połącz kalendarz" (`CalendarConnectRow`), above everything else.
+    var calendarRow: CalendarConnectRow?
 
     var body: some View {
         VStack(spacing: 24) {
             Spacer(minLength: 0)
+            if let calendarRow {
+                calendarRow
+                    .frame(maxWidth: 760)
+            }
             if !upcoming.isEmpty {
                 UpcomingMeetingsStrip(events: upcoming, onRecord: onRecordEvent)
                     .frame(maxWidth: 760)
