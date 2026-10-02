@@ -122,23 +122,25 @@ extension Database {
     ///   the stop never made (without headphones the other side would show twice), and a length:
     ///   the longer of `recordedLength` (the track files) and the end of the last segment.
     /// - "processing": the stop had saved the transcript, echo marks and length, only the
-    ///   post-processors (speaker labels, AI notes) were cut short, so it becomes "completed".
-    /// Returns the ids of the interrupted meetings.
-    func markInterruptedMeetings(recordedLength: @Sendable (UUID) -> Double = { _ in 0 }) throws -> [UUID] {
+    ///   post-processors (speaker labels, AI notes) were cut short, so it becomes "completed"
+    ///   and is returned as "resumed" (in stop order) for the recorder to finish the AI steps.
+    func markInterruptedMeetings(recordedLength: @Sendable (UUID) -> Double = { _ in 0 }) throws -> MeetingRecovery {
         let recording = MeetingStatus.recording.rawValue
         let processing = MeetingStatus.processing.rawValue
         let rows = try modelContext.fetch(FetchDescriptor<Meeting>(
-            predicate: #Predicate { $0.status == recording || $0.status == processing }
+            predicate: #Predicate { $0.status == recording || $0.status == processing },
+            sortBy: [SortDescriptor(\.createdAt)]
         ))
-        guard !rows.isEmpty else { return [] }
-        var interrupted: [UUID] = []
+        guard !rows.isEmpty else { return MeetingRecovery() }
+        var recovery = MeetingRecovery()
         for row in rows {
             guard row.status == recording else {
                 row.status = MeetingStatus.completed.rawValue
+                recovery.resumed.append(row.id)
                 continue
             }
             row.status = MeetingStatus.interrupted.rawValue
-            interrupted.append(row.id)
+            recovery.interrupted.append(row.id)
             let segments = try fetchSegments(meetingID: row.id)
             let records = segments.map(\.record)
             let lastEnd = records.map(\.end).max() ?? 0
@@ -153,7 +155,7 @@ extension Database {
             try rebuildSearchText(meetingID: row.id)
         }
         try modelContext.save()
-        return interrupted
+        return recovery
     }
 
     /// Audio retention: the rows no longer have track files on disk.

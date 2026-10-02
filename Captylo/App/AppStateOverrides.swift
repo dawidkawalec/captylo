@@ -16,6 +16,8 @@ struct AppStateOverrides {
     var systemMuteDefaults: UserDefaults?
     /// Parakeet status shown regardless of the files on disk.
     var pinnedModelStatus: ParakeetModelStore.Status?
+    /// Meeting voice detector status shown without loading it (the design preview never downloads).
+    var pinnedSpeechDetectorStatus: SpeechDetectorStatus.State?
     /// Accessibility grant reported regardless of `AXIsProcessTrusted()`.
     var pinnedAccessibilityTrust: Bool?
     /// Pro status shown regardless of the dev switch (design preview, tests).

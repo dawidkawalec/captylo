@@ -12,6 +12,12 @@ actor SpeechDetectorCache {
         self.load = load
     }
 
+    /// Loads the detector ahead of the first meeting (with the speech model and at launch),
+    /// which downloads it once; the meetings then find it ready.
+    func prewarm() async throws {
+        _ = try await detector()
+    }
+
     func detector() async throws -> any SpeechDetecting {
         if let loaded { return loaded }
         if let loading { return try await loading.value }

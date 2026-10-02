@@ -6412,6 +6412,21 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Starting now: “%1$@” (%2$@). Record notes?" } }
       }
+    },
+    "Wykrywanie mowy do spotkań: gotowe": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting speech detection: ready" } }
+      }
+    },
+    "Wykrywanie mowy do spotkań: pobieram...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting speech detection: downloading..." } }
+      }
+    },
+    "Wykrywanie mowy do spotkań: nie pobrano (%@)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting speech detection: not downloaded (%@)" } }
+      }
     }
   },
   "version": "1.0"

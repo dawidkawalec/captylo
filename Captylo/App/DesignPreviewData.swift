@@ -41,6 +41,7 @@ enum DesignPreviewData {
             keyStore: keyStore,
             systemMuteDefaults: defaults,
             pinnedModelStatus: .ready,
+            pinnedSpeechDetectorStatus: .ready,
             pinnedAccessibilityTrust: true,
             pinnedPro: !showsFreePlan(),
             calendarEvents: showsCalendar() ? sampleCalendarEvents(now: Date()) : [],

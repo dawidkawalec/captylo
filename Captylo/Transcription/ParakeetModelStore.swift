@@ -31,6 +31,9 @@ final class ParakeetModelStore {
     static let downloadVariant = "int8"
 
     private(set) var status: Status = .missing
+    /// Runs once a `download()` ends with the model loaded: the meeting voice detector is
+    /// fetched right after it (`AppState`), so a first meeting never waits for a download.
+    @ObservationIgnored var onDownloaded: (@MainActor () -> Void)?
     @ObservationIgnored private let engine: ParakeetEngine
     /// Fixed status for the design preview; `refresh()` keeps it instead of reading the disk.
     @ObservationIgnored private let pinnedStatus: Status?
@@ -93,6 +96,7 @@ final class ParakeetModelStore {
             try await engine.load()
             status = .ready
             Log.transcription.info("Parakeet download finished")
+            onDownloaded?()
         } catch {
             Log.transcription.error("Parakeet download failed: \(error.localizedDescription, privacy: .public)")
             status = .failed(error.localizedDescription)

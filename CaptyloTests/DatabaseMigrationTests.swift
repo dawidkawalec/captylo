@@ -221,7 +221,7 @@ struct DatabaseMigrationTests {
         let database = Database(modelContainer: try Store.openContainer(at: url))
         #expect(await database.count() == 1)
         #expect(try await database.meetings(query: "", limit: 1).isEmpty)
-        #expect(try await database.markInterruptedMeetings().isEmpty)
+        #expect(try await database.markInterruptedMeetings() == MeetingRecovery())
 
         let meeting = MeetingRecord(title: "Pierwsze spotkanie")
         try await database.createMeeting(meeting)

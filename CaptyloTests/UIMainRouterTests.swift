@@ -68,5 +68,7 @@ struct UIMainRouterTests {
         #expect(DashboardView.recordedTime(2 * 3600) == "2 godz.")
         #expect(AudioPlayerView.clock(65) == "1:05")
         #expect(AudioPlayerView.clock(-3) == "0:00")
+        // A long meeting's player shows hours, like the list and the details.
+        #expect(AudioPlayerView.clock(3723) == "1:02:03")
     }
 }

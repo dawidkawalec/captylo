@@ -86,9 +86,9 @@ struct AudioPlayerView: View {
         }
     }
 
+    /// "12:34", and "1:02:03" from an hour: the same clock as the meetings list and details.
     static func clock(_ seconds: TimeInterval) -> String {
-        let total = max(0, Int(seconds.rounded()))
-        return String(format: "%d:%02d", total / 60, total % 60)
+        MeetingTime.clock(seconds)
     }
 }
 

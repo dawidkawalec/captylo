@@ -24,13 +24,13 @@ struct ModelsView: View {
                 .accessibilityLabel(Text("Silnik"))
 
                 if settings.sttEngine == .parakeet {
-                    ParakeetSection(store: appState.modelStore, showsCloudNote: false)
+                    ParakeetSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: false)
                 } else {
                     ElevenLabsSection(keyStore: appState.keyStore, client: appState.elevenLabs)
                     // The cloud path still uses Parakeet for the fallback and the live preview,
                     // so the local model stays manageable without switching engines.
                     GlassRowSeparator()
-                    ParakeetSection(store: appState.modelStore, showsCloudNote: true)
+                    ParakeetSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: true)
                 }
 
                 GlassRowSeparator()
@@ -60,6 +60,8 @@ struct ModelsView: View {
 @MainActor
 private struct ParakeetSection: View {
     let store: ParakeetModelStore
+    /// The meeting voice detector that downloads with the model ("Wykrywanie mowy do spotkań").
+    let detector: SpeechDetectorStatus
     /// On the cloud engine: explain why the local model still matters.
     let showsCloudNote: Bool
 
@@ -85,6 +87,8 @@ private struct ParakeetSection: View {
                 ToolStatusLine(text: deleteError, tone: .error)
                     .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             }
+            SpeechDetectorStatusLine(status: detector)
+                .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
         }
         .alert("Usunąć model Parakeet?", isPresented: $confirmDelete) {
             Button("Usuń", role: .destructive) {

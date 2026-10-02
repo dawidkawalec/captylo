@@ -372,7 +372,10 @@ struct ModelStep: View {
             }
         case .ready:
             // Green text on warm glass washes out: the state is a success badge, like elsewhere.
-            GlassBadge("Model gotowy do pracy", systemImage: "checkmark", tone: .success)
+            VStack(alignment: .leading, spacing: 6) {
+                GlassBadge("Model gotowy do pracy", systemImage: "checkmark", tone: .success)
+                SpeechDetectorStatusLine(status: model.appState.speechDetectorStatus)
+            }
         case .failed(let message):
             Label {
                 Text(verbatim: message)

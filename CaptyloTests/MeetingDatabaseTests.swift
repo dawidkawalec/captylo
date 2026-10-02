@@ -186,13 +186,31 @@ struct MeetingDatabaseTests {
         try await db.createMeeting(live)
         try await db.createMeeting(processing)
         try await db.appendSegment(MeetingSegmentRecord(meetingID: live.id, track: .me, start: 0, end: 2, text: "zdążyłem"))
-        #expect(try await db.markInterruptedMeetings() == [live.id])
+        let recovery = try await db.markInterruptedMeetings()
+        #expect(recovery.interrupted == [live.id])
+        #expect(recovery.resumed == [processing.id])
         #expect(try await db.meeting(id: live.id)?.status == .interrupted)
-        // Its transcript, echo marks and length were saved by the stop: only the extras were cut.
+        // Its transcript, echo marks and length were saved by the stop: only the extras were cut,
+        // and the recorder gets them back as "resumed" to finish the AI steps.
         #expect(try await db.meeting(id: processing.id)?.status == .completed)
         #expect(try await db.meeting(id: done.id)?.status == .completed)
         #expect(try await db.segments(meetingID: live.id).count == 1)
-        #expect(try await db.markInterruptedMeetings().isEmpty)
+        #expect(try await db.markInterruptedMeetings() == MeetingRecovery())
+    }
+
+    /// Two meetings cut short while processing come back in stop order (the older first), so
+    /// the resumed AI steps run the way the stops would have.
+    @Test func resumedMeetingsComeBackInStopOrder() async throws {
+        let db = try Self.db()
+        var later = Self.meeting(title: "później", createdAt: Date(timeIntervalSince1970: 2_000))
+        later.status = .processing
+        var earlier = Self.meeting(title: "wcześniej", createdAt: Date(timeIntervalSince1970: 1_000))
+        earlier.status = .processing
+        try await db.createMeeting(later)
+        try await db.createMeeting(earlier)
+        let recovery = try await db.markInterruptedMeetings()
+        #expect(recovery.interrupted.isEmpty)
+        #expect(recovery.resumed == [earlier.id, later.id])
     }
 
     /// The stop never ran: the echo the live view hid gets its mark (and leaves the search
@@ -207,7 +225,7 @@ struct MeetingDatabaseTests {
         for segment in [them, echo, mine] {
             try await db.appendSegment(segment)
         }
-        #expect(try await db.markInterruptedMeetings { _ in 21.5 } == [live.id])
+        #expect(try await db.markInterruptedMeetings { _ in 21.5 }.interrupted == [live.id])
         let saved = try await db.segments(meetingID: live.id)
         #expect(saved.first { $0.id == echo.id }?.isEcho == true)
         #expect(saved.first { $0.id == mine.id }?.isEcho == false)

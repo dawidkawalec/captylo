@@ -14,6 +14,10 @@ struct MeetingEnvironment: Sendable {
     /// On while a meeting records: a dictation take must not mute the call.
     var setMuteSuppressed: @MainActor @Sendable (Bool) -> Void
     var postProcessors: [any MeetingPostProcessing]
+    /// The steps a meeting left "processing" by a quit gets at the next launch, in order: only
+    /// the AI ones still missing on the row (`MeetingResumeStep`) and retention, never the
+    /// diarizer or the cloud pass, so a crash in those never repeats at every launch.
+    var resumeProcessors: [any MeetingPostProcessing] = []
     /// True when the default output is the Mac's own speakers (the headphones hint). Polled off
     /// the main actor while a meeting records.
     var outputUsesBuiltInSpeakers: @Sendable () -> Bool = { false }

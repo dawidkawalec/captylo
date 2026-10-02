@@ -71,6 +71,9 @@ final class AppState {
     @ObservationIgnored let meetingTranscriptRuns: MeetingTranscriptRuns
     /// "Zachowuj nagrania spotkań": the last post-processor, and a sweep at launch.
     @ObservationIgnored let meetingRetention: MeetingRetention
+    /// The meeting voice detector: fetched with the speech model and at launch, shown under the
+    /// model status in Modele and onboarding. Itself `@Observable`.
+    @ObservationIgnored let speechDetectorStatus: SpeechDetectorStatus
     /// "Wykrywaj spotkania": asks to record when a call starts and to stop when it ends.
     /// Polls only after `startServices()` (never in the design preview or the test host).
     @ObservationIgnored let meetingDetector: MeetingDetector
@@ -200,6 +203,12 @@ final class AppState {
         let access = ProAccess(settings: settings, pinned: overrides.pinnedPro)
         proAccess = access
         let meetingVAD = SpeechDetectorCache { try await FluidSpeechDetector.load() }
+        let detectorStatus = SpeechDetectorStatus(load: { try await meetingVAD.prewarm() }, pinned: overrides.pinnedSpeechDetectorStatus)
+        speechDetectorStatus = detectorStatus
+        // The voice detector comes with the speech model: fetched right after its download.
+        modelStore.onDownloaded = {
+            Task { await detectorStatus.prewarm() }
+        }
         let dictionaryStore = dictionary
         let meetingVocabulary: @Sendable () async -> [String] = { @MainActor in dictionaryStore.data.vocabulary }
         let meetingModel: @Sendable () async -> String = { @MainActor in settings.meetingAIModelID }
@@ -298,6 +307,14 @@ final class AppState {
             language: { settings.transcriptionLanguage },
             setMuteSuppressed: { mute.isSuppressed = $0 },
             postProcessors: [meetingCloud, speakerLabels, meetingCorrection, meetingNotes, meetingRetention],
+            // After a quit mid-processing: only the AI steps still missing on the row, then
+            // retention. Never the diarizer (a crash there would repeat at every launch) or the
+            // cloud pass (paid; the live transcript is already there).
+            resumeProcessors: [
+                MeetingResumeStep(database: database, isDone: { $0.transcriptAIModel != nil }, processor: meetingCorrection),
+                MeetingResumeStep(database: database, isDone: { $0.summary != nil }, processor: meetingNotes),
+                meetingRetention,
+            ],
             outputUsesBuiltInSpeakers: { CoreAudioProcesses.defaultOutputIsBuiltInSpeakers() },
             speechModelReady: { ParakeetEngine.isDownloaded },
             currentEvent: { meetingCalendar.currentEvent() }
@@ -498,9 +515,16 @@ final class AppState {
         }
         prewarmCapture()
 
-        // Parakeet: background load at launch and after sleep (gotcha 16).
+        // Parakeet: background load at launch and after sleep (gotcha 16). The meeting voice
+        // detector follows it once the model is installed (its first load downloads it).
         let store = modelStore
-        Task { await store.prewarm() }
+        let detectorStatus = speechDetectorStatus
+        Task {
+            await store.prewarm()
+            if store.isInstalled {
+                await detectorStatus.prewarm()
+            }
+        }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,

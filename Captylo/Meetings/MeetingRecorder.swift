@@ -160,24 +160,37 @@ final class MeetingRecorder {
     // MARK: Launch recovery
 
     /// Launch step: a meeting left "recording" by a crash or quit becomes "interrupted" with the
-    /// segments it saved (echo marked, length from its track files), one left "processing" becomes
-    /// "completed" (`Database.markInterruptedMeetings`). `start` waits for it, so a meeting started
-    /// right after launch is never swept up with them. Runs once.
+    /// segments it saved (echo marked, length from its track files); one left "processing" gets
+    /// the AI steps it is missing (`resumeProcessing`). `start` waits for the marking, so a
+    /// meeting started right after launch is never swept up with them. Runs once.
     func recoverInterruptedMeetings() {
         guard recovery == nil else { return }
         let database = env.database
         let trackURL = env.trackURL
-        recovery = Task {
+        recovery = Task { [weak self] in
             do {
-                let ids = try await database.markInterruptedMeetings { id in
+                let recovery = try await database.markInterruptedMeetings { id in
                     MeetingTrack.allCases.map { TrackFileWriter.recordedSeconds(at: trackURL(id, $0)) }.max() ?? 0
                 }
-                if !ids.isEmpty {
-                    Log.data.notice("Marked \(ids.count) interrupted meeting(s)")
+                if !recovery.interrupted.isEmpty {
+                    Log.data.notice("Marked \(recovery.interrupted.count) interrupted meeting(s)")
                 }
+                self?.resumeProcessing(ids: recovery.resumed)
             } catch {
                 Log.data.error("Interrupted meetings could not be marked: \(error.localizedDescription, privacy: .public)")
             }
+        }
+    }
+
+    /// Meetings a quit left "processing": each gets `env.resumeProcessors` (the AI steps still
+    /// missing on its row, then retention; never the diarizer or the cloud pass), in stop order,
+    /// through the same serial chain as a stopped meeting. The row reads "processing" again
+    /// while it runs and "completed" after, with `processedCount` bumped.
+    func resumeProcessing(ids: [UUID]) {
+        guard !ids.isEmpty else { return }
+        Log.data.notice("Resuming the post-processing of \(ids.count) meeting(s)")
+        for id in ids {
+            enqueuePostProcessing(id, processors: env.resumeProcessors, reopen: true)
         }
     }
 
@@ -491,11 +504,24 @@ final class MeetingRecorder {
     /// stopped before it is done, so they never run for two meetings at once (the diarizer and
     /// the AI call are heavy, and retention must follow the speaker labels of the same meeting).
     private func postProcess(_ id: UUID) {
+        enqueuePostProcessing(id, processors: env.postProcessors, reopen: false)
+    }
+
+    /// Appends `id` to the serial chain: after the meeting before it is done, `processors` in
+    /// order, then "completed". With `reopen` (a resumed meeting, already marked "completed" by
+    /// the launch recovery) the row reads "processing" again first.
+    private func enqueuePostProcessing(_ id: UUID, processors: [any MeetingPostProcessing], reopen: Bool) {
         let previous = postProcessing
-        let processors = env.postProcessors
         let database = env.database
         postProcessing = Task { [weak self] in
             await previous?.value
+            if reopen {
+                do {
+                    try await database.modifyMeeting(id: id) { $0.status = .processing }
+                } catch {
+                    Log.data.error("Resumed meeting could not be marked processing: \(error.localizedDescription, privacy: .public)")
+                }
+            }
             for processor in processors {
                 await processor.process(meetingID: id)
             }

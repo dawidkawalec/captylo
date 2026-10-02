@@ -267,6 +267,27 @@ final class FakeCalendarSource: CalendarEventSource, @unchecked Sendable {
     }
 }
 
+/// The order in which named post-processors ran, shared by several of them.
+actor ProcessingLog {
+    private(set) var entries: [String] = []
+
+    func append(_ entry: String) {
+        entries.append(entry)
+    }
+}
+
+/// A post-processor that only writes "<name> <meeting title>" to a shared `ProcessingLog`.
+struct NamedPostProcessor: MeetingPostProcessing {
+    let name: String
+    let database: Database
+    let log: ProcessingLog
+
+    func process(meetingID: UUID) async {
+        let title = (try? await database.meeting(id: meetingID)?.title) ?? "?"
+        await log.append("\(name) \(title)")
+    }
+}
+
 /// Counts VAD loads; fails the first `failures` of them.
 actor CountingDetectorLoader {
     private(set) var loads = 0
