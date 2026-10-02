@@ -16,7 +16,8 @@ Captylo is a minimalist, open source dictation app for macOS. Hold a hotkey, spe
 - Dictionary: vocabulary hints and replacement rules for names and terms.
 - History with audio playback, search and CSV export; dashboard with words, sessions and time saved.
 - File transcription: drop an audio or video file or use "Otwórz za pomocą" in Finder.
-- Meeting notes: records the call (mic + system audio, no bot) and transcribes it live on your Mac (⌃⌥⌘M starts and ends it); in Pro: a more accurate cloud transcript, AI fixes of misheard words (the original can be restored), speaker labels and AI notes.
+- Meeting notes: records the call (mic + system audio, no bot) and transcribes it live on your Mac (⌃⌥⌘M starts and ends it); it notices when a call app starts or ends and asks whether to record; in Pro: a more accurate cloud transcript, AI fixes of misheard words (the original can be restored), speaker labels and AI notes.
+- Calendar (optional): names the meeting after the event, keeps the participants, shows today's upcoming meetings in Spotkania and reminds you shortly before a call with a link. It only asks; it never starts recording by itself.
 - Menu bar menu, Polish UI with English translations.
 
 ## Requirements
@@ -25,6 +26,7 @@ Captylo is a minimalist, open source dictation app for macOS. Hold a hotkey, spe
 - Apple Silicon (M1 or newer)
 - Microphone and Accessibility permissions (for the global hotkey and pasting)
 - For meeting notes: the "System Audio Recording Only" permission (asked the first time a meeting records)
+- Optional: full access to Calendars (asked only when you turn "Kalendarz" on in Settings > Spotkania)
 
 ## Build it yourself
 
@@ -73,7 +75,9 @@ Transcription runs locally on your Mac by default: recordings and text never lea
 
 Learning from your corrections ("Ucz się z moich poprawek", Settings) stays on your Mac too: after a paste Captylo reads back only that text field for a short while, never password fields, password managers or terminals, and keeps what it learned in `learning.json` next to the dictionary. With an AI mode on, a few before/after pairs go to the same AI to update your style description. Every lesson can be undone in Słownik, and the switch turns it all off.
 
-Meetings are recorded and transcribed on your Mac as well; the audio files can be deleted automatically (Settings > Spotkania) while transcripts and notes stay. Three optional Pro features send meeting data: the cloud transcript sends the meeting audio to the same cloud as cloud transcription, and the AI fixes and AI notes send the transcript to the AI you picked for meetings. The cloud transcript and the AI fixes are off until you turn them on in Settings. Meeting detection only checks which apps use the microphone and, for browsers, whether a window title names a call service; it stores nothing and never records without asking.
+Meetings are recorded and transcribed on your Mac as well; the audio files can be deleted automatically (Settings > Spotkania) while transcripts and notes stay. Three optional Pro features send meeting data: the cloud transcript sends the meeting audio to the same cloud as cloud transcription, and the AI fixes and AI notes send the transcript to the AI you picked for meetings. The cloud transcript and the AI fixes are off until you turn them on in Settings. Meeting detection only checks which apps use the microphone and, for browsers, whether a window or tab title names a call service; it stores nothing and never records without asking.
+
+The calendar is read only on this Mac, and only while "Kalendarz" is on: Captylo keeps the event's title, id and the participants' names with the meeting and never logs them. The participants' names leave your Mac only when the AI notes or the AI fixes run (both Pro, the AI you picked for meetings), as part of the same transcript those features already send. A reminder before a call is a question, never an automatic recording.
 
 ## Pricing
 

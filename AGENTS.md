@@ -14,7 +14,7 @@ Minimalist macOS dictation app: hold a hotkey, speak, the text lands at the curs
 - **Project**: XcodeGen `project.yml` → generated `Captylo.xcodeproj` (git-ignored, never hand-edit)
 - **Speech**: FluidAudio 0.17.4 (Parakeet TDT 0.6b v3), ElevenLabs `scribe_v2` → `Captylo/Transcription/`
 - **AI cleanup**: OpenRouter chat completions, model picked by the user → `Captylo/Enhancement/`
-- **Meetings (notetaker)**: mic + Core Audio system tap as two tracks, live Parakeet per track, call detection, ⌃⌥⌘M; in Pro after the meeting: cloud transcript (Scribe), AI fixes of the transcript, speaker labels, AI notes → `Captylo/Meetings/`, views in `Captylo/UI/Meetings/` (section "Spotkania (notetaker)" in [docs/architecture.md](docs/architecture.md))
+- **Meetings (notetaker)**: mic + Core Audio system tap as two tracks, live Parakeet per track, call detection (mic use, app quit, browser tabs), optional calendar through EventKit (Free: event title, participants, "Nadchodzące", reminders before a call; never auto-starts), launch resume of the AI steps, experimental echo reduction, ⌃⌥⌘M; in Pro after the meeting: cloud transcript (Scribe), AI fixes of the transcript, speaker labels, AI notes → `Captylo/Meetings/`, views in `Captylo/UI/Meetings/` (section "Spotkania (notetaker)" in [docs/architecture.md](docs/architecture.md))
 - **Data**: SwiftData store (dictations, meetings, meeting segments) + `dictionary.json` + WAV recordings + meeting CAF tracks → `Captylo/Data/`, `Captylo/Text/`
 - **Tests**: Swift Testing → `CaptyloTests/`
 - **Website**: static landing page → `site/` (captylo.com)
@@ -55,5 +55,5 @@ scripts/make-dusk-video.sh           # re-render Resources/Video/dusk-loop.mp4 (
 - No new dependencies without a note in `docs/architecture.md` and an entry in `NOTICE.md` (GPLv3-compatible licences only). No secrets in the repo; API keys live in the login Keychain.
 - Meeting audio never goes under `Recordings/` (the dictation orphan sweep would delete it): it lives in `AppPaths.meetings/<meetingID>/` (`me.caf`, `them.caf`).
 - Diarization (speaker labels) only on macOS 15+: FluidAudio's offline diarizer crashes on macOS 14 (FluidAudio #878). Pro features go through `ProAccess` only.
-- Meetings never record or stop without a visible prompt or click; a recording always shows the live bar and the menu bar state.
+- Meetings never record or stop without a visible prompt or click; a recording always shows the live bar and the menu bar state. The calendar never starts a recording on its own (a reminder always asks), calendar features stay Free, and event titles or attendee names are never logged (`Log.calendar` logs states and counts only). The design preview and the test host never create an `EKEventStore`.
 - After adding files run `make gen`; a change is done only when `make build` and `make test` pass.
