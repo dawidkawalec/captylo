@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>Captylo</title>
+    <link>https://captylo.com/</link>
+    <description>Aktualizacje Captylo</description>
+    <language>pl</language>
+    <item>
+      <title>Captylo 1.0.0</title>
+      <pubDate>Sat, 03 Oct 2026 12:41:27 +0200</pubDate>
+      <sparkle:version>60</sparkle:version>
+      <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://captylo.com/updates/notes/1.0.0.html</sparkle:releaseNotesLink>
+      <enclosure url="https://captylo.com/download/Captylo-1.0.0.dmg" length="21025104" type="application/octet-stream" sparkle:edSignature="MQJrju7CBKdUvytfjLmP9CSpXqU7vgrZycs2UEA0oWzGYj1D4XJ38nBogkRda22/5O1hwK7crnG1egHBqiRaDw==" />
+    </item>
+  </channel>
+</rss>
