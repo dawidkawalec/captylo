@@ -56,5 +56,12 @@ volumes:
   captylo-api-pgdata:
 
 networks:
+  # The stack's own network gets a fixed subnet: on a host with many stacks Docker's default
+  # address pools run out ("all predefined address pools have been fully subnetted").
+  # Pick a free one with CAPTYLO_API_SUBNET in .env if this one is taken.
+  default:
+    ipam:
+      config:
+        - subnet: ${CAPTYLO_API_SUBNET:-10.250.46.0/24}
   proxy:
     external: true
