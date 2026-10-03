@@ -37,10 +37,23 @@ enum CalendarAccess: Sendable, Equatable {
     /// Privacy & Security itself, when the settings app refuses the anchor.
     static let fallbackURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy")!
 
+    /// Internet Accounts, where Google, Outlook or Exchange calendars are added to the Mac;
+    /// EventKit then returns their events like any other calendar.
+    static let internetAccountsURL = URL(string: "x-apple.systempreferences:com.apple.Internet-Accounts-Settings.extension")!
+    /// The pre-Ventura pane id, when the settings app refuses the extension id.
+    static let internetAccountsFallbackURL = URL(string: "x-apple.systempreferences:com.apple.preferences.internetaccounts")!
+
     @MainActor
     static func openSettings() {
         if !NSWorkspace.shared.open(settingsURL) {
             NSWorkspace.shared.open(fallbackURL)
+        }
+    }
+
+    @MainActor
+    static func openInternetAccounts() {
+        if !NSWorkspace.shared.open(internetAccountsURL) {
+            NSWorkspace.shared.open(internetAccountsFallbackURL)
         }
     }
 }

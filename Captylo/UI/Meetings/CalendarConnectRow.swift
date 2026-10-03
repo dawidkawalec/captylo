@@ -50,7 +50,7 @@ struct CalendarConnectRow: View {
     private var text: some View {
         switch kind {
         case .connect:
-            Text("Połącz kalendarz: spotkania dostaną tytuły i uczestników z wydarzeń, a przed rozmową przypomnę o nagraniu.")
+            Text("Połącz kalendarz: spotkania dostaną tytuły i uczestników z wydarzeń, a przed rozmową przypomnę o nagraniu. Google i Outlook działają po dodaniu w Kontach internetowych macOS.")
         case .noAccess(let message):
             Text(verbatim: message)
         }

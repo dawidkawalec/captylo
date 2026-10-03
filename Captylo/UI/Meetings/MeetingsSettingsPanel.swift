@@ -125,6 +125,17 @@ private struct CalendarSettings: View {
             }
             .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             .padding(.bottom, 4)
+        } else if settings.meetingsCalendar, calendar.access.isGranted {
+            HStack(alignment: .center, spacing: 10) {
+                ToolStatusLine(text: String(localized: "Captylo widzi kalendarze z aplikacji Kalendarz. Google lub Outlooka dodasz w Kontach internetowych macOS."))
+                Button("Konta internetowe") {
+                    CalendarAccess.openInternetAccounts()
+                }
+                .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+                .fixedSize()
+            }
+            .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+            .padding(.bottom, 4)
         }
         GlassRow(
             "Przypominaj przed spotkaniem",
