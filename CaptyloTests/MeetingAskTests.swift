@@ -132,12 +132,11 @@ struct MeetingAskTests {
         _ handler: @escaping StubURLProtocol.Handler
     ) -> (MeetingAsker, URL) {
         let baseURL = StubURLProtocol.register(handler)
+        let client = OpenRouterClient(baseURL: baseURL)
         let asker = MeetingAsker(
             database: fixture.database,
-            client: OpenRouterClient(baseURL: baseURL),
             session: StubURLProtocol.makeSession(),
-            key: { key },
-            model: { Self.model }
+            route: { key.map { AIRoute(client: client, key: $0, model: Self.model) } }
         )
         return (asker, baseURL)
     }
@@ -184,7 +183,7 @@ struct MeetingAskTests {
         defer { StubURLProtocol.unregister(baseURL) }
         let asked = try #require(await asker.ask(meetingID: fixture.meetingID, question: "Co ustaliliśmy?"))
         #expect(asked.answer == nil)
-        #expect(asked.error == OpenRouterError.missingKeyMessage)
+        #expect(asked.error == MeetingSummaryError.noKey.errorDescription)
         #expect(asked.model == nil)
         #expect(calls.withLock { $0 } == 0)
         let meeting = try #require(try await fixture.database.meeting(id: fixture.meetingID))

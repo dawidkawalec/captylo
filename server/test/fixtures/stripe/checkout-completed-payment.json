@@ -1,0 +1,38 @@
+{
+  "id": "evt_test_checkout_payment",
+  "object": "event",
+  "api_version": "2026-08-26.dahlia",
+  "created": 1791028800,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": null, "idempotency_key": null },
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_payment",
+      "object": "checkout.session",
+      "mode": "payment",
+      "status": "complete",
+      "payment_status": "paid",
+      "client_reference_id": null,
+      "customer": null,
+      "customer_email": null,
+      "customer_details": {
+        "email": "donor@example.pl",
+        "name": null,
+        "address": null,
+        "tax_exempt": "none",
+        "tax_ids": []
+      },
+      "subscription": null,
+      "payment_link": "plink_test_coffee",
+      "currency": "pln",
+      "amount_subtotal": 1500,
+      "amount_total": 1500,
+      "livemode": false,
+      "locale": "auto",
+      "metadata": {},
+      "url": null
+    }
+  }
+}

@@ -26,6 +26,9 @@ struct AppStateOverrides {
     var pinnedAccessibilityTrust: Bool?
     /// Pro status shown regardless of the dev switch (design preview, tests).
     var pinnedPro: Bool?
+    /// Captylo account state fixed without the Keychain or the network (design preview: a
+    /// sample account; test host: signed out). nil is a normal launch.
+    var pinnedAccount: AccountStore.State?
     /// Calendar events served with full access instead of EventKit (`FixedCalendarSource`): the
     /// design preview and the test host never open the user's calendar.
     var calendarEvents: [CalendarEvent]?
@@ -68,6 +71,7 @@ struct AppStateOverrides {
             modelContainer: container,
             dictionaryURL: dictionaryURL,
             systemMuteDefaults: defaults,
+            pinnedAccount: .signedOut,
             calendarEvents: []
         )
         return (AppSettings(defaults: defaults), overrides)

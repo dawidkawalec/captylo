@@ -268,8 +268,8 @@ final class DictationController: RecorderCoordinator {
             try Task.checkCancellation()
             record.modelName = result.modelName
             record.transcriptionMs = result.ms
-            if result.usedFallback {
-                env.toasts.showInfo(String(localized: "Chmura nie odpowiedziała, użyto modelu lokalnego."))
+            if let notice = result.fallbackNotice {
+                env.toasts.showInfo(notice)
             }
 
             // A take that is only a spelling corrects the previous dictation: learn the pair,

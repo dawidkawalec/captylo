@@ -12,6 +12,8 @@ import SwiftUI
 final class WindowPresenter {
     /// Section the main window shows; `MainView` binds its sidebar selection to it.
     var selectedSection: MainSection = .pulpit
+    /// Ustawienia scrolls to this panel and clears it (`openAccount()`, `MainRouter.openAccount()`).
+    var settingsAnchor: SettingsAnchor?
     /// Bumped on every open request; observed by `OpenWindowBridge`.
     private(set) var openRequest = 0
 
@@ -72,6 +74,12 @@ final class WindowPresenter {
     }
 
     func openSettings() {
+        openMain(section: .ustawienia)
+    }
+
+    /// Ustawienia scrolled to "Konto Captylo" (deep links, "Zobacz Pro", "Przejdź na Pro").
+    func openAccount() {
+        settingsAnchor = .account
         openMain(section: .ustawienia)
     }
 

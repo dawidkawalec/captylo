@@ -1,0 +1,39 @@
+{
+  "id": "evt_test_checkout_app",
+  "object": "event",
+  "api_version": "2026-08-26.dahlia",
+  "created": 1791028800,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": null, "idempotency_key": null },
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_app",
+      "object": "checkout.session",
+      "mode": "subscription",
+      "status": "complete",
+      "payment_status": "paid",
+      "client_reference_id": "00000000-0000-4000-8000-000000000000",
+      "customer": "cus_test_app",
+      "customer_email": null,
+      "customer_details": {
+        "email": "anna@example.pl",
+        "name": "Anna Kowalska",
+        "address": { "city": "Warszawa", "country": "PL", "line1": "ul. Testowa 1", "line2": null, "postal_code": "00-001", "state": null },
+        "tax_exempt": "none",
+        "tax_ids": []
+      },
+      "subscription": "sub_test_app",
+      "currency": "pln",
+      "amount_subtotal": 15900,
+      "amount_total": 15900,
+      "livemode": false,
+      "locale": "auto",
+      "metadata": {},
+      "success_url": "https://captylo.com/pro/dziekujemy/?from=app",
+      "cancel_url": "https://captylo.com/#cennik",
+      "url": null
+    }
+  }
+}

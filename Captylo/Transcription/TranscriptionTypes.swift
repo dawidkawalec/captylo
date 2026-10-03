@@ -38,17 +38,37 @@ struct TranscriptionResult: Sendable, Equatable {
     let ms: Int
     /// True when the cloud engine failed and the local engine produced the text.
     let usedFallback: Bool
+    /// Why the cloud was not used when `usedFallback` (no route, the Pro limit, a timeout...).
+    let fallbackError: STTError?
 
-    init(text: String, modelName: String, ms: Int, usedFallback: Bool = false) {
+    init(text: String, modelName: String, ms: Int, usedFallback: Bool = false, fallbackError: STTError? = nil) {
         self.text = text
         self.modelName = modelName
         self.ms = ms
         self.usedFallback = usedFallback
+        self.fallbackError = fallbackError
+    }
+
+    /// The toast after a fallback, saying why; nil when the cloud (or the local engine by
+    /// choice) produced the text.
+    var fallbackNotice: String? {
+        guard usedFallback else { return nil }
+        switch fallbackError {
+        case .quotaExceeded:
+            return STTError.quotaExceeded.errorDescription
+        case .missingKey:
+            return String(localized: "Chmura nie jest dostępna bez klucza albo Pro, użyto modelu lokalnego.")
+        default:
+            return String(localized: "Chmura nie odpowiedziała, użyto modelu lokalnego.")
+        }
     }
 }
 
 enum STTError: Error, LocalizedError, Sendable, Equatable {
+    /// No route to the cloud: no own key and no Pro session (or the relay refused the session).
     case missingKey
+    /// The Pro relay's monthly cloud limit is used up (402); the take falls back to the local engine.
+    case quotaExceeded
     /// The Keychain did not answer in time (an ACL prompt is open or was denied); the take falls back.
     case keychainTimeout
     case unauthorized
@@ -62,7 +82,9 @@ enum STTError: Error, LocalizedError, Sendable, Equatable {
     var errorDescription: String? {
         switch self {
         case .missingKey:
-            return String(localized: "Brak klucza API. Dodaj go w zakładce Modele.")
+            return String(localized: "Brak dostępu do chmury. Dodaj klucz albo włącz Pro w Ustawieniach.")
+        case .quotaExceeded:
+            return String(localized: "Limit chmury w tym miesiącu jest wyczerpany. Captylo użyje modelu lokalnego.")
         case .keychainTimeout:
             return String(localized: "Pęk kluczy nie odpowiedział na czas.")
         case .unauthorized:

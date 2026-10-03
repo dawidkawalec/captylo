@@ -9,10 +9,10 @@ import SwiftUI
 /// recording is gone). On top: the template menu, the action ("Napisz notatki", "Wygeneruj
 /// ponownie", or "Spróbuj ponownie" after a failure; a spinner and "Piszę notatki..." while
 /// `MeetingNotesRuns` writes them) and "Kopiuj" (the Markdown). A failure shows its message as a
-/// banner, with "Dodaj klucz" when the AI key is missing; earlier notes stay under it.
+/// banner, with "Dodaj klucz lub Pro" when there is no AI route; earlier notes stay under it.
 ///
 /// Free: a blurred sample of notes under a card "Notatki AI są w Captylo Pro" with "Zobacz Pro"
-/// (captylo.com pricing), `MeetingProCard`.
+/// (the "Konto Captylo" panel in Ustawienia), `MeetingProCard`.
 @MainActor
 struct MeetingAINotesView: View {
     let meeting: MeetingRecord
@@ -99,7 +99,7 @@ struct MeetingAINotesView: View {
                 if let failure, !isRunning {
                     MainBanner(symbol: "exclamationmark.triangle", tone: .warning, text: failure, surface: .raised) {
                         if failure == MeetingSummaryError.noKey.errorDescription {
-                            Button("Dodaj klucz", action: onAddKey)
+                            Button("Dodaj klucz lub Pro", action: onAddKey)
                         }
                     }
                     .transition(.opacity)

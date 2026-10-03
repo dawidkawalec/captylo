@@ -1,0 +1,53 @@
+{
+  "id": "evt_test_sub_active",
+  "object": "event",
+  "api_version": "2026-08-26.dahlia",
+  "created": 1791029100,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": null, "idempotency_key": null },
+  "type": "customer.subscription.updated",
+  "data": {
+    "object": {
+      "id": "sub_test_app",
+      "object": "subscription",
+      "customer": "cus_test_app",
+      "status": "active",
+      "cancel_at_period_end": false,
+      "cancel_at": null,
+      "canceled_at": null,
+      "collection_method": "charge_automatically",
+      "created": 1791028790,
+      "currency": "pln",
+      "livemode": false,
+      "metadata": { "plan": "yearly" },
+      "items": {
+        "object": "list",
+        "data": [
+          {
+            "id": "si_test_app",
+            "object": "subscription_item",
+            "current_period_start": 1791028790,
+            "current_period_end": 1822564800,
+            "quantity": 1,
+            "subscription": "sub_test_app",
+            "price": {
+              "id": "price_test_yearly",
+              "object": "price",
+              "active": true,
+              "currency": "pln",
+              "product": "prod_test_captylo_pro",
+              "recurring": { "interval": "year", "interval_count": 1, "usage_type": "licensed" },
+              "type": "recurring",
+              "unit_amount": 15900
+            }
+          }
+        ],
+        "has_more": false,
+        "url": "/v1/subscription_items?subscription=sub_test_app"
+      },
+      "start_date": 1791028790
+    },
+    "previous_attributes": { "status": "incomplete" }
+  }
+}

@@ -3,9 +3,16 @@ import os
 
 /// ElevenLabs Scribe (`scribe_v2`) batch client (brief 5.2). Request building is pure so tests
 /// can inspect the multipart body; transport errors map to `STTError`.
+///
+/// Each upload asks its credential provider (`CloudRouter.sttCredential`) where to go: the user's
+/// own key straight to the vendor, or the Pro session to the Captylo relay, which takes the same
+/// multipart form plus `X-Captylo-Audio-Seconds` and answers with the vendor's JSON.
 struct ElevenLabsSTT: Sendable {
-    static let transcribeURL = URL(string: "https://api.elevenlabs.io/v1/speech-to-text")!
-    static let userURL = URL(string: "https://api.elevenlabs.io/v1/user")!
+    static let apiBaseURL = URL(string: "https://api.elevenlabs.io/v1")!
+    static let transcribeURL = apiBaseURL.appending(path: "speech-to-text")
+    static let userURL = apiBaseURL.appending(path: "user")
+    /// The audio length the relay counts against the monthly cloud limit, whole seconds rounded up.
+    static let audioSecondsHeader = "X-Captylo-Audio-Seconds"
     static let modelID = STTEngine.elevenLabs.modelName
     static let verifyTimeout: TimeInterval = 10
     static let keytermMaxCount = 1000
@@ -17,24 +24,24 @@ struct ElevenLabsSTT: Sendable {
     static let keyLookupTimeout: Duration = .seconds(3)
 
     private let session: URLSession
-    private let keyProvider: @Sendable () async -> KeyStore.Lookup
+    private let credentialProvider: @Sendable () async -> KeyStore.Lookup<CloudCredential>
     private let makeRetrySession: @Sendable () -> URLSession
     private let deadline: @Sendable (_ audioSeconds: Double) -> TimeInterval
 
     /// - Parameters:
     ///   - session: shared upload session for the first attempt.
-    ///   - keyProvider: looks the API key up at call time without blocking the caller (nil or empty =
-    ///     `missingKey`, `.timedOut` = `keychainTimeout`); wire it to `KeyStore.load(_:timeout:)`.
+    ///   - credentialProvider: resolves the route at call time without blocking the caller (nil or a
+    ///     blank secret = `missingKey`, `.timedOut` = `keychainTimeout`); wire it to `CloudRouter.sttCredential`.
     ///   - retrySession: fresh session for the single retry after a timeout or network error (gotcha 72).
     ///   - deadline: total seconds per attempt for a take of the given length (tests shorten it).
     init(
         session: URLSession = .shared,
-        keyProvider: @escaping @Sendable () async -> KeyStore.Lookup,
+        credentialProvider: @escaping @Sendable () async -> KeyStore.Lookup<CloudCredential>,
         retrySession: @escaping @Sendable () -> URLSession = { URLSession(configuration: .ephemeral) },
         deadline: @escaping @Sendable (_ audioSeconds: Double) -> TimeInterval = { ElevenLabsSTT.timeout(forAudioSeconds: $0) }
     ) {
         self.session = session
-        self.keyProvider = keyProvider
+        self.credentialProvider = credentialProvider
         self.makeRetrySession = retrySession
         self.deadline = deadline
     }
@@ -56,28 +63,29 @@ struct ElevenLabsSTT: Sendable {
         try Self.parseWords(await upload(request, options: UploadOptions(mimeType: mimeType, timestamps: "word")))
     }
 
-    /// The key lookup, the upload and one retry on a fresh session after a transport failure;
+    /// The route lookup, the upload and one retry on a fresh session after a transport failure;
     /// returns the body of a 2xx answer.
     private func upload(_ request: STTRequest, options: UploadOptions) async throws -> Data {
-        let key: String
-        switch await keyProvider() {
+        let credential: CloudCredential
+        switch await credentialProvider() {
         case .timedOut:
-            Log.transcription.error("ElevenLabs skipped: Keychain read did not finish in time")
+            Log.transcription.error("Cloud STT skipped: Keychain read did not finish in time")
             throw STTError.keychainTimeout
         case .value(let value):
-            guard let normalized = Self.normalizedKey(value) else { throw STTError.missingKey }
-            key = normalized
+            guard let value, value.secret != nil else { throw STTError.missingKey }
+            credential = value
         }
         try Task.checkCancellation()
-        let (urlRequest, body) = Self.makeUpload(request, key: key, options: options)
+        let (urlRequest, body) = Self.makeUpload(request, credential: credential, options: options)
         let deadline = self.deadline(request.audioSeconds)
+        let isRelay = credential.isRelay
         do {
-            return try await perform(urlRequest, body: body, on: session, deadline: deadline)
+            return try await perform(urlRequest, body: body, on: session, deadline: deadline, isRelay: isRelay)
         } catch let error as STTError where error.isTransport && !Task.isCancelled {
-            Log.transcription.warning("ElevenLabs upload failed (\(String(describing: error), privacy: .public)), retrying on a fresh session")
+            Log.transcription.warning("Cloud STT upload failed (\(String(describing: error), privacy: .public)), retrying on a fresh session")
             let retry = makeRetrySession()
             defer { retry.finishTasksAndInvalidate() }
-            return try await perform(urlRequest, body: body, on: retry, deadline: deadline)
+            return try await perform(urlRequest, body: body, on: retry, deadline: deadline, isRelay: isRelay)
         }
     }
 
@@ -100,7 +108,7 @@ struct ElevenLabsSTT: Sendable {
     /// One upload raced against `deadline` seconds (brief 5.2). `URLRequest.timeoutInterval` is only
     /// an idle timeout and the session's resource timeout is a loose cap, so the total deadline is
     /// enforced here; the loser is cancelled.
-    private func perform(_ request: URLRequest, body: Data, on session: URLSession, deadline: TimeInterval) async throws -> Data {
+    private func perform(_ request: URLRequest, body: Data, on session: URLSession, deadline: TimeInterval, isRelay: Bool) async throws -> Data {
         let data: Data
         let response: URLResponse
         do {
@@ -127,8 +135,8 @@ struct ElevenLabsSTT: Sendable {
         }
         try Task.checkCancellation()
         guard let http = response as? HTTPURLResponse else { throw Self.invalidResponse }
-        if let failure = Self.mapStatus(http.statusCode, body: data) {
-            Log.transcription.error("ElevenLabs HTTP \(http.statusCode): \(Self.shortBody(data), privacy: .public)")
+        if let failure = Self.mapStatus(http.statusCode, body: data, isRelay: isRelay) {
+            Log.transcription.error("Cloud STT\(isRelay ? " (relay)" : "", privacy: .public) HTTP \(http.statusCode): \(Self.shortBody(data), privacy: .public)")
             throw failure
         }
         return data
@@ -145,15 +153,22 @@ struct ElevenLabsSTT: Sendable {
         static let dictation = UploadOptions()
     }
 
-    /// Multipart POST with the body in `httpBody` (gotcha 74: CRLF everywhere, closing boundary once).
+    /// Multipart POST with the body in `httpBody` (gotcha 74: CRLF everywhere, closing boundary once),
+    /// with the user's own key.
     static func makeRequest(_ request: STTRequest, key: String, options: UploadOptions = .dictation) -> URLRequest {
-        var (urlRequest, body) = makeUpload(request, key: key, options: options)
+        makeRequest(request, credential: .ownKey(key), options: options)
+    }
+
+    static func makeRequest(_ request: STTRequest, credential: CloudCredential, options: UploadOptions = .dictation) -> URLRequest {
+        var (urlRequest, body) = makeUpload(request, credential: credential, options: options)
         urlRequest.httpBody = body
         return urlRequest
     }
 
     /// The request without a body plus the multipart body, built once, for `upload(for:from:)`.
-    static func makeUpload(_ request: STTRequest, key: String, options: UploadOptions = .dictation) -> (URLRequest, Data) {
+    /// `credential.baseURL/speech-to-text`; an own key signs with `xi-api-key`, the Pro session
+    /// with `Authorization: Bearer` plus the audio length the relay counts.
+    static func makeUpload(_ request: STTRequest, credential: CloudCredential, options: UploadOptions = .dictation) -> (URLRequest, Data) {
         let boundary = "Boundary-\(UUID().uuidString)"
         var form = Multipart(boundary: boundary)
         form.addField("model_id", request.model.isEmpty ? modelID : request.model)
@@ -169,11 +184,20 @@ struct ElevenLabsSTT: Sendable {
             form.addField("keyterms", term)
         }
 
-        var urlRequest = URLRequest(url: transcribeURL)
+        var urlRequest = URLRequest(url: credential.baseURL.appending(path: "speech-to-text"))
         urlRequest.httpMethod = "POST"
         urlRequest.cachePolicy = .reloadIgnoringLocalCacheData
         urlRequest.timeoutInterval = timeout(forAudioSeconds: request.audioSeconds)
-        urlRequest.setValue(key, forHTTPHeaderField: "xi-api-key")
+        let secret = credential.secret ?? ""
+        switch credential.authorization {
+        case .apiKey:
+            urlRequest.setValue(secret, forHTTPHeaderField: "xi-api-key")
+        case .bearer:
+            urlRequest.setValue("Bearer \(secret)", forHTTPHeaderField: "Authorization")
+        }
+        if credential.isRelay {
+            urlRequest.setValue(String(relaySeconds(request.audioSeconds)), forHTTPHeaderField: audioSecondsHeader)
+        }
         urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
         urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         return (urlRequest, form.encoded())
@@ -187,6 +211,12 @@ struct ElevenLabsSTT: Sendable {
         urlRequest.setValue(key, forHTTPHeaderField: "xi-api-key")
         urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
         return urlRequest
+    }
+
+    /// The relay's audio seconds: whole seconds rounded up, at least 1 (the relay rejects 0).
+    static func relaySeconds(_ audioSeconds: Double) -> Int {
+        guard audioSeconds.isFinite, audioSeconds > 0 else { return 1 }
+        return max(1, Int(audioSeconds.rounded(.up)))
     }
 
     /// Upload deadline: `max(20, 10 + 0.5 * audioSeconds)` seconds.
@@ -212,9 +242,14 @@ struct ElevenLabsSTT: Sendable {
 
     // MARK: - Response handling (pure)
 
-    static func mapStatus(_ code: Int, body: Data) -> STTError? {
+    /// The relay answers 402 `quota_exceeded` past the monthly limit, 403 `pro_required` for a
+    /// plan that is no longer Pro and 401 for a revoked session: the last two mean "no access",
+    /// never a wrong key the user could fix in Modele.
+    static func mapStatus(_ code: Int, body: Data, isRelay: Bool = false) -> STTError? {
         switch code {
         case 200..<300: return nil
+        case 402 where isRelay: return .quotaExceeded
+        case 401 where isRelay, 403 where isRelay: return .missingKey
         case 401, 403: return .unauthorized
         case 413: return .tooLarge
         case 429: return .rateLimited

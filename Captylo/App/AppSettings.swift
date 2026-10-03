@@ -53,6 +53,8 @@ final class AppSettings {
         case meetingsCalendarPromptDismissed = "meetings.calendarPromptDismissed"
         case meetingsVoiceProcessing = "meetings.voiceProcessing"
         case meetingsMCP = "meetings.mcp"
+        case accountCache = "account.cache"
+        case accountRefreshedAt = "account.refreshedAt"
     }
 
     /// Every persisted key, for tests and diagnostics.
@@ -557,6 +559,25 @@ final class AppSettings {
         set { withMutation(keyPath: \.openRouterModelsCachedAt) { defaults.set(newValue, forKey: Key.openRouterModelsCachedAt.rawValue) } }
     }
 
+    // MARK: Captylo account
+
+    /// The last `/v1/me` answer as JSON (`AccountClient.encodeCache`), so the plan is known at
+    /// launch before the network answers. Nil when signed out. The token lives in the Keychain.
+    var accountCache: String? {
+        get { track(\.accountCache); return defaults.string(forKey: Key.accountCache.rawValue) }
+        set { withMutation(keyPath: \.accountCache) { setOrRemove(newValue, .accountCache) } }
+    }
+
+    /// When `accountCache` was last confirmed by the server, stored as seconds since 1970.
+    var accountRefreshedAt: Date? {
+        get {
+            track(\.accountRefreshedAt)
+            guard defaults.object(forKey: Key.accountRefreshedAt.rawValue) != nil else { return nil }
+            return Date(timeIntervalSince1970: defaults.double(forKey: Key.accountRefreshedAt.rawValue))
+        }
+        set { withMutation(keyPath: \.accountRefreshedAt) { setOrRemove(newValue?.timeIntervalSince1970, .accountRefreshedAt) } }
+    }
+
     // MARK: Reset
 
     /// Removes every key so the defaults above apply again.
@@ -584,6 +605,14 @@ final class AppSettings {
 
     private func clamp(_ value: Int, _ range: ClosedRange<Int>) -> Int {
         min(max(value, range.lowerBound), range.upperBound)
+    }
+
+    private func setOrRemove(_ value: Any?, _ key: Key) {
+        if let value {
+            defaults.set(value, forKey: key.rawValue)
+        } else {
+            defaults.removeObject(forKey: key.rawValue)
+        }
     }
 
     private func string(_ key: Key, default value: String) -> String {

@@ -10,31 +10,42 @@ enum ProFeature: Sendable {
     case meetingTranscriptCorrection
 }
 
-/// The single Pro check. M1 has no accounts yet: Pro is the DEBUG "Tryb Pro (dev)" switch or
-/// `CAPTYLO_DEV_PRO=1`; M4 replaces the source with the account's subscription.
+/// The single Pro check: the Captylo account's subscription (`AccountStore.isPro`). Debug builds
+/// also accept the "Tryb Pro (dev)" switch and `CAPTYLO_DEV_PRO=1`; release builds ignore both.
 @MainActor
 @Observable
 final class ProAccess {
     nonisolated static let environmentKey = "CAPTYLO_DEV_PRO"
 
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private let account: AccountStore?
     @ObservationIgnored private let pinned: Bool?
     @ObservationIgnored private let environmentPro: Bool
 
     /// `pinned` fixes the answer (design preview, tests); `environment` is read once.
-    init(settings: AppSettings, pinned: Bool? = nil, environment: [String: String] = ProcessInfo.processInfo.environment) {
+    init(
+        settings: AppSettings,
+        account: AccountStore?,
+        pinned: Bool? = nil,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) {
         self.settings = settings
+        self.account = account
         self.pinned = pinned
         environmentPro = environment[Self.environmentKey] == "1"
     }
 
-    /// Observable through `settings.devPro`, so views follow the dev switch live.
+    /// Observable through the account's state (and `settings.devPro` in debug builds), so views
+    /// follow a sign-in, a refresh or the dev switch live.
     var isPro: Bool {
         if let pinned { return pinned }
-        return environmentPro || settings.devPro
+        #if DEBUG
+        if environmentPro || settings.devPro { return true }
+        #endif
+        return account?.isPro ?? false
     }
 
-    /// Every Pro feature follows `isPro` in M1; the switch is per feature so M4 can split them.
+    /// Every Pro feature follows `isPro`; the switch is per feature so plans can split them later.
     func allows(_ feature: ProFeature) -> Bool {
         isPro
     }

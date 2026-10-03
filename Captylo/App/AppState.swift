@@ -61,6 +61,10 @@ final class AppState {
     /// rebuilt when needed by `startServices()`; until it is ready search uses the store.
     @ObservationIgnored let meetingSearchIndex: MeetingSearchIndex
 
+    // Account and Pro
+    /// The Captylo account (sign-in, plan, billing links). Itself `@Observable`.
+    @ObservationIgnored let account: AccountStore
+
     // Meetings
     @ObservationIgnored let proAccess: ProAccess
     /// Itself `@Observable`: views read its phase, live transcript and issues directly.
@@ -104,6 +108,9 @@ final class AppState {
     @ObservationIgnored let launchAtLogin: LaunchAtLogin
     @ObservationIgnored let windowPresenter: WindowPresenter
     @ObservationIgnored let oldAppDetector: OldAppDetector
+    /// "Sprawdź aktualizacje" (Sparkle). Itself `@Observable`. No controller in the design preview
+    /// or the test host; elsewhere it starts only in `startServices()`.
+    @ObservationIgnored let updater: AppUpdater
 
     // Dictation and hotkeys
     @ObservationIgnored let dictationController: DictationController
@@ -130,7 +137,7 @@ final class AppState {
     var statsVersion: Int { stats.version }
 
     @ObservationIgnored private let hotkeyRelay: HotkeyRelay
-    /// `Enhancer.modelProvider` runs off the main actor, so it reads this snapshot of `settings.aiModel`.
+    /// The dictation AI route runs off the main actor, so it reads this snapshot of `settings.aiModel`.
     @ObservationIgnored private let aiModelSnapshot: OSAllocatedUnfairLock<String>
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
     /// ⌃⌥⌘M, registered while "Skrót ⌃⌥⌘M" is on (`applyMeetingShortcut`).
@@ -158,9 +165,30 @@ final class AppState {
         livePreview = LivePreview(engine: engine)
         let keyStore = overrides.keyStore ?? KeyStore()
         self.keyStore = keyStore
+
+        // Account and Pro. Pro comes from the Captylo account; the design preview and the test
+        // host pin its state (no Keychain, no network, never a relay token).
+        let account = AccountStore(
+            client: AccountClient(),
+            keyStore: overrides.pinnedAccount == nil ? keyStore : .inMemory(),
+            settings: settings,
+            pinned: overrides.pinnedAccount
+        )
+        self.account = account
+        let access = ProAccess(settings: settings, account: account, pinned: overrides.pinnedPro)
+        proAccess = access
+        // Every cloud request: own key -> vendor, else the Pro session -> relay, else no route.
+        let openRouter = OpenRouterClient()
+        self.openRouter = openRouter
+        let cloudRouter = CloudRouter(
+            keyStore: keyStore,
+            accountToken: { timeout in await account.relayToken(timeout: timeout) },
+            aiClient: openRouter
+        )
+
         elevenLabs = ElevenLabsSTT(
             session: HTTP.uploadSession,
-            keyProvider: { await keyStore.load(KeyStore.Account.elevenLabs, timeout: ElevenLabsSTT.keyLookupTimeout) },
+            credentialProvider: { await cloudRouter.sttCredential(timeout: ElevenLabsSTT.keyLookupTimeout) },
             retrySession: { HTTP.makeEphemeral() }
         )
         transcriptionRouter = TranscriptionRouter(
@@ -170,22 +198,23 @@ final class AppState {
         )
 
         // AI cleanup
-        openRouter = OpenRouterClient()
         openRouterModels = OpenRouterModels(settings: settings, client: openRouter)
         let modelSnapshot = OSAllocatedUnfairLock(initialState: settings.aiModel)
         aiModelSnapshot = modelSnapshot
         let modelsCache = settings.openRouterModelsCacheReader
         let reasoningPolicy: @Sendable (String) -> ReasoningPolicy = { ReasoningPolicy.lookup($0, inCache: modelsCache()) }
+        // Dictation, files and "Testuj tryb": the model chosen in Modele (own key only).
+        let dictationRoute: @Sendable (Duration) async -> KeyStore.Lookup<AIRoute> = { timeout in
+            await cloudRouter.aiRoute(timeout: timeout, model: modelSnapshot.withLock { $0 })
+        }
         enhancer = Enhancer(
             client: openRouter,
-            keyStore: keyStore,
-            modelProvider: { modelSnapshot.withLock { $0 } },
+            route: dictationRoute,
             reasoningProvider: reasoningPolicy
         )
         utilityEnhancer = Enhancer(
             client: openRouter,
-            keyStore: keyStore,
-            modelProvider: { modelSnapshot.withLock { $0 } },
+            route: dictationRoute,
             reasoningProvider: reasoningPolicy,
             session: HTTP.fileLLMSession,
             deadline: FileTranscriptionQueue.enhancementDeadline,
@@ -211,10 +240,9 @@ final class AppState {
         // on the first meeting, and serves both tracks. After a meeting stops, in the background:
         // the cloud transcript (Pro, setting) replaces the live one, then speaker labels (Pro,
         // macOS 15+; the diarizer loads on first use), the AI fixes of the transcript (Pro,
-        // setting) and the AI notes (Pro), both with the user's AI key and the meetings model,
+        // setting) and the AI notes (Pro), both with the user's AI key and the meetings model or
+        // through the Pro relay (`meetingRoute`),
         // so the notes see "Mówca N" and the fixed text.
-        let access = ProAccess(settings: settings, pinned: overrides.pinnedPro)
-        proAccess = access
         let meetingVAD = SpeechDetectorCache { try await FluidSpeechDetector.load() }
         let detectorStatus = SpeechDetectorStatus(load: { try await meetingVAD.prewarm() }, pinned: overrides.pinnedSpeechDetectorStatus)
         speechDetectorStatus = detectorStatus
@@ -225,10 +253,11 @@ final class AppState {
         let dictionaryStore = dictionary
         let meetingVocabulary: @Sendable () async -> [String] = { @MainActor in dictionaryStore.data.vocabulary }
         let meetingModel: @Sendable () async -> String = { @MainActor in settings.meetingAIModelID }
-        let openRouterKey: @Sendable () async -> String? = {
-            // Off the hot path: a longer wait than dictation, still bounded if an ACL prompt hangs.
-            switch await keyStore.load(KeyStore.Account.openRouter, timeout: .seconds(10)) {
-            case .value(let key): return key
+        // The meetings model with an own key, else the Pro relay. Off the hot path: a longer wait
+        // than dictation, still bounded if an ACL prompt hangs.
+        let meetingRoute: @Sendable () async -> AIRoute? = {
+            switch await cloudRouter.aiRoute(timeout: .seconds(10), model: await meetingModel()) {
+            case .value(let route): return route
             case .timedOut:
                 Log.enhancement.error("Meeting AI: Keychain read did not finish in time")
                 return nil
@@ -251,16 +280,11 @@ final class AppState {
         )
         let meetingCorrection = MeetingCorrectionProcessor(
             database: database,
-            corrector: MeetingTranscriptCorrector(client: openRouter, key: openRouterKey, model: meetingModel, reasoning: reasoningPolicy),
+            corrector: MeetingTranscriptCorrector(route: meetingRoute, reasoning: reasoningPolicy),
             isEnabled: { @MainActor in access.allows(.meetingTranscriptCorrection) && settings.meetingsAICorrection },
             vocabulary: meetingVocabulary
         )
-        let meetingSummarizer = MeetingSummarizer(
-            client: openRouter,
-            key: openRouterKey,
-            model: meetingModel,
-            reasoning: reasoningPolicy
-        )
+        let meetingSummarizer = MeetingSummarizer(route: meetingRoute, reasoning: reasoningPolicy)
         let meetingNotes = MeetingNotesProcessor(
             database: database,
             summarizer: meetingSummarizer,
@@ -271,21 +295,8 @@ final class AppState {
             guard await access.allows(.meetingAINotes) else { return }
             await meetingNotes.regenerate(meetingID: id, templateID: templateID)
         }
-        let meetingAsker = MeetingAsker(
-            database: database,
-            client: openRouter,
-            key: openRouterKey,
-            model: meetingModel,
-            reasoning: reasoningPolicy
-        )
-        let libraryAsker = LibraryAsker(
-            database: database,
-            index: searchIndex,
-            client: openRouter,
-            key: openRouterKey,
-            model: meetingModel,
-            reasoning: reasoningPolicy
-        )
+        let meetingAsker = MeetingAsker(database: database, route: meetingRoute, reasoning: reasoningPolicy)
+        let libraryAsker = LibraryAsker(database: database, index: searchIndex, route: meetingRoute, reasoning: reasoningPolicy)
         // The design preview never reaches the network: its questions are seeded.
         let asksOffline = overrides.isDesignPreview
         meetingAskRuns = MeetingAskRuns(
@@ -412,6 +423,8 @@ final class AppState {
         let presenter = WindowPresenter(settings: settings)
         windowPresenter = presenter
         oldAppDetector = OldAppDetector()
+        // The design preview and the test host never get a live updater (no network, no windows).
+        updater = AppUpdater(enabled: !overrides.isDesignPreview && !AppStateOverrides.isTestHost)
         meetingDetector = MeetingDetector(
             recorder: meetingRecorder,
             toasts: toasts,
@@ -507,7 +520,7 @@ final class AppState {
             dictionary: dictionary,
             database: database,
             client: openRouter,
-            keyStore: keyStore,
+            route: dictationRoute,
             stats: stats,
             persistsHistory: !isFallback
         ))
@@ -550,8 +563,13 @@ final class AppState {
             await searchIndex.prepare(database: indexedDatabase)
         }
 
-        // API keys: read once on the Keychain queue so the hot path hits the cache.
-        keyStore.preload([KeyStore.Account.openRouter, KeyStore.Account.elevenLabs])
+        // API keys and the account token: read once on the Keychain queue so the hot path hits the cache.
+        keyStore.preload([KeyStore.Account.openRouter, KeyStore.Account.elevenLabs, KeyStore.Account.captyloAccount])
+        // The plan: refreshed now and every 6 hours (the cache already answered at init).
+        account.start()
+
+        // Updates: Sparkle's scheduler (no-op until the public key is configured).
+        updater.start()
 
         // Hotkey tap: installed now when trusted, otherwise on the Accessibility flip (gotcha 38).
         // Revoking the grant kills the tap but leaves its port behind, so a re-grant always builds
@@ -645,6 +663,7 @@ final class AppState {
         calendarReminder.stop()
         meetingCalendar.stop()
         meetingRecorder.abortForTermination()
+        account.stop()
         systemMute.restore()
         dictationController.abortForTermination()
         textOutput.flushPendingRestore()
@@ -696,6 +715,16 @@ final class AppState {
         pendingOpenURLs.append(contentsOf: urls)
         guard servicesStarted else { return }
         drainPendingOpenURLs()
+    }
+
+    /// `captylo://pro/done` (after Checkout) and `captylo://account/refresh` (after the Portal):
+    /// the account refreshes and the main window opens on its panel in Ustawienia.
+    func handleDeepLink(_ url: URL) {
+        guard account.handleDeepLink(url) else {
+            Log.app.notice("Ignored an unknown captylo:// link")
+            return
+        }
+        windowPresenter.openAccount()
     }
 
     private func drainPendingOpenURLs() {

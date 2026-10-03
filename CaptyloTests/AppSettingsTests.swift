@@ -119,7 +119,25 @@ struct AppSettingsTests {
         #expect(raw.contains("meetings.voiceProcessing"))
         #expect(raw.contains("meetings.mcp"))
         #expect(raw.contains("meetings.calendarPromptDismissed"))
-        #expect(AppSettings.keys.count == 46)
+        #expect(raw.contains("account.cache"))
+        #expect(raw.contains("account.refreshedAt"))
+        #expect(AppSettings.keys.count == 48)
+    }
+
+    @Test func accountCacheDefaultsEmptyAndPersists() throws {
+        let settings = try makeSettings()
+        #expect(settings.accountCache == nil)
+        #expect(settings.accountRefreshedAt == nil)
+        let refreshed = Date(timeIntervalSince1970: 1_790_000_000.5)
+        settings.accountCache = "{}"
+        settings.accountRefreshedAt = refreshed
+        let reloaded = AppSettings(defaults: try #require(UserDefaults(suiteName: Self.suiteName)))
+        #expect(reloaded.accountCache == "{}")
+        #expect(reloaded.accountRefreshedAt == refreshed)
+        settings.accountCache = nil
+        settings.accountRefreshedAt = nil
+        #expect(reloaded.accountCache == nil)
+        #expect(reloaded.accountRefreshedAt == nil)
     }
 
     @Test func meetingMCPDefaultsOff() throws {

@@ -1,20 +1,26 @@
 import AppKit
 import SwiftUI
 
-/// "Modele": speech engine (local model download / ElevenLabs key, language), the "Tryby AI" list
-/// (`AIModesPanel`) and AI cleanup (master switch, OpenRouter key, model picker, test call), as
-/// three Dusk Glass panels.
+/// "Modele": the Captylo Pro card (`ProStatusCard`), speech engine (local model download /
+/// ElevenLabs key, language), the "Tryby AI" list (`AIModesPanel`) and AI cleanup (master switch,
+/// OpenRouter key, model picker, test call), as Dusk Glass panels. With Pro the cloud and AI work
+/// without keys; an own key still wins (`CloudRouter`), and the captions say so.
 @MainActor
 struct ModelsView: View {
     static let elevenLabsKeysURL = URL(string: "https://elevenlabs.io/app/settings/api-keys")!
     static let openRouterKeysURL = URL(string: "https://openrouter.ai/settings/keys")!
 
     @Environment(AppState.self) private var appState
+    /// Whether an own AI key is saved: without one, Pro lets Captylo pick the model.
+    @State private var hasOwnAIKey = true
 
     var body: some View {
         @Bindable var settings = appState.settings
+        let isPro = appState.account.isPro
 
         ToolPage(subtitle: "Silnik, który zamienia mowę na tekst, i opcjonalne poprawianie przez AI.") {
+            ProStatusCard(account: appState.account)
+
             GlassPanel {
                 GlassSectionHeader("Silnik mowy", systemImage: "waveform")
                 GlassSegmentedPicker(selection: $settings.sttEngine, segments: [
@@ -26,7 +32,7 @@ struct ModelsView: View {
                 if settings.sttEngine == .local {
                     LocalModelSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: false)
                 } else {
-                    ElevenLabsSection(keyStore: appState.keyStore, client: appState.elevenLabs)
+                    ElevenLabsSection(keyStore: appState.keyStore, client: appState.elevenLabs, isPro: isPro)
                     // The cloud path still uses the local model for the fallback and the live
                     // preview, so it stays manageable without switching engines.
                     GlassRowSeparator()
@@ -50,9 +56,20 @@ struct ModelsView: View {
                 GlassSectionHeader("Poprawianie przez AI", systemImage: "sparkles")
                 GlassToggleRow("Poprawiaj transkrypcję przez AI", systemImage: "wand.and.stars", isOn: $settings.aiEnabled)
                 GlassRowSeparator()
-                OpenRouterKeySection(keyStore: appState.keyStore, enhancer: appState.enhancer, models: appState.openRouterModels, settings: settings)
+                OpenRouterKeySection(
+                    keyStore: appState.keyStore,
+                    enhancer: appState.enhancer,
+                    models: appState.openRouterModels,
+                    settings: settings,
+                    isPro: isPro,
+                    onKeyPresence: { hasOwnAIKey = $0 }
+                )
                 GlassRowSeparator()
                 ModelPicker(models: appState.openRouterModels, selection: $settings.aiModel)
+                if isPro, !hasOwnAIKey {
+                    ToolCaption("W Pro bez własnego klucza model wybiera Captylo.")
+                        .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+                }
                 TestButtonRow(enhancer: appState.enhancer, model: settings.aiModel)
             }
         }
@@ -313,6 +330,8 @@ private extension View {
 private struct ElevenLabsSection: View {
     let keyStore: KeyStore
     let client: ElevenLabsSTT
+    /// Pro sends the cloud through Captylo when no own key is saved.
+    let isPro: Bool
 
     @State private var key = ""
     @State private var status: (text: String, tone: InlineStatus.Tone)?
@@ -333,6 +352,10 @@ private struct ElevenLabsSection: View {
             )
             ToolCaption("Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.")
                 .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+            if isPro {
+                ToolCaption("Własny klucz ma pierwszeństwo przed Pro.")
+                    .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+            }
         }
         .onAppear {
             key = keyStore.get(KeyStore.Account.elevenLabs) ?? ""
@@ -416,31 +439,43 @@ private struct OpenRouterKeySection: View {
     let enhancer: Enhancer
     let models: OpenRouterModels
     let settings: AppSettings
+    /// Pro runs the AI through Captylo when no own key is saved.
+    let isPro: Bool
+    /// Whether an own key is saved (on appear and after "Zapisz").
+    let onKeyPresence: (Bool) -> Void
 
     @State private var key = ""
     @State private var status: (text: String, tone: InlineStatus.Tone)?
     @State private var isChecking = false
 
     var body: some View {
-        APIKeyField(
-            title: "Klucz API do AI",
-            placeholder: "sk-or-...",
-            key: $key,
-            status: status,
-            isChecking: isChecking,
-            linkTitle: "Skąd wziąć klucz",
-            linkURL: ModelsView.openRouterKeysURL,
-            onSave: save,
-            onVerify: verify
-        )
+        VStack(alignment: .leading, spacing: 8) {
+            APIKeyField(
+                title: "Klucz API do AI",
+                placeholder: "sk-or-...",
+                key: $key,
+                status: status,
+                isChecking: isChecking,
+                linkTitle: "Skąd wziąć klucz",
+                linkURL: ModelsView.openRouterKeysURL,
+                onSave: save,
+                onVerify: verify
+            )
+            if isPro {
+                ToolCaption("Własny klucz ma pierwszeństwo przed Pro.")
+                    .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+            }
+        }
         .onAppear {
             key = keyStore.get(KeyStore.Account.openRouter) ?? ""
+            onKeyPresence(!key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
     }
 
     private func save() {
         do {
             try keyStore.set(key.trimmingCharacters(in: .whitespacesAndNewlines), account: KeyStore.Account.openRouter)
+            onKeyPresence(true)
             status = (String(localized: "Klucz zapisany w pęku kluczy."), .success)
             // Gotcha 67: validate the chosen model id against the live list once a key is saved.
             let models = models

@@ -4,7 +4,7 @@ import SwiftUI
 /// when only the AI notes were searched (the index is being built), the answer line by line with
 /// its `[S1 12:34]` citations as buttons on the right (`LibraryCitationButton`), and "Źródła",
 /// the meetings it was answered from (S1 first), each a button that opens the meeting. A failure
-/// shows as a status line, with "Dodaj klucz" when the AI key is missing.
+/// shows as a status line, with "Dodaj klucz lub Pro" when there is no AI route.
 @MainActor
 struct LibraryAnswerView: View {
     let answer: LibraryAnswer
@@ -28,8 +28,8 @@ struct LibraryAnswerView: View {
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     ToolStatusLine(text: answer.error ?? String(localized: "AI zwróciło pustą odpowiedź."), tone: .error)
-                    if answer.error == OpenRouterError.missingKeyMessage {
-                        Button("Dodaj klucz", action: onAddKey)
+                    if answer.error == MeetingSummaryError.noKey.errorDescription {
+                        Button("Dodaj klucz lub Pro", action: onAddKey)
                             .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
                             .fixedSize()
                     }

@@ -3,7 +3,7 @@ import os
 
 /// "Zapytaj wszystkie spotkania" (Pro): finds the meetings that talk about the question in the
 /// search index (`context`), sends the excerpts of the best eight to the meetings model with the
-/// user's AI key (`LibraryAskPrompt`, one non-streaming call on `HTTP.meetingLLMSession`, like
+/// user's AI key or through the Pro relay (`LibraryAskPrompt`, one non-streaming call on `HTTP.meetingLLMSession`, like
 /// the one-meeting ask) and returns the answer with its sources. Nothing matched: the
 /// `noHitsAnswer` without an AI call. Nothing is stored. Never logs the question or the answer.
 actor LibraryAsker {
@@ -21,30 +21,27 @@ actor LibraryAsker {
     private let database: Database
     private let index: MeetingSearchIndex
     private let chat: MeetingChat
-    private let keyProvider: @Sendable () async -> String?
-    private let modelProvider: @Sendable () async -> String
+    private let routeProvider: @Sendable () async -> AIRoute?
     private let now: @Sendable () -> Date
     private let calendar: Calendar
 
+    /// - Parameter route: own key with the meetings model, the Pro relay, or nil (`noKey`).
     /// - Parameter reasoning: model id -> how to send `reasoning` (mandatory-reasoning models
     ///   reject `enabled: false`).
     /// - Parameter calendar: what "wczoraj" or "w tym tygodniu" means (`LibraryAskRetrieval.period`).
     init(
         database: Database,
         index: MeetingSearchIndex,
-        client: OpenRouterClient = OpenRouterClient(),
         session: URLSession = HTTP.meetingLLMSession,
-        key: @escaping @Sendable () async -> String?,
-        model: @escaping @Sendable () async -> String,
+        route: @escaping @Sendable () async -> AIRoute?,
         reasoning: @escaping @Sendable (String) -> ReasoningPolicy = { _ in .disabled },
         now: @escaping @Sendable () -> Date = { Date() },
         calendar: Calendar = LibraryAskRetrieval.calendar
     ) {
         self.database = database
         self.index = index
-        chat = MeetingChat(client: client, session: session, reasoning: reasoning)
-        keyProvider = key
-        modelProvider = model
+        chat = MeetingChat(session: session, reasoning: reasoning)
+        routeProvider = route
         self.now = now
         self.calendar = calendar
     }
@@ -65,18 +62,17 @@ actor LibraryAsker {
                 result.answer = Self.noHitsAnswer
                 return result
             }
-            guard let key = await keyProvider(), !key.isEmpty else { throw MeetingSummaryError.noKey }
-            let model = await modelProvider()
+            let route = try await MeetingChat.resolve(routeProvider)
             let user = LibraryAskPrompt.user(context: context, question: trimmed, now: now())
             let started = ContinuousClock.now
-            let reply = try await chat.complete(model: model, key: key, system: LibraryAskPrompt.system, user: user, maxTokens: Self.maxTokens)
+            let reply = try await chat.complete(route: route, system: LibraryAskPrompt.system, user: user, maxTokens: Self.maxTokens)
             if reply.finishReason == "length" {
                 Log.enhancement.notice("Library answer reached the \(Self.maxTokens) token cap")
             }
             let ms = Int((ContinuousClock.now - started) / .milliseconds(1))
-            Log.enhancement.info("Library ask ok in \(ms) ms with \(model, privacy: .public), \(context.sources.count) meetings")
+            Log.enhancement.info("Library ask ok in \(ms) ms with \(reply.model, privacy: .public), \(context.sources.count) meetings")
             result.answer = reply.text
-            result.model = model
+            result.model = reply.model
         } catch {
             Log.enhancement.error("Library ask failed: \(error.localizedDescription, privacy: .public)")
             result.error = error.localizedDescription

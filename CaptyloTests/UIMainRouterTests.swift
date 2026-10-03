@@ -31,6 +31,15 @@ struct UIMainRouterTests {
         }
     }
 
+    @Test func settingsAnchorIsSharedWithThePresenter() {
+        let (router, presenter) = Self.makeRouter()
+        #expect(router.settingsAnchor == nil)
+        router.settingsAnchor = .account
+        #expect(presenter.settingsAnchor == .account)
+        presenter.settingsAnchor = nil
+        #expect(router.settingsAnchor == nil)
+    }
+
     @Test func selectionIsSharedWithThePresenter() {
         let (router, presenter) = Self.makeRouter()
         #expect(router.selection == .pulpit)

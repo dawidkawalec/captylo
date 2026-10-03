@@ -209,13 +209,12 @@ struct LibraryAskTests {
         _ handler: @escaping StubURLProtocol.Handler
     ) -> (LibraryAsker, URL) {
         let baseURL = StubURLProtocol.register(handler)
+        let client = OpenRouterClient(baseURL: baseURL)
         let asker = LibraryAsker(
             database: fixture.database,
             index: index ?? fixture.index,
-            client: OpenRouterClient(baseURL: baseURL),
             session: StubURLProtocol.makeSession(),
-            key: { key },
-            model: { Self.model },
+            route: { key.map { AIRoute(client: client, key: $0, model: Self.model) } },
             now: { now },
             calendar: Self.utc
         )
@@ -583,7 +582,7 @@ struct LibraryAskTests {
         defer { StubURLProtocol.unregister(firstURL) }
         let missing = try #require(await noKey.ask(question: "Ile na reklamy?"))
         #expect(missing.answer == nil)
-        #expect(missing.error == OpenRouterError.missingKeyMessage)
+        #expect(missing.error == MeetingSummaryError.noKey.errorDescription)
         #expect(missing.sources.count == 1)
         #expect(calls.withLock { $0 } == 0)
 

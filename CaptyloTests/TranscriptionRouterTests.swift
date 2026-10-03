@@ -12,9 +12,63 @@ struct TranscriptionRouterTests {
         }
         return ElevenLabsSTT(
             session: TranscriptionStubURLProtocol.makeSession(),
-            keyProvider: { .value(key) },
+            credentialProvider: { TranscriptionFixtures.ownKey(key) },
             retrySession: { TranscriptionStubURLProtocol.makeSession() }
         )
+    }
+
+    /// The Pro relay answering with `status` and `body` for a fresh session token.
+    private func relay(status: Int, body: String) -> ElevenLabsSTT {
+        let token = TranscriptionFixtures.uniqueKey()
+        TranscriptionStubURLProtocol.register(key: token, TranscriptionStubURLProtocol.json(status, body))
+        return ElevenLabsSTT(
+            session: TranscriptionStubURLProtocol.makeSession(),
+            credentialProvider: { TranscriptionFixtures.relay(token) },
+            retrySession: { TranscriptionStubURLProtocol.makeSession() }
+        )
+    }
+
+    @Test func proRelaySuccessIsTheCloudModel() async throws {
+        let local = TranscriptionFakeLocalTranscriber(text: "lokalnie")
+        let router = TranscriptionRouter(local: local, localInstalled: { true }, elevenLabs: relay(status: 200, body: #"{"text":"z Pro"}"#))
+        let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud, duration: 3)
+
+        let result = try await router.transcribe(audio, engine: .elevenLabs, language: "pl", vocabulary: [])
+
+        #expect(result.text == "z Pro")
+        #expect(result.modelName == "scribe_v2")
+        #expect(!result.usedFallback)
+        #expect(result.fallbackError == nil)
+        #expect(local.transcribeCalls == 0)
+    }
+
+    @Test func quotaExceededFallsBackToTheLocalEngineAndSaysWhy() async throws {
+        let local = TranscriptionFakeLocalTranscriber(text: "lokalnie")
+        let router = TranscriptionRouter(
+            local: local,
+            localInstalled: { true },
+            elevenLabs: relay(status: 402, body: #"{"error":"quota_exceeded","resetsAt":"2026-11-01T00:00:00.000Z"}"#)
+        )
+        let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud)
+
+        let result = try await router.transcribe(audio, engine: .elevenLabs, language: "pl", vocabulary: [])
+
+        #expect(result.text == "lokalnie")
+        #expect(result.modelName == "whisper-large-v3-turbo", "the history row keeps the local model name")
+        #expect(result.usedFallback)
+        #expect(result.fallbackError == .quotaExceeded)
+        #expect(result.fallbackNotice == STTError.quotaExceeded.errorDescription)
+        #expect(local.transcribeCalls == 1)
+    }
+
+    @Test func fallbackNoticeSaysWhyTheCloudWasNotUsed() {
+        func notice(_ error: STTError?) -> String? {
+            TranscriptionResult(text: "x", modelName: "m", ms: 1, usedFallback: error != nil, fallbackError: error).fallbackNotice
+        }
+        #expect(notice(nil) == nil)
+        #expect(notice(.quotaExceeded) == "Limit chmury w tym miesiącu jest wyczerpany. Captylo użyje modelu lokalnego.")
+        #expect(notice(.missingKey) == "Chmura nie jest dostępna bez klucza albo Pro, użyto modelu lokalnego.")
+        #expect(notice(.timeout) == "Chmura nie odpowiedziała, użyto modelu lokalnego.")
     }
 
     @Test func localPathUsesTheLocalEngine() async throws {
@@ -77,7 +131,7 @@ struct TranscriptionRouterTests {
         let router = TranscriptionRouter(
             local: local,
             localInstalled: { true },
-            elevenLabs: ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), keyProvider: { .timedOut })
+            elevenLabs: ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { .timedOut })
         )
         let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud)
 
@@ -111,7 +165,7 @@ struct TranscriptionRouterTests {
             localInstalled: { true },
             elevenLabs: ElevenLabsSTT(
                 session: TranscriptionStubURLProtocol.makeSession(),
-                keyProvider: { .value(key) },
+                credentialProvider: { TranscriptionFixtures.ownKey(key) },
                 retrySession: { TranscriptionStubURLProtocol.makeSession() }
             )
         )

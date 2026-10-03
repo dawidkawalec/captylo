@@ -2,7 +2,8 @@ import Foundation
 import os
 @testable import Captylo
 
-/// URLProtocol stub keyed by the `xi-api-key` header, so parallel tests never share a handler.
+/// URLProtocol stub keyed by the `xi-api-key` header (own key) or the bearer token (the relay),
+/// so parallel tests never share a handler.
 final class TranscriptionStubURLProtocol: URLProtocol {
     typealias Handler = @Sendable (URLRequest) throws -> (status: Int, body: Data)
 
@@ -27,7 +28,8 @@ final class TranscriptionStubURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        let key = request.value(forHTTPHeaderField: "xi-api-key") ?? ""
+        let bearer = request.value(forHTTPHeaderField: "Authorization").map { String($0.dropFirst("Bearer ".count)) }
+        let key = request.value(forHTTPHeaderField: "xi-api-key") ?? bearer ?? ""
         guard let handler = Self.handlers.withLock({ $0[key] }) else {
             client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
             return
@@ -90,5 +92,17 @@ enum TranscriptionFixtures {
 
     static func uniqueKey() -> String {
         "test-key-\(UUID().uuidString)"
+    }
+
+    /// An own cloud key as the STT client's credential (`.value(nil)` without a key).
+    static func ownKey(_ key: String?) -> KeyStore.Lookup<CloudCredential> {
+        .value(key.map { CloudCredential.ownKey($0) })
+    }
+
+    /// The Pro relay with a session token.
+    static let relayBase = URL(string: "https://relay.example.test/v1")!
+
+    static func relay(_ token: String) -> KeyStore.Lookup<CloudCredential> {
+        .value(CloudCredential.relay(token: token, baseURL: relayBase))
     }
 }

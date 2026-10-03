@@ -2,8 +2,10 @@ import Accelerate
 import Foundation
 import os
 
-/// Routes a finished recording to the local engine or ElevenLabs. A cloud failure falls back to the local engine
-/// when the model is installed (`usedFallback`), otherwise surfaces as `DictationError.stt`.
+/// Routes a finished recording to the local engine or the cloud (own key or the Pro relay, decided
+/// by the STT client's credential). A cloud failure, including no route at all and the Pro monthly
+/// limit, falls back to the local engine when the model is installed (`usedFallback` with the
+/// reason in `fallbackError`), otherwise surfaces as `DictationError.stt`.
 struct TranscriptionRouter: TranscriptionRouting {
     /// Below this RMS the recording counts as silence for the hallucination filter (gotcha 87).
     static let silenceRMS: Float = 0.003
@@ -47,6 +49,7 @@ struct TranscriptionRouter: TranscriptionRouting {
         let text: String
         let modelName: String
         var usedFallback = false
+        var fallbackError: STTError?
         switch engine {
         case .local:
             text = try await transcribeLocally(audio, language: language)
@@ -63,13 +66,14 @@ struct TranscriptionRouter: TranscriptionRouting {
                 text = try await transcribeLocally(audio, language: language)
                 modelName = STTEngine.local.modelName
                 usedFallback = true
+                fallbackError = error
             }
         }
 
         let ms = Int(start.duration(to: clock.now) / .milliseconds(1))
         let filtered = Self.filterHallucination(text, samples: audio.samples)
         Log.transcription.info("Transcribed \(audio.duration, format: .fixed(precision: 1)) s with \(modelName, privacy: .public) in \(ms) ms, fallback: \(usedFallback)")
-        return TranscriptionResult(text: filtered, modelName: modelName, ms: ms, usedFallback: usedFallback)
+        return TranscriptionResult(text: filtered, modelName: modelName, ms: ms, usedFallback: usedFallback, fallbackError: fallbackError)
     }
 
     // MARK: - Paths

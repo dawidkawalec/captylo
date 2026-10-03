@@ -125,6 +125,10 @@ struct MeetingsView: View {
                     onAddKey: {
                         showsLibraryAsk = false
                         openModels()
+                    },
+                    onSeePro: {
+                        showsLibraryAsk = false
+                        appState.windowPresenter.openAccount()
                     }
                 )
             }

@@ -35,6 +35,11 @@ enum DesignPreviewData {
             reader: { _, _ in KeyStore.ReadResult(value: nil, status: errSecItemNotFound) }
         )
 
+        let account = previewAccount(now: Date())
+        var accountIsPro = false
+        if case .signedIn(let info) = account {
+            accountIsPro = info.isPro
+        }
         let overrides = AppStateOverrides(
             modelContainer: container,
             dictionaryURL: writeDictionary(),
@@ -43,7 +48,8 @@ enum DesignPreviewData {
             pinnedModelStatus: .ready,
             pinnedSpeechDetectorStatus: .ready,
             pinnedAccessibilityTrust: true,
-            pinnedPro: !showsFreePlan(),
+            pinnedPro: accountIsPro,
+            pinnedAccount: account,
             calendarEvents: showsCalendar() ? sampleCalendarEvents(now: Date()) : [],
             isDesignPreview: true
         )
@@ -54,6 +60,41 @@ enum DesignPreviewData {
     /// Pro is pinned on otherwise.
     static func showsFreePlan(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
         environment["CAPTYLO_PREVIEW_FREE"] == "1"
+    }
+
+    /// `CAPTYLO_PREVIEW_ACCOUNT=signedout|code|free|pro`: the "Konto Captylo" state (pinned, never
+    /// the Keychain or the network). Default: the Pro sample account, or signed out with
+    /// `CAPTYLO_PREVIEW_FREE=1`. Pro in the whole preview follows it.
+    static func previewAccount(environment: [String: String] = ProcessInfo.processInfo.environment, now: Date) -> AccountStore.State {
+        switch environment["CAPTYLO_PREVIEW_ACCOUNT"]?.lowercased() {
+        case "signedout": return .signedOut
+        case "code": return .codeSent(email: sampleAccountEmail)
+        case "free": return .signedIn(sampleAccount(plan: .free, now: now))
+        case "pro": return .signedIn(sampleAccount(plan: .pro, now: now))
+        default: return showsFreePlan(environment: environment) ? .signedOut : .signedIn(sampleAccount(plan: .pro, now: now))
+        }
+    }
+
+    static let sampleAccountEmail = "anna.kowalska@example.com"
+
+    /// An invented account: Pro renews in about six months with 3 h of 20 h and 12% of the AI
+    /// limit used this month; Free has no subscription and no usage.
+    static func sampleAccount(plan: AccountPlan, now: Date) -> AccountInfo {
+        let isPro = plan == .pro
+        return AccountInfo(
+            email: sampleAccountEmail,
+            plan: plan,
+            status: isPro ? "active" : nil,
+            periodEnd: isPro ? now.addingTimeInterval(183 * 86_400) : nil,
+            cancelAtPeriodEnd: false,
+            usage: AccountUsage(
+                month: "2026-10",
+                audioSeconds: isPro ? 10_800 : 0,
+                audioSecondsLimit: 72_000,
+                aiTokens: isPro ? 360_000 : 0,
+                aiTokensLimit: 3_000_000
+            )
+        )
     }
 
     /// `CAPTYLO_PREVIEW_CALENDAR=1`: "Kalendarz" on with the three invented events of

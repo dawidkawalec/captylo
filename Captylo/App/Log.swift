@@ -16,6 +16,8 @@ enum Log {
     static let learning = Logger(subsystem: subsystem, category: "learning")
     /// Calendar access and refresh counts only: never event titles or attendee names.
     static let calendar = Logger(subsystem: subsystem, category: "calendar")
+    /// Captylo account states and error kinds only: never the e-mail address, a code or a token.
+    static let account = Logger(subsystem: subsystem, category: "account")
 
     /// Wrap hot-path steps (capture stop, transcribe, enhance, paste) in signpost intervals.
     static let signposter = OSSignposter(subsystem: subsystem, category: "hotpath")

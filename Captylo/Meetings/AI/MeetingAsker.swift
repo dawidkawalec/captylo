@@ -3,7 +3,7 @@ import os
 
 /// "Zapytaj" about one meeting (Pro): one non-streaming call with the whole transcript and the
 /// user's notes (`MeetingAskPrompt`), on `HTTP.meetingLLMSession` with the meetings model and the
-/// user's AI key, like the AI notes. The question and its answer, or the Polish reason it failed,
+/// user's AI key, or through the Pro relay, like the AI notes. The question and its answer, or the Polish reason it failed,
 /// go onto the meeting row in one `modifyMeeting` step, newest last, the newest
 /// `maxStoredQuestions` kept. Never logs the question or the answer.
 actor MeetingAsker {
@@ -26,23 +26,20 @@ actor MeetingAsker {
 
     private let database: Database
     private let chat: MeetingChat
-    private let keyProvider: @Sendable () async -> String?
-    private let modelProvider: @Sendable () async -> String
+    private let routeProvider: @Sendable () async -> AIRoute?
 
+    /// - Parameter route: own key with the meetings model, the Pro relay, or nil (`noKey`).
     /// - Parameter reasoning: model id -> how to send `reasoning` (mandatory-reasoning models
     ///   reject `enabled: false`).
     init(
         database: Database,
-        client: OpenRouterClient = OpenRouterClient(),
         session: URLSession = HTTP.meetingLLMSession,
-        key: @escaping @Sendable () async -> String?,
-        model: @escaping @Sendable () async -> String,
+        route: @escaping @Sendable () async -> AIRoute?,
         reasoning: @escaping @Sendable (String) -> ReasoningPolicy = { _ in .disabled }
     ) {
         self.database = database
-        chat = MeetingChat(client: client, session: session, reasoning: reasoning)
-        keyProvider = key
-        modelProvider = model
+        chat = MeetingChat(session: session, reasoning: reasoning)
+        routeProvider = route
     }
 
     /// Asks `question` about the meeting and stores the exchange on its row. Nil (and nothing
@@ -90,21 +87,20 @@ actor MeetingAsker {
 
     private func answer(_ question: String, meeting: MeetingRecord, segments: [MeetingSegmentRecord]) async throws -> (String, String) {
         guard meeting.status != .recording else { throw AskError(message: Self.recordingMessage) }
-        guard let key = await keyProvider(), !key.isEmpty else { throw MeetingSummaryError.noKey }
+        let route = try await MeetingChat.resolve(routeProvider)
         let spoken = segments.filter { !$0.isEcho }
         let words = spoken.reduce(WordCounter.count(meeting.notes)) { $0 + WordCounter.count($1.text) }
         guard words >= Self.minimumWords else { throw AskError(message: Self.nothingToAskMessage) }
 
-        let model = await modelProvider()
         let user = MeetingAskPrompt.user(meeting: meeting, segments: spoken, question: question, history: meeting.questions)
         let started = ContinuousClock.now
-        let reply = try await chat.complete(model: model, key: key, system: MeetingAskPrompt.system, user: user, maxTokens: Self.maxTokens)
+        let reply = try await chat.complete(route: route, system: MeetingAskPrompt.system, user: user, maxTokens: Self.maxTokens)
         if reply.finishReason == "length" {
             Log.enhancement.notice("Meeting answer reached the \(Self.maxTokens) token cap")
         }
         let ms = Int((ContinuousClock.now - started) / .milliseconds(1))
-        Log.enhancement.info("Meeting ask ok in \(ms) ms with \(model, privacy: .public)")
-        return (reply.text, model)
+        Log.enhancement.info("Meeting ask ok in \(ms) ms with \(reply.model, privacy: .public)")
+        return (reply.text, reply.model)
     }
 
     /// A reason not to call the AI, shown as it is.

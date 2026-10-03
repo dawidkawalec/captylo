@@ -23,7 +23,6 @@ enum SupportPromo: Equatable, Sendable {
     /// "Ukryj" hides the card for this long.
     static let hideInterval: TimeInterval = 14 * 24 * 3600
 
-    static let proURL = URL(string: "https://captylo.com/#cennik")!
     /// A page on our site that forwards to the Stripe Payment Link, so the payment link can
     /// change without a new app release.
     static let coffeeURL = URL(string: "https://captylo.com/kawa/")!
@@ -73,9 +72,10 @@ enum SupportPromo: Equatable, Sendable {
         }
     }
 
-    var url: URL {
+    /// The page the action opens; nil for Pro, which opens "Konto Captylo" in Ustawienia.
+    var url: URL? {
         switch self {
-        case .pro: return Self.proURL
+        case .pro: return nil
         case .coffee: return Self.coffeeURL
         case .sponsor(let ad): return ad.url
         }
@@ -97,6 +97,7 @@ enum SupportPromo: Equatable, Sendable {
 struct SupportCard: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openURL) private var openURL
+    @Environment(MainRouter.self) private var router: MainRouter?
     let now: Date
 
     var body: some View {
@@ -128,7 +129,11 @@ struct SupportCard: View {
                     .foregroundStyle(GlassColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button(promo.actionTitle) {
-                    openURL(promo.url)
+                    if let url = promo.url {
+                        openURL(url)
+                    } else {
+                        router?.openAccount()
+                    }
                 }
                 .buttonStyle(.glass(.accent, size: .small, shape: .capsule, fillsWidth: true))
                 .padding(.top, 2)

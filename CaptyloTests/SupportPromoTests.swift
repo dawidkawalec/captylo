@@ -48,7 +48,8 @@ struct SupportPromoTests {
     }
 
     @Test func linksPointAtOurSite() {
-        #expect(SupportPromo.pro.url.absoluteString == "https://captylo.com/#cennik")
-        #expect(SupportPromo.coffee.url.absoluteString == "https://captylo.com/kawa/")
+        // Pro opens the account panel in Ustawienia, not the site.
+        #expect(SupportPromo.pro.url == nil)
+        #expect(SupportPromo.coffee.url?.absoluteString == "https://captylo.com/kawa/")
     }
 }

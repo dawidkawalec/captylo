@@ -56,7 +56,7 @@ struct EnhancementJob: Sendable, Equatable {
 enum EnhancementSkip: LocalizedError, Sendable, Equatable {
     /// Empty text, or 3 words or fewer for a cleanup mode.
     case tooShort
-    /// No OpenRouter key in the Keychain.
+    /// No route: no own AI key and no Pro session (or the relay refused the session).
     case noKey
 
     var errorDescription: String? {
@@ -89,11 +89,15 @@ enum EnhancementFailure: LocalizedError, Sendable, Equatable {
     case invalidResponse
     /// The sanity guard threw the answer away.
     case rejected(EnhancementRejection)
+    /// The Pro relay's monthly AI limit is used up (402).
+    case quotaExceeded
 
     var errorDescription: String? {
         switch self {
         case .keychainTimeout:
             return String(localized: "Pęk kluczy nie odpowiedział na czas.")
+        case .quotaExceeded:
+            return String(localized: "Limit AI w tym miesiącu jest wyczerpany.")
         case .deadline:
             return EnhancerError.deadline.errorDescription
         case .http(let status):
@@ -111,6 +115,8 @@ enum EnhancementFailure: LocalizedError, Sendable, Equatable {
         switch self {
         case .keychainTimeout:
             return String(localized: "Pęk kluczy nie odpowiedział na czas")
+        case .quotaExceeded:
+            return String(localized: "Limit AI wyczerpany")
         case .deadline(let seconds):
             let limit = seconds.formatted(.number.precision(.fractionLength(0...1)).locale(AppLocale.current))
             return String(localized: "Przekroczono limit \(limit) s")

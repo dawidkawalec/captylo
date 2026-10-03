@@ -14,6 +14,8 @@ struct LibraryAskPanel: View {
     let onOpen: (_ meetingID: UUID, _ seconds: Double?) -> Void
     /// Opens Modele, where the AI key goes.
     let onAddKey: () -> Void
+    /// Free: "Zobacz Pro" closes the panel and opens "Konto Captylo" in Ustawienia.
+    let onSeePro: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
@@ -52,7 +54,8 @@ struct LibraryAskPanel: View {
                     MeetingProCard(
                         title: "Zapytaj wszystkie spotkania jest w Captylo Pro",
                         message: "Zadaj jedno pytanie o wszystkie spotkania i dostań krótką odpowiedź ze źródłami i odnośnikami do momentów rozmowy.",
-                        systemImage: "bubble.left.and.text.bubble.right"
+                        systemImage: "bubble.left.and.text.bubble.right",
+                        onSeePro: onSeePro
                     ) {
                         Self.proSample
                     }

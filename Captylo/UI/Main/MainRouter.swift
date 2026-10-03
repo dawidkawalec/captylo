@@ -44,4 +44,15 @@ final class MainRouter {
     func openSettings() {
         open(.ustawienia)
     }
+
+    /// Ustawienia, scrolled to the "Konto Captylo" panel.
+    func openAccount() {
+        presenter.openAccount()
+    }
+
+    /// The panel Ustawienia should scroll to once; the page clears it after scrolling.
+    var settingsAnchor: SettingsAnchor? {
+        get { presenter.settingsAnchor }
+        set { presenter.settingsAnchor = newValue }
+    }
 }

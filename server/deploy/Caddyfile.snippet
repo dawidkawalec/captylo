@@ -1,0 +1,28 @@
+# === captylo-api ===
+api.captylo.com {
+    encode zstd gzip
+    # Access log for traffic numbers only: path, status, timing. No client address, port or
+    # headers (the privacy policy and server/README.md promise exactly that).
+    log {
+        format filter {
+            request>remote_ip delete
+            request>remote_port delete
+            request>client_ip delete
+            request>headers delete
+            resp_headers delete
+        }
+    }
+    request_body {
+        max_size 220MB
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+    }
+    reverse_proxy captylo-api:8080 {
+        transport http {
+            read_timeout 15m
+        }
+    }
+}
+# === /captylo-api ===

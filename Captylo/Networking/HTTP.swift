@@ -45,6 +45,19 @@ enum HTTP {
         return URLSession(configuration: configuration)
     }()
 
+    /// Captylo account calls (`AccountClient`: sign-in, `/me`, billing links): small JSON
+    /// requests, never cached, 15 s per request.
+    static let accountSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.waitsForConnectivity = false
+        configuration.timeoutIntervalForRequest = 15
+        configuration.timeoutIntervalForResource = 30
+        configuration.httpMaximumConnectionsPerHost = 2
+        return URLSession(configuration: configuration)
+    }()
+
     /// Resource cap for audio uploads. The real per-take deadline (`max(20, 10 + 0.5 * seconds)`)
     /// is enforced in `ElevenLabsSTT`; this only has to stay above it for the longest file
     /// (a 4 h recording needs about 7210 s).

@@ -182,6 +182,21 @@ struct DesignPreviewTests {
         #expect(!DesignPreviewData.editsMeetingTitle(environment: [:]))
     }
 
+    /// `CAPTYLO_PREVIEW_ACCOUNT` (the "Konto Captylo" panel), defaulting to the plan the preview shows.
+    @Test func previewPicksTheAccountState() {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        let email = DesignPreviewData.sampleAccountEmail
+        #expect(email.hasSuffix("@example.com"))
+        #expect(DesignPreviewData.previewAccount(environment: [:], now: now) == .signedIn(DesignPreviewData.sampleAccount(plan: .pro, now: now)))
+        #expect(DesignPreviewData.previewAccount(environment: ["CAPTYLO_PREVIEW_FREE": "1"], now: now) == .signedOut)
+        #expect(DesignPreviewData.previewAccount(environment: ["CAPTYLO_PREVIEW_ACCOUNT": "code"], now: now) == .codeSent(email: email))
+        #expect(DesignPreviewData.previewAccount(environment: ["CAPTYLO_PREVIEW_ACCOUNT": "SignedOut"], now: now) == .signedOut)
+        let free = DesignPreviewData.previewAccount(environment: ["CAPTYLO_PREVIEW_ACCOUNT": "free"], now: now)
+        #expect(free == .signedIn(DesignPreviewData.sampleAccount(plan: .free, now: now)))
+        #expect(DesignPreviewData.sampleAccount(plan: .free, now: now).usage.audioSeconds == 0)
+        #expect(DesignPreviewData.sampleAccount(plan: .pro, now: now).periodEnd ?? now > now)
+    }
+
     /// `CAPTYLO_PREVIEW_AUDIO_CHECK`: the result the system audio check row in Ustawienia shows.
     @Test func previewPicksTheSystemAudioCheckResult() {
         #expect(DesignPreviewData.audioCheckOutcome(environment: ["CAPTYLO_PREVIEW_AUDIO_CHECK": "works"]) == .works)

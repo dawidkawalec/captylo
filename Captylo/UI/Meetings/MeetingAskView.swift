@@ -3,7 +3,7 @@ import SwiftUI
 /// The "Zapytaj" tab of a finished meeting (Pro): questions about this meeting and the AI's
 /// answers, oldest first. Each question sits in a small glass bubble on the right, its answer
 /// under it like the AI notes (`MeetingNotesSections`, `[mm:ss]` citations as stamps that play
-/// that moment), a failure as a status line ("Dodaj klucz" when the AI key is missing). While
+/// that moment), a failure as a status line ("Dodaj klucz lub Pro" when there is no AI route). While
 /// `MeetingAskRuns` answers, the question shows with a spinner "Szukam odpowiedzi...". At the
 /// bottom the field "Zapytaj o to spotkanie..." (Return sends); with no questions yet, three
 /// suggested questions above it. A trash icon left of the field (confirmed: "Wyczyść") removes
@@ -132,8 +132,8 @@ struct MeetingAskView: View {
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     ToolStatusLine(text: asked.error ?? String(localized: "AI zwróciło pustą odpowiedź."), tone: .error)
-                    if asked.error == OpenRouterError.missingKeyMessage {
-                        Button("Dodaj klucz", action: onAddKey)
+                    if asked.error == MeetingSummaryError.noKey.errorDescription {
+                        Button("Dodaj klucz lub Pro", action: onAddKey)
                             .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
                             .fixedSize()
                     }

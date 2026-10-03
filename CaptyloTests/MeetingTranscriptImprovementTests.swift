@@ -106,11 +106,11 @@ struct MeetingTranscriptImprovementTests {
 
     @Test func meetingUploadsAskForWordTimesInTheirOwnFormat() {
         let request = STTRequest(wav: Data([1, 2, 3]), fileName: "them.m4a", model: "scribe_v2", audioSeconds: 60)
-        let (_, meeting) = ElevenLabsSTT.makeUpload(request, key: "k", options: .init(mimeType: "audio/mp4", timestamps: "word"))
+        let (_, meeting) = ElevenLabsSTT.makeUpload(request, credential: .ownKey("k"), options: .init(mimeType: "audio/mp4", timestamps: "word"))
         let text = String(decoding: meeting, as: UTF8.self)
         #expect(text.contains("Content-Type: audio/mp4"))
         #expect(text.contains("name=\"timestamps_granularity\"\r\n\r\nword"))
-        let (_, dictation) = ElevenLabsSTT.makeUpload(request, key: "k")
+        let (_, dictation) = ElevenLabsSTT.makeUpload(request, credential: .ownKey("k"))
         let dictationText = String(decoding: dictation, as: UTF8.self)
         #expect(dictationText.contains("Content-Type: audio/wav"))
         #expect(dictationText.contains("name=\"timestamps_granularity\"\r\n\r\nnone"))
@@ -317,11 +317,10 @@ struct MeetingTranscriptImprovementTests {
     }
 
     private static func corrector(_ handler: @escaping StubURLProtocol.Handler, key: String? = "sk-or-test") -> MeetingTranscriptCorrector {
-        MeetingTranscriptCorrector(
-            client: OpenRouterClient(baseURL: StubURLProtocol.register(handler)),
+        let client = OpenRouterClient(baseURL: StubURLProtocol.register(handler))
+        return MeetingTranscriptCorrector(
             session: StubURLProtocol.makeSession(),
-            key: { key },
-            model: { "google/gemini-2.5-flash-lite" }
+            route: { key.map { AIRoute(client: client, key: $0, model: "google/gemini-2.5-flash-lite") } }
         )
     }
 
@@ -374,7 +373,7 @@ struct MeetingTranscriptImprovementTests {
             vocabulary: { [] }
         )
         #expect(await noKey.run(meetingID: id) == false)
-        #expect(try await database.meeting(id: id)?.transcriptError == MeetingCorrectionProcessor.errorPrefix + OpenRouterError.missingKeyMessage)
+        #expect(try await database.meeting(id: id)?.transcriptError == MeetingCorrectionProcessor.errorPrefix + (MeetingSummaryError.noKey.errorDescription ?? ""))
     }
 
     @Test func theAIFixAfterAMeetingFollowsItsSwitch() async throws {

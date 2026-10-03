@@ -447,6 +447,10 @@ struct ModelStep: View {
                 .font(GlassFont.caption)
                 .foregroundStyle(GlassColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Text("Masz Captylo Pro? Zalogujesz się w Ustawieniach po zakończeniu.")
+                .font(GlassFont.caption)
+                .foregroundStyle(GlassColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
                 GlassSecureField("Klucz API chmury", text: $apiKey)
                 Button("Zapisz klucz") {
@@ -464,7 +468,8 @@ struct ModelStep: View {
                 get: { settings.sttEngine == .elevenLabs },
                 set: { settings.sttEngine = $0 ? .elevenLabs : .local }
             ))
-            .disabled(keyStore.get(KeyStore.Account.elevenLabs) == nil)
+            // Pro reaches the cloud without a key (through Captylo).
+            .disabled(keyStore.get(KeyStore.Account.elevenLabs) == nil && !model.appState.account.isPro)
         }
     }
 

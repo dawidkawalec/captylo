@@ -28,8 +28,22 @@ Files: `Captylo/UI/Glass/Grainient.metal`, the shader in `site/assets/js/grainie
 | [FluidAudio](https://github.com/FluidInference/FluidAudio) | meeting voice detection and speaker labels runtime (Swift package) | Apache License 2.0 |
 | [Silero VAD](https://github.com/snakers4/silero-vad) by Silero Team, [Core ML conversion](https://huggingface.co/FluidInference/silero-vad-coreml) by FluidInference | detecting speech in meetings, downloaded on first use (not bundled) | MIT |
 | [pyannote speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1) by pyannote (segmentation, WeSpeaker speaker embedding, PLDA parameters by BUT Speech@FIT), modified [Core ML conversion](https://huggingface.co/FluidInference/speaker-diarization-coreml) by FluidInference | speaker labels in meetings (macOS 15+), downloaded on first use (not bundled) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| [Sparkle](https://github.com/sparkle-project/Sparkle) (sparkle-project/Sparkle) | software updates (Swift package, bundled as `Sparkle.framework`) | MIT; its bundled bsdiff, sais-lite, ed25519 and signature verifier parts keep their BSD, MIT and zlib terms (Sparkle's `LICENSE`) |
 | [Inter](https://rsms.me/inter/) by Rasmus Andersson | UI typeface, app and site | SIL Open Font License 1.1 (`OFL-Inter.txt`) |
 | [Manrope](https://github.com/sharanda/manrope) by Mikhail Sharanda | display typeface, app and site | SIL Open Font License 1.1 (`OFL-Manrope.txt`) |
+
+## Server
+
+The API service in `server/` (`api.captylo.com`) is GPLv3 like the app. Its npm dependencies (exact versions in `server/package.json`, the full tree in `server/package-lock.json`) are not part of this repository; `npm ci` installs them.
+
+| Component | Used for | Licence |
+|---|---|---|
+| [Hono](https://github.com/honojs/hono) and [@hono/node-server](https://github.com/honojs/node-server) | HTTP routing and the Node.js adapter | MIT |
+| [node-postgres](https://github.com/brianc/node-postgres) (`pg`) | Postgres client | MIT |
+| [stripe-node](https://github.com/stripe/stripe-node) (`stripe`) | Stripe API client (Checkout, Portal, webhook signatures) | MIT |
+| [resend-node](https://github.com/resend/resend-node) (`resend`) | sending the sign-in code e-mails | MIT |
+| [PGlite](https://github.com/electric-sql/pglite) (`@electric-sql/pglite`, tests only) | in-process Postgres for the server tests | Apache License 2.0 |
+| [TypeScript](https://github.com/microsoft/TypeScript), [tsx](https://github.com/privatenumber/tsx), [Vitest](https://github.com/vitest-dev/vitest) (development only) | compiler, dev runner, test runner | Apache License 2.0, MIT, MIT |
 
 ## Prior work
 

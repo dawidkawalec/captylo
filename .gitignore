@@ -12,11 +12,18 @@ build/
 *.xcresult
 *.profraw
 
+# Release output (scripts/release.sh): DMGs, signed apps, build logs, never committed
+dist/
+
+# Python bytecode (scripts/appcast.py tests)
+__pycache__/
+
 # SwiftPM
 .swiftpm/
 Package.resolved
 
-# Secrets / local env
+# Secrets / local env (deploy/local.env names the server and its folders: never in the public repo)
+deploy/local.env
 .env
 .env.*
 !.env.example

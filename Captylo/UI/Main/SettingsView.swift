@@ -1,10 +1,11 @@
 import AppKit
 import SwiftUI
 
-/// "Ustawienia": grouped Dusk Glass panels of rows and blue switches (mockup 03): the shortcut
+/// "Ustawienia": grouped Dusk Glass panels of rows and blue switches (mockup 03): the Captylo
+/// account first (`AccountSettingsPanel`, the target of `openAccount()`), the shortcut
 /// recorder as a glass keycap, microphone menu, recording toggles, meetings
 /// (`MeetingsSettingsPanel`), pasting / history toggles, login item, onboarding reset, the import
-/// from the old VocaType ("Dane") and the version footer.
+/// from the old VocaType ("Dane"), updates (`UpdatesRow`) and the version footer.
 @MainActor
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
@@ -13,6 +14,18 @@ struct SettingsView: View {
         @Bindable var settings = appState.settings
 
         ToolPage {
+            // The reader only needs the anchored panel; its proxy scrolls the page's scroll view.
+            ScrollViewReader { proxy in
+                AccountSettingsPanel(account: appState.account)
+                    .id(SettingsAnchor.account)
+                    .onAppear {
+                        scrollToAnchor(proxy)
+                    }
+                    .onChange(of: appState.windowPresenter.settingsAnchor) {
+                        scrollToAnchor(proxy)
+                    }
+            }
+
             GlassPanel(spacing: 14) {
                 sectionHeader("Skrót", systemImage: "keyboard")
                 VStack(alignment: .leading, spacing: 12) {
@@ -107,16 +120,28 @@ struct SettingsView: View {
                 LaunchAtLoginRow(launchAtLogin: appState.launchAtLogin)
                 GlassRowSeparator()
                     .padding(.vertical, 6)
+                UpdatesRow(updater: appState.updater)
+                GlassRowSeparator()
+                    .padding(.vertical, 6)
                 OnboardingResetRow(settings: settings)
             }
 
-            VersionFooter()
+            VersionFooter(versionLine: appState.updater.versionLine)
                 .padding(.horizontal, 8)
                 .padding(.top, 4)
         }
         .onAppear {
             appState.launchAtLogin.refresh()
             appState.audioDevices.refresh()
+        }
+    }
+
+    /// `openAccount()` (deep links, "Zobacz Pro"): scrolls to the panel once, then forgets it.
+    private func scrollToAnchor(_ proxy: ScrollViewProxy) {
+        guard let anchor = appState.windowPresenter.settingsAnchor else { return }
+        appState.windowPresenter.settingsAnchor = nil
+        withAnimation(GlassMotion.spring) {
+            proxy.scrollTo(anchor, anchor: .top)
         }
     }
 
@@ -361,9 +386,8 @@ private struct OnboardingResetRow: View {
 
 @MainActor
 private struct VersionFooter: View {
-    private var version: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-    }
+    /// "Wersja 1.0.0 (142)" (`AppUpdaterConfiguration.versionLine`).
+    let versionLine: String
 
     var body: some View {
         HStack(spacing: 10) {
@@ -376,7 +400,7 @@ private struct VersionFooter: View {
                 Text(verbatim: "Captylo")
                     .font(GlassFont.ui(13, .semibold))
                     .foregroundStyle(GlassColor.textPrimary)
-                Text("Wersja \(version)")
+                Text(verbatim: versionLine)
                     .font(GlassFont.caption)
                     .foregroundStyle(GlassColor.textSecondary)
             }

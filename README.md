@@ -31,9 +31,19 @@ Captylo is a minimalist, open source dictation app for macOS. Hold a hotkey, spe
 - For meeting notes: the "System Audio Recording Only" permission (asked the first time a meeting records)
 - Optional: full access to Calendars (asked only when you turn "Kalendarz" on in Settings > Spotkania)
 
+## Install
+
+1. Download [Captylo.dmg](https://captylo.com/download/Captylo.dmg) from [captylo.com](https://captylo.com) (earlier versions are attached to the [GitHub releases](https://github.com/dawidkawalec/captylo/releases)).
+2. Open it and drag Captylo to the Applications folder ("Programy").
+3. Open Captylo. It asks for the microphone, then for Accessibility (System Settings > Privacy & Security), so the hotkey works and the text can be pasted where you type. Meeting notes ask for "System Audio Recording Only" the first time they record.
+
+The app is signed with a Developer ID and notarized by Apple, so macOS opens it without the "unidentified developer" warning. The first launch downloads the speech model (about 1.6 GB) once; after that dictation works offline. Updates come through the app (Ustawienia > Aplikacja > Aktualizacje, or "Sprawdź aktualizacje…" in the menu bar menu); Captylo asks before it installs one.
+
+If you used a copy you built yourself before, macOS treats the downloaded app as a new one and asks for the permissions again, once.
+
 ## Build it yourself
 
-A signed download is coming to [captylo.com](https://captylo.com). Until then you can build Captylo from this repository. You need a Mac with Apple Silicon and **Xcode 26** (free from the Mac App Store, about 10 GB, install it first and open it once to accept the licence).
+You can also build Captylo from this repository. You need a Mac with Apple Silicon and **Xcode 26** (free from the Mac App Store, about 10 GB, install it first and open it once to accept the licence).
 
 ### The easy way: let an AI agent do it
 
@@ -48,7 +58,7 @@ Build and install the Captylo dictation app for me from https://github.com/dawid
 If a step fails, read the error, fix it and try again. Explain what you do in simple words.
 ```
 
-The first launch downloads the speech model (about 600 MB) once. After that dictation works offline.
+The first launch downloads the speech model (about 1.6 GB) once. After that dictation works offline.
 
 ### The manual way
 
@@ -70,11 +80,15 @@ make run      # launch the last build
 make check    # permissions, model and paths as JSON
 ```
 
-Self-built copies are signed ad hoc, so macOS may forget the Microphone and Accessibility permissions after you rebuild. Run `make reset-tcc` and grant them again, or run `scripts/setup-signing.sh` once to create a local signing identity that keeps them across builds.
+Self-built copies are signed ad hoc, so macOS may forget the Microphone and Accessibility permissions after you rebuild. Run `make reset-tcc` and grant them again, or run `scripts/setup-signing.sh` once to create a local signing identity that keeps them across builds. Self-built copies check the same update feed as the download, and installing an update replaces them with the official, notarized build; turn off "Sprawdzaj automatycznie" in Ustawienia > Aplikacja to keep your own.
+
+How a public release is made (Developer ID, notarization, the DMG, the update feed): [docs/release.md](docs/release.md).
 
 ## Privacy
 
 Transcription runs locally on your Mac by default: recordings and text never leave it. The cloud features are optional and off until you turn them on: cloud transcription receives the recording, the AI modes receive the transcript. API keys are stored in the macOS login Keychain. The code is open, so you can check all of this yourself.
+
+In Pro, when you have no key of your own, the cloud and AI requests go through our server (`api.captylo.com`), which passes them on to the cloud and AI providers and keeps none of the audio or text, not even in its logs. It stores your e-mail address, your sign-in sessions, the state of your subscription and this month's usage counts (audio seconds and AI tokens), nothing else. Payments are handled by the payment provider; we never see your card. The full list of providers and what each one receives is in the [privacy policy](https://captylo.com/prywatnosc/).
 
 Learning from your corrections ("Ucz się z moich poprawek", Settings) stays on your Mac too: after a paste Captylo reads back only that text field for a short while, never password fields, password managers or terminals, and keeps what it learned in `learning.json` next to the dictionary. With an AI mode on, a few before/after pairs go to the same AI to update your style description. Every lesson can be undone in Słownik, and the switch turns it all off.
 
@@ -89,7 +103,9 @@ The calendar is read only on this Mac, and only while "Kalendarz" is on: Captylo
 ## Pricing
 
 - **Free**: unlimited local dictation, forever. Cloud transcription and AI modes work in Free too when you paste your own API keys in Settings (Modele); you pay the provider directly.
-- **Pro** (the only paid plan): cloud transcription and AI modes that work right away, with no keys to set up, plus every future feature. Launch prices: [captylo.com](https://captylo.com/#cennik).
+- **Pro** (the only paid plan): cloud transcription, AI modes and the meeting AI features that work right away, with no keys to set up, plus every future feature. You pay by card (yearly or monthly, cancel any time from the app) and sign in to a Captylo account in Settings > Konto Captylo with your e-mail address and a code we send you; no passwords. Fair use: 20 hours of cloud transcription and 3 million AI tokens a month (a meeting's two tracks count separately). Launch prices: [captylo.com](https://captylo.com/#cennik), terms: [captylo.com/regulamin](https://captylo.com/regulamin/).
+
+Your own key always wins: with a key in Settings, Captylo talks to that provider directly even in Pro. The server behind Pro is open source too, in [server/](server/).
 
 ## Contributing
 

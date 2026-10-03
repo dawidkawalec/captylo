@@ -2,7 +2,7 @@ import Foundation
 
 /// Request builders and parsers for the OpenRouter API (docs/architecture.md, AI cleanup).
 /// Pure value type: no networking here, so every request and parser is unit-tested with fixtures.
-struct OpenRouterClient: Sendable {
+struct OpenRouterClient: Sendable, Equatable {
     static let defaultBaseURL = URL(string: "https://openrouter.ai/api/v1")!
     /// App attribution headers (`X-Title`, `HTTP-Referer`) shown on openrouter.ai.
     static let appTitle = "Captylo"
@@ -67,6 +67,17 @@ struct OpenRouterClient: Sendable {
             throw OpenRouterError.decoding
         }
         return (choice.message?.content, choice.finishReason)
+    }
+
+    /// `$.model` of a chat answer: the model that actually answered (the Pro relay picks it on
+    /// the server). Nil when absent or blank.
+    static func responseModel(_ data: Data) -> String? {
+        struct Answer: Decodable {
+            let model: String?
+        }
+        guard let model = (try? JSONDecoder().decode(Answer.self, from: data))?.model?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !model.isEmpty else { return nil }
+        return model
     }
 
     // MARK: Key and models

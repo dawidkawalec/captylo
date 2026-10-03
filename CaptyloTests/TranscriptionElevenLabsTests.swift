@@ -102,7 +102,7 @@ struct TranscriptionElevenLabsTests {
     @Test func transcribesThroughTheStub() async throws {
         let key = TranscriptionFixtures.uniqueKey()
         TranscriptionStubURLProtocol.register(key: key, TranscriptionStubURLProtocol.json(200, #"{"text":"Dzień dobry"}"#))
-        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), keyProvider: { .value(key) })
+        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { TranscriptionFixtures.ownKey(key) })
 
         #expect(try await client.transcribe(request()) == "Dzień dobry")
     }
@@ -118,19 +118,84 @@ struct TranscriptionElevenLabsTests {
         for (status, body, expected) in cases {
             let key = TranscriptionFixtures.uniqueKey()
             TranscriptionStubURLProtocol.register(key: key, TranscriptionStubURLProtocol.json(status, body))
-            let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), keyProvider: { .value(key) })
+            let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { TranscriptionFixtures.ownKey(key) })
             await #expect(throws: expected) { try await client.transcribe(request()) }
         }
     }
 
     @Test func missingKeyFailsBeforeTheNetwork() async {
-        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), keyProvider: { .value("  ") })
+        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { TranscriptionFixtures.ownKey("  ") })
         await #expect(throws: STTError.missingKey) { try await client.transcribe(request()) }
     }
 
     @Test func keychainTimeoutFailsBeforeTheNetwork() async {
-        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), keyProvider: { .timedOut })
+        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { .timedOut })
         await #expect(throws: STTError.keychainTimeout) { try await client.transcribe(request()) }
+    }
+
+    // MARK: - The Pro relay
+
+    @Test func relayRequestCarriesTheBearerAndTheSecondsButNoKey() throws {
+        let credential = CloudCredential.relay(token: "session-token", baseURL: TranscriptionFixtures.relayBase)
+        let urlRequest = ElevenLabsSTT.makeRequest(request(audioSeconds: 12.2), credential: credential)
+
+        #expect(urlRequest.url == URL(string: "https://relay.example.test/v1/speech-to-text"))
+        #expect(urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer session-token")
+        #expect(urlRequest.value(forHTTPHeaderField: "xi-api-key") == nil)
+        #expect(urlRequest.value(forHTTPHeaderField: "X-Captylo-Audio-Seconds") == "13")
+        #expect(urlRequest.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("multipart/form-data; boundary=") == true)
+        // The relay passes the same multipart form on.
+        let body = String(decoding: try #require(urlRequest.httpBody), as: UTF8.self)
+        #expect(body.contains(field("model_id", "scribe_v2")))
+
+        // A blip still counts as one second (the relay rejects 0).
+        let short = ElevenLabsSTT.makeRequest(request(audioSeconds: 0.2), credential: credential)
+        #expect(short.value(forHTTPHeaderField: "X-Captylo-Audio-Seconds") == "1")
+    }
+
+    @Test func ownKeyRequestSendsNoSecondsAndNoBearer() {
+        let urlRequest = ElevenLabsSTT.makeRequest(request(), credential: .ownKey("secret"))
+        #expect(urlRequest.url == ElevenLabsSTT.transcribeURL)
+        #expect(urlRequest.value(forHTTPHeaderField: "xi-api-key") == "secret")
+        #expect(urlRequest.value(forHTTPHeaderField: "Authorization") == nil)
+        #expect(urlRequest.value(forHTTPHeaderField: "X-Captylo-Audio-Seconds") == nil)
+    }
+
+    @Test func mapsTheRelayStatuses() {
+        #expect(ElevenLabsSTT.mapStatus(402, body: Data(#"{"error":"quota_exceeded"}"#.utf8), isRelay: true) == .quotaExceeded)
+        #expect(ElevenLabsSTT.mapStatus(403, body: Data(#"{"error":"pro_required"}"#.utf8), isRelay: true) == .missingKey)
+        #expect(ElevenLabsSTT.mapStatus(401, body: Data(#"{"error":"unauthorized"}"#.utf8), isRelay: true) == .missingKey)
+        #expect(ElevenLabsSTT.mapStatus(429, body: Data(), isRelay: true) == .rateLimited)
+        // An own key keeps the vendor's meaning.
+        #expect(ElevenLabsSTT.mapStatus(403, body: Data()) == .unauthorized)
+        #expect(ElevenLabsSTT.mapStatus(402, body: Data("pay".utf8)) == .server(402, "pay"))
+        #expect(STTError.quotaExceeded.errorDescription == "Limit chmury w tym miesiącu jest wyczerpany. Captylo użyje modelu lokalnego.")
+        #expect(STTError.missingKey.errorDescription == "Brak dostępu do chmury. Dodaj klucz albo włącz Pro w Ustawieniach.")
+    }
+
+    @Test func transcribesThroughTheRelay() async throws {
+        let token = TranscriptionFixtures.uniqueKey()
+        let seen = OSAllocatedUnfairLock<URLRequest?>(initialState: nil)
+        TranscriptionStubURLProtocol.register(key: token) { request in
+            seen.withLock { $0 = request }
+            return (200, Data(#"{"text":"Przez Pro"}"#.utf8))
+        }
+        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { TranscriptionFixtures.relay(token) })
+
+        #expect(try await client.transcribe(request(audioSeconds: 3)) == "Przez Pro")
+        let sent = try #require(seen.withLock { $0 })
+        #expect(sent.url?.host() == "relay.example.test")
+        #expect(sent.value(forHTTPHeaderField: "X-Captylo-Audio-Seconds") == "3")
+
+        let over = TranscriptionFixtures.uniqueKey()
+        TranscriptionStubURLProtocol.register(key: over, TranscriptionStubURLProtocol.json(402, #"{"error":"quota_exceeded","resetsAt":"2026-11-01T00:00:00.000Z"}"#))
+        let capped = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { TranscriptionFixtures.relay(over) })
+        await #expect(throws: STTError.quotaExceeded) { try await capped.transcribe(self.request()) }
+    }
+
+    @Test func blankRelayTokenIsNoRoute() async {
+        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { TranscriptionFixtures.relay(" ") })
+        await #expect(throws: STTError.missingKey) { try await client.transcribe(request()) }
     }
 
     @Test func totalDeadlineCutsASlowUpload() async {
@@ -141,7 +206,7 @@ struct TranscriptionElevenLabsTests {
         }
         let client = ElevenLabsSTT(
             session: TranscriptionStubURLProtocol.makeSession(),
-            keyProvider: { .value(key) },
+            credentialProvider: { TranscriptionFixtures.ownKey(key) },
             retrySession: { TranscriptionStubURLProtocol.makeSession() },
             deadline: { _ in 0.1 }
         )
@@ -162,7 +227,7 @@ struct TranscriptionElevenLabsTests {
         }
         let client = ElevenLabsSTT(
             session: TranscriptionStubURLProtocol.makeSession(),
-            keyProvider: { .value(key) },
+            credentialProvider: { TranscriptionFixtures.ownKey(key) },
             retrySession: { TranscriptionStubURLProtocol.makeSession() }
         )
 
@@ -175,7 +240,7 @@ struct TranscriptionElevenLabsTests {
         TranscriptionStubURLProtocol.register(key: key) { _ in throw URLError(.timedOut) }
         let client = ElevenLabsSTT(
             session: TranscriptionStubURLProtocol.makeSession(),
-            keyProvider: { .value(key) },
+            credentialProvider: { TranscriptionFixtures.ownKey(key) },
             retrySession: { TranscriptionStubURLProtocol.makeSession() }
         )
         await #expect(throws: STTError.timeout) { try await client.transcribe(request()) }
@@ -190,7 +255,7 @@ struct TranscriptionElevenLabsTests {
         }
         let client = ElevenLabsSTT(
             session: TranscriptionStubURLProtocol.makeSession(),
-            keyProvider: { .value(key) },
+            credentialProvider: { TranscriptionFixtures.ownKey(key) },
             retrySession: { TranscriptionStubURLProtocol.makeSession() }
         )
         await #expect(throws: CancellationError.self) { try await client.transcribe(request()) }
@@ -208,7 +273,7 @@ struct TranscriptionElevenLabsTests {
         }
         let client = ElevenLabsSTT(
             session: TranscriptionStubURLProtocol.makeSession(),
-            keyProvider: { .value(key) },
+            credentialProvider: { TranscriptionFixtures.ownKey(key) },
             retrySession: { TranscriptionStubURLProtocol.makeSession() }
         )
         await #expect(throws: STTError.server(500, "")) { try await client.transcribe(request()) }
@@ -230,7 +295,7 @@ struct TranscriptionElevenLabsTests {
         TranscriptionStubURLProtocol.register(key: good, TranscriptionStubURLProtocol.json(200, #"{"subscription":{}}"#))
         let bad = TranscriptionFixtures.uniqueKey()
         TranscriptionStubURLProtocol.register(key: bad, TranscriptionStubURLProtocol.json(401, #"{"detail":"invalid"}"#))
-        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), keyProvider: { .value(nil) })
+        let client = ElevenLabsSTT(session: TranscriptionStubURLProtocol.makeSession(), credentialProvider: { TranscriptionFixtures.ownKey(nil) })
 
         try await client.verify(key: good)
         await #expect(throws: STTError.unauthorized) { try await client.verify(key: bad) }

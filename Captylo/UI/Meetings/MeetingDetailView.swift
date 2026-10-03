@@ -106,7 +106,7 @@ struct MeetingDetailView: View {
     let onDelete: (UUID) -> Void
     /// "Usuń tylko nagranie": the section confirms, removes the track files and reloads.
     let onDeleteAudio: (UUID) -> Void
-    /// Opens Modele: "Dodaj klucz" under a missing-key failure of the AI notes, "Otwórz Modele"
+    /// Opens Modele: "Dodaj klucz lub Pro" under a missing-key failure of the AI notes, "Otwórz Modele"
     /// when the speech model fails while recording.
     let onOpenModels: () -> Void
     /// A new title was saved (the saved row): the list shows it without a reload.

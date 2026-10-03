@@ -11,8 +11,17 @@ struct MeetingProAccessTests {
         return AppSettings(defaults: defaults)
     }
 
+    private func account(_ state: AccountStore.State, settings: AppSettings) -> AccountStore {
+        AccountStore(
+            client: AccountClient(baseURL: AccountClient.defaultBaseURL, session: StubURLProtocol.makeSession()),
+            keyStore: .inMemory(),
+            settings: settings,
+            pinned: state
+        )
+    }
+
     @Test func freeByDefault() {
-        let access = ProAccess(settings: settings(), environment: [:])
+        let access = ProAccess(settings: settings(), account: nil, environment: [:])
         #expect(access.isPro == false)
         #expect(access.allows(.meetingAINotes) == false)
     }
@@ -20,18 +29,36 @@ struct MeetingProAccessTests {
     @Test func devSwitchUnlocksPro() {
         let s = settings()
         s.devPro = true
-        #expect(ProAccess(settings: s, environment: [:]).isPro)
+        #expect(ProAccess(settings: s, account: nil, environment: [:]).isPro)
     }
 
     @Test func environmentUnlocksPro() {
-        #expect(ProAccess(settings: settings(), environment: ["CAPTYLO_DEV_PRO": "1"]).isPro)
-        #expect(ProAccess(settings: settings(), environment: ["CAPTYLO_DEV_PRO": "0"]).isPro == false)
+        #expect(ProAccess(settings: settings(), account: nil, environment: ["CAPTYLO_DEV_PRO": "1"]).isPro)
+        #expect(ProAccess(settings: settings(), account: nil, environment: ["CAPTYLO_DEV_PRO": "0"]).isPro == false)
     }
 
     @Test func pinnedWins() {
         let s = settings()
         s.devPro = true
-        #expect(ProAccess(settings: s, pinned: false, environment: [:]).isPro == false)
+        #expect(ProAccess(settings: s, account: nil, pinned: false, environment: [:]).isPro == false)
+    }
+
+    @Test func aSignedInProAccountIsPro() throws {
+        let s = settings()
+        let pro = account(.signedIn(try AccountFixtures.proInfo()), settings: s)
+        let access = ProAccess(settings: s, account: pro, environment: [:])
+        #expect(access.isPro)
+        #expect(access.allows(.cloudMeetingTranscription))
+    }
+
+    @Test func aFreeOrSignedOutAccountIsNotPro() throws {
+        let s = settings()
+        let free = account(.signedIn(try AccountFixtures.freeInfo()), settings: s)
+        #expect(ProAccess(settings: s, account: free, environment: [:]).isPro == false)
+        let signedOut = account(.signedOut, settings: s)
+        #expect(ProAccess(settings: s, account: signedOut, environment: [:]).isPro == false)
+        let waiting = account(.codeSent(email: "anna@example.com"), settings: s)
+        #expect(ProAccess(settings: s, account: waiting, environment: [:]).isPro == false)
     }
 
     @Test func retentionDays() {

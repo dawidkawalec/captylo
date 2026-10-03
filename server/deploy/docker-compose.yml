@@ -1,0 +1,60 @@
+# Stack captylo-api on the server: docker-compose.yml in the stack folder (DEPLOY_STACK in deploy/local.env)
+# The sources live next to it in ./src (synced by deploy.sh), the secrets in ./.env (never in git).
+# No ports are published: Caddy reaches the API over the shared "proxy" network.
+
+name: captylo-api
+
+services:
+  captylo-api:
+    build: ./src
+    image: captylo-api:latest
+    container_name: captylo-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      # node-postgres takes the password from PGPASSWORD when the URL has none.
+      DATABASE_URL: postgres://captylo@captylo-api-postgres/captylo
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    depends_on:
+      captylo-api-postgres:
+        condition: service_healthy
+    networks:
+      - default
+      - proxy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  captylo-api-postgres:
+    image: postgres:17-alpine
+    container_name: captylo-api-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: captylo
+      POSTGRES_DB: captylo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - captylo-api-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U captylo -d captylo"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  captylo-api-pgdata:
+
+networks:
+  proxy:
+    external: true

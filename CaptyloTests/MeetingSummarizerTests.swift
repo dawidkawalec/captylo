@@ -26,14 +26,61 @@ struct MeetingSummarizerTests {
         reasoning: @escaping @Sendable (String) -> ReasoningPolicy = { _ in .disabled }
     ) -> (MeetingSummarizer, URL) {
         let baseURL = StubURLProtocol.register(handler)
+        let client = OpenRouterClient(baseURL: baseURL)
         let summarizer = MeetingSummarizer(
-            client: OpenRouterClient(baseURL: baseURL),
             session: StubURLProtocol.makeSession(),
-            key: { key },
-            model: { Self.model },
+            route: { key.map { AIRoute(client: client, key: $0, model: Self.model) } },
             reasoning: reasoning
         )
         return (summarizer, baseURL)
+    }
+
+    /// The Pro relay: the session as the key, no model (the server picks it).
+    private static func relaySummarizer(_ handler: @escaping StubURLProtocol.Handler) -> (MeetingSummarizer, URL) {
+        let baseURL = StubURLProtocol.register(handler)
+        let client = OpenRouterClient(baseURL: baseURL)
+        let summarizer = MeetingSummarizer(
+            session: StubURLProtocol.makeSession(),
+            route: { AIRoute(client: client, key: "session-token", model: nil) },
+            // Never asked for the relay: the server's model is unknown here.
+            reasoning: { _ in .minimal(effort: "high") }
+        )
+        return (summarizer, baseURL)
+    }
+
+    @Test func proRelayWritesNotesWithoutAnAIKey() async throws {
+        let seen = OSAllocatedUnfairLock<URLRequest?>(initialState: nil)
+        let (summarizer, baseURL) = Self.relaySummarizer { request in
+            seen.withLock { $0 = request }
+            return .json(###"{"model":"google/gemini-2.5-flash-lite","choices":[{"message":{"content":"## Podsumowanie\n- ok"},"finish_reason":"stop"}]}"###)
+        }
+        defer { StubURLProtocol.unregister(baseURL) }
+        let meeting = MeetingRecord(title: "Standup")
+        let out = try await summarizer.summarize(meeting: meeting, segments: Self.segments(meeting.id), template: BuiltInMeetingTemplates.standup)
+        #expect(out.markdown == "## Podsumowanie\n- ok")
+        #expect(out.model == "google/gemini-2.5-flash-lite")
+        let request = try #require(seen.withLock { $0 })
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer session-token")
+        let body = Self.json(Self.rawBody(of: request))
+        #expect(body["model"] as? String == Enhancer.relayModelPlaceholder)
+        #expect((body["reasoning"] as? [String: Any])?["enabled"] as? Bool == false)
+    }
+
+    @Test func proRelayQuotaAndRefusalAreTyped() async throws {
+        let meeting = MeetingRecord(title: "x")
+        let replies: [(StubURLProtocol.Reply, MeetingSummaryError)] = [
+            (.json(#"{"error":"quota_exceeded","resetsAt":"2026-11-01T00:00:00.000Z"}"#, status: 402), .quotaExceeded),
+            (.json(#"{"error":"pro_required"}"#, status: 403), .noKey),
+            (.json(#"{"error":"unauthorized"}"#, status: 401), .noKey),
+            (.json(#"{"error":"upstream_failed"}"#, status: 502), .server(502)),
+        ]
+        for (reply, expected) in replies {
+            let (summarizer, baseURL) = Self.relaySummarizer { _ in reply }
+            defer { StubURLProtocol.unregister(baseURL) }
+            await #expect(throws: expected) {
+                try await summarizer.summarize(meeting: meeting, segments: Self.segments(meeting.id), template: BuiltInMeetingTemplates.general)
+            }
+        }
     }
 
     private static func rawBody(of request: URLRequest) -> Data {
@@ -95,15 +142,15 @@ struct MeetingSummarizerTests {
 
     @Test func missingKeyAndEmptyTranscriptFailClearly() async throws {
         let meeting = MeetingRecord(title: "x")
-        let noKey = MeetingSummarizer(session: .shared, key: { nil }, model: { "m" })
+        let noKey = MeetingSummarizer(session: .shared, route: { nil })
         await #expect(throws: MeetingSummaryError.noKey) {
             try await noKey.summarize(meeting: meeting, segments: Self.segments(meeting.id), template: BuiltInMeetingTemplates.general)
         }
-        let blankKey = MeetingSummarizer(session: .shared, key: { "" }, model: { "m" })
+        let blankKey = MeetingSummarizer(session: .shared, route: { AIRoute(client: OpenRouterClient(), key: "", model: "m") })
         await #expect(throws: MeetingSummaryError.noKey) {
             try await blankKey.summarize(meeting: meeting, segments: Self.segments(meeting.id), template: BuiltInMeetingTemplates.general)
         }
-        let withKey = MeetingSummarizer(session: .shared, key: { "k" }, model: { "m" })
+        let withKey = MeetingSummarizer(session: .shared, route: { AIRoute(client: OpenRouterClient(), key: "k", model: "m") })
         await #expect(throws: MeetingSummaryError.noTranscript) {
             try await withKey.summarize(meeting: meeting, segments: [], template: BuiltInMeetingTemplates.general)
         }
@@ -134,7 +181,8 @@ struct MeetingSummarizerTests {
     }
 
     @Test func errorMessagesReuseTheAppsKeyAndStatusTexts() {
-        #expect(MeetingSummaryError.noKey.errorDescription == OpenRouterError.missingKeyMessage)
+        #expect(MeetingSummaryError.noKey.errorDescription == "Brak dostępu do AI. Dodaj klucz AI w Modelach albo włącz Pro.")
+        #expect(MeetingSummaryError.quotaExceeded.errorDescription == "Limit AI w tym miesiącu jest wyczerpany.")
         #expect(MeetingSummaryError.server(401).errorDescription == OpenRouterError.unauthorized.errorDescription)
         #expect(MeetingSummaryError.server(429).errorDescription == OpenRouterError.rateLimited.errorDescription)
         #expect(MeetingSummaryError.server(500).errorDescription?.contains("500") == true)

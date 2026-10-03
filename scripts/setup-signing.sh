@@ -1,5 +1,6 @@
 #!/bin/bash
 # One-time setup of a stable local code signing identity ("Captylo Dev").
+# Development identity only; releases use Developer ID, see docs/release.md.
 #
 # Ad-hoc signatures change with every build, so macOS drops the Microphone and
 # Accessibility grants after each rebuild. A self-signed certificate gives the app

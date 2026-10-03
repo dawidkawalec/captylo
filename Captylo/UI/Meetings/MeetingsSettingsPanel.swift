@@ -196,7 +196,7 @@ private struct MeetingTranscriptSettings: View {
     var body: some View {
         GlassToggleRow(
             "Dokładniejszy transkrypt z chmury",
-            subtitle: "Po spotkaniu wysyła nagranie do chmury i zastępuje nim transkrypt z Maca. Potrzebny klucz chmury w Modelach.",
+            subtitle: "Po spotkaniu wysyła nagranie do chmury i zastępuje nim transkrypt z Maca. W Pro działa bez własnego klucza.",
             systemImage: "cloud",
             isOn: proBinding($settings.meetingsCloudTranscript)
         )

@@ -1,16 +1,20 @@
 import SwiftUI
 
 /// Free: what a Pro feature looks like, as a blurred sample, under a card that leads to the
-/// pricing ("Zobacz Pro"), styled like the sidebar's `SupportCard`. "Notatki AI" and "Zapytaj".
+/// "Konto Captylo" panel ("Zobacz Pro"), styled like the sidebar's `SupportCard`. "Notatki AI"
+/// and "Zapytaj".
 @MainActor
 struct MeetingProCard<Sample: View>: View {
     let title: LocalizedStringKey
     let message: LocalizedStringKey
     let systemImage: String
+    /// "Zobacz Pro" when the card sits in a sheet (the caller closes it first); nil opens the
+    /// account panel through the main window's router.
+    var onSeePro: (() -> Void)? = nil
     /// Invented content behind the blur (never readable, only its shape shows).
     @ViewBuilder let sample: () -> Sample
 
-    @Environment(\.openURL) private var openURL
+    @Environment(MainRouter.self) private var router: MainRouter?
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -42,7 +46,11 @@ struct MeetingProCard<Sample: View>: View {
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
             Button("Zobacz Pro") {
-                openURL(SupportPromo.proURL)
+                if let onSeePro {
+                    onSeePro()
+                } else {
+                    router?.openAccount()
+                }
             }
             .buttonStyle(.glass(.accent, size: .small, shape: .capsule))
             .padding(.top, 4)

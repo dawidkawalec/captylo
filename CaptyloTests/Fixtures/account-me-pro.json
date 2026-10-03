@@ -1,0 +1,14 @@
+{
+  "email": "anna@example.com",
+  "plan": "pro",
+  "status": "active",
+  "periodEnd": "2026-11-03T11:00:00.000Z",
+  "cancelAtPeriodEnd": false,
+  "usage": {
+    "month": "2026-10",
+    "audioSeconds": 10800,
+    "audioSecondsLimit": 72000,
+    "aiTokens": 360000,
+    "aiTokensLimit": 3000000
+  }
+}

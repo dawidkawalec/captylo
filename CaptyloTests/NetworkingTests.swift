@@ -156,6 +156,41 @@ struct NetworkingTests {
         #expect(await store.load("openrouter") == .value("sk-late"))
     }
 
+    @Test func keyStoreLookupTellsAMissingItemFromAnUnreadableOne() async {
+        let store = KeyStore(service: "com.captylo.app.tests") { _, account in
+            switch account {
+            case "present": return KeyStore.ReadResult(value: "sk-1", status: errSecSuccess)
+            case "absent": return KeyStore.ReadResult(value: nil, status: errSecItemNotFound)
+            case "denied": return KeyStore.ReadResult(value: nil, status: errSecAuthFailed)
+            default: return KeyStore.ReadResult(value: nil, status: errSecInteractionNotAllowed)
+            }
+        }
+        #expect(await store.lookup("present") == .found("sk-1"))
+        #expect(await store.lookup("absent") == .absent)
+        #expect(await store.lookup("denied") == .unreadable(errSecAuthFailed))
+        #expect(await store.lookup("locked") == .unreadable(errSecInteractionNotAllowed))
+        // Cached answers keep their meaning.
+        #expect(await store.lookup("present") == .found("sk-1"))
+        #expect(await store.lookup("absent") == .absent)
+    }
+
+    @Test func keyStoreLookupTimesOutWhileTheKeychainBlocks() async {
+        let gate = DispatchSemaphore(value: 0)
+        let store = KeyStore(service: "com.captylo.app.tests") { _, _ in
+            gate.wait()
+            return KeyStore.ReadResult(value: "sk-late", status: errSecSuccess)
+        }
+        #expect(await store.lookup("captylo-account", timeout: .milliseconds(50)) == .timedOut)
+        gate.signal()
+        #expect(await store.lookup("captylo-account") == .found("sk-late"))
+    }
+
+    @Test func keyStoreRemoveInBackgroundForgetsAtOnce() {
+        let store = KeyStore.inMemory(seed: ["captylo-account": "token"])
+        store.removeInBackground(account: "captylo-account")
+        #expect(store.get("captylo-account") == nil)
+    }
+
     @Test func keyStoreErrorHasPolishDescription() {
         let error = KeyStoreError.status(errSecAuthFailed)
         let text = error.errorDescription ?? ""

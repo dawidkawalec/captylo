@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 
 /// Content of the menu bar extra (brief "App shell"): start / stop dictation, record / end a
-/// meeting, copy last transcript, microphone and AI mode submenus, open app, settings, Dock and
-/// login toggles, quit.
+/// meeting, copy last transcript, microphone and AI mode submenus, open app, check for updates,
+/// settings, Dock and login toggles, quit.
 @MainActor
 struct MenuBarMenu: View {
     @Environment(AppState.self) private var appState
@@ -69,6 +69,11 @@ struct MenuBarMenu: View {
         Button("Otwórz Captylo") {
             appState.windowPresenter.openMain(section: .pulpit)
         }
+        // Sparkle's own windows take it from here; off until the public build has its key.
+        Button("Sprawdź aktualizacje…") {
+            appState.updater.checkNow()
+        }
+        .disabled(!appState.updater.isConfigured || appState.updater.isChecking)
         Button("Ustawienia...") {
             appState.windowPresenter.openSettings()
         }

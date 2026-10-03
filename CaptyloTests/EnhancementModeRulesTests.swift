@@ -13,11 +13,11 @@ struct EnhancementModeRulesTests {
         model: String = "openai/gpt-4.1-mini"
     ) -> (Enhancer, URL) {
         let baseURL = StubURLProtocol.register(handler)
-        let store = KeyStore(service: "com.captylo.app.tests", seed: key.map { ["openrouter": $0] } ?? [:])
+        let client = OpenRouterClient(baseURL: baseURL)
+        let route = key.map { AIRoute(client: client, key: $0, model: model) }
         let enhancer = Enhancer(
-            client: OpenRouterClient(baseURL: baseURL),
-            keyStore: store,
-            modelProvider: { model },
+            client: client,
+            route: { _ in .value(route) },
             session: StubURLProtocol.makeSession()
         )
         return (enhancer, baseURL)

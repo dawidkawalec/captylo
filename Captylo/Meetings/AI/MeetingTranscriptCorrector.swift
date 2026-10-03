@@ -9,25 +9,22 @@ actor MeetingTranscriptCorrector {
     static let parallelBatches = 3
 
     private let chat: MeetingChat
-    private let keyProvider: @Sendable () async -> String?
-    private let modelProvider: @Sendable () async -> String
+    private let routeProvider: @Sendable () async -> AIRoute?
 
+    /// - Parameter route: own key with the meetings model, the Pro relay, or nil (`noKey`).
     init(
-        client: OpenRouterClient = OpenRouterClient(),
         session: URLSession = HTTP.meetingLLMSession,
-        key: @escaping @Sendable () async -> String?,
-        model: @escaping @Sendable () async -> String,
+        route: @escaping @Sendable () async -> AIRoute?,
         reasoning: @escaping @Sendable (String) -> ReasoningPolicy = { _ in .disabled }
     ) {
-        chat = MeetingChat(client: client, session: session, reasoning: reasoning)
-        keyProvider = key
-        modelProvider = model
+        chat = MeetingChat(session: session, reasoning: reasoning)
+        routeProvider = route
     }
 
     /// The fixed segments (only those that changed) and the model that fixed them.
     func correct(meeting: MeetingRecord, segments: [MeetingSegmentRecord], glossary: [String]) async throws -> (changes: [MeetingSegmentRecord], model: String) {
-        guard let key = await keyProvider(), !key.isEmpty else { throw MeetingSummaryError.noKey }
-        let model = await modelProvider()
+        let route = try await MeetingChat.resolve(routeProvider)
+        var model = route.model ?? Enhancer.relayModelPlaceholder
         let batches = MeetingCorrectionPrompt.batches(segments)
         guard !batches.isEmpty else { return ([], model) }
         let started = ContinuousClock.now
@@ -36,7 +33,8 @@ actor MeetingTranscriptCorrector {
 
         var changes: [MeetingSegmentRecord] = []
         var failures: [any Error] = []
-        await withTaskGroup(of: Result<[MeetingSegmentRecord], any Error>.self) { group in
+        var servedModel: String?
+        await withTaskGroup(of: Result<([MeetingSegmentRecord], String), any Error>.self) { group in
             var next = 0
             func addNext() {
                 guard next < batches.count else { return }
@@ -45,13 +43,12 @@ actor MeetingTranscriptCorrector {
                 group.addTask {
                     do {
                         let reply = try await chat.complete(
-                            model: model,
-                            key: key,
+                            route: route,
                             system: MeetingCorrectionPrompt.system,
                             user: MeetingCorrectionPrompt.user(title: title, glossary: glossary, batch: batch),
                             maxTokens: MeetingCorrectionPrompt.maxTokens(for: batch)
                         )
-                        return .success(MeetingCorrectionPrompt.changes(in: batch, reply: reply.text))
+                        return .success((MeetingCorrectionPrompt.changes(in: batch, reply: reply.text), reply.model))
                     } catch {
                         return .failure(error)
                     }
@@ -62,8 +59,11 @@ actor MeetingTranscriptCorrector {
             }
             for await result in group {
                 switch result {
-                case .success(let fixed): changes += fixed
-                case .failure(let error): failures.append(error)
+                case .success(let (fixed, served)):
+                    changes += fixed
+                    servedModel = servedModel ?? served
+                case .failure(let error):
+                    failures.append(error)
                 }
                 addNext()
             }
@@ -75,6 +75,8 @@ actor MeetingTranscriptCorrector {
         if !failures.isEmpty {
             Log.enhancement.error("Meeting transcript fix: \(failures.count, privacy: .public) of \(batches.count, privacy: .public) batches failed")
         }
+        // The relay names its model in each answer.
+        model = servedModel ?? model
         let ms = Int((ContinuousClock.now - started) / .milliseconds(1))
         Log.enhancement.info("Meeting transcript fix: \(changes.count, privacy: .public) line(s) in \(ms, privacy: .public) ms with \(model, privacy: .public)")
         return (changes, model)

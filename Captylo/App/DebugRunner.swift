@@ -456,7 +456,14 @@ final class DebugRunner: DebugCommandRunner {
         case .notFound: loginStatus = "notFound"
         @unknown default: loginStatus = "unknown"
         }
+        // Account: the state at launch (from the cache, no network); never the address or the token.
+        let accountInfo = appState.account.info
         let payload: [String: Any] = [
+            "account": [
+                "signedIn": accountInfo != nil,
+                "plan": Self.orNull(accountInfo?.plan.rawValue),
+                "cached": settings.accountCache != nil,
+            ],
             "bundle": Bundle.main.bundleIdentifier ?? "",
             "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
             "permissions": [

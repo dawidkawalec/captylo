@@ -1,7 +1,11 @@
 import Foundation
 
-/// OpenRouter cleanup with one hard deadline (gotchas 64, 65, 68). Never throws: any failure
-/// yields `.failed` and the caller pastes the raw transcript.
+/// AI cleanup with one hard deadline (gotchas 64, 65, 68). Never throws: any failure yields
+/// `.failed` and the caller pastes the raw transcript.
+///
+/// Each call resolves its route first (`CloudRouter.aiRoute`, within the deadline): the user's
+/// own key with the chosen model, or the Pro relay with `relayModelPlaceholder` (the server
+/// picks the model) and reasoning off.
 actor Enhancer: TextEnhancing {
     /// Transcripts with this many words or fewer skip the model.
     static let minimumWords = 4
@@ -9,10 +13,14 @@ actor Enhancer: TextEnhancing {
     static let retryBudget: Duration = .milliseconds(800)
     /// Budget for the settings "Test" call and the key check (not on the hot path).
     static let utilityDeadline: Duration = .seconds(10)
+    /// The model sent to the Pro relay, which ignores it; also the history's model name when the
+    /// relay's answer does not say which model it used.
+    static let relayModelPlaceholder = "captylo-pro"
 
+    /// The vendor client for the own-key check (`verifyKey`); requests go to the route's client.
     private let client: OpenRouterClient
-    private let keyStore: KeyStore
-    private let modelProvider: @Sendable () -> String
+    /// Own key or Pro relay, resolved within the given timeout (`CloudRouter.aiRoute`).
+    private let route: @Sendable (Duration) async -> KeyStore.Lookup<AIRoute>
     /// Model id -> how to send `reasoning` (mandatory-reasoning models reject `enabled: false`).
     private let reasoningProvider: @Sendable (String) -> ReasoningPolicy
     private let session: URLSession
@@ -27,16 +35,14 @@ actor Enhancer: TextEnhancing {
 
     init(
         client: OpenRouterClient,
-        keyStore: KeyStore,
-        modelProvider: @escaping @Sendable () -> String,
+        route: @escaping @Sendable (Duration) async -> KeyStore.Lookup<AIRoute>,
         reasoningProvider: @escaping @Sendable (String) -> ReasoningPolicy = { _ in .disabled },
         session: URLSession = HTTP.llmSession,
         deadline: Duration = .seconds(3),
         tokenCap: Int = Enhancer.defaultTokenCap
     ) {
         self.client = client
-        self.keyStore = keyStore
-        self.modelProvider = modelProvider
+        self.route = route
         self.reasoningProvider = reasoningProvider
         self.session = session
         self.deadline = deadline
@@ -49,13 +55,13 @@ actor Enhancer: TextEnhancing {
         guard !Self.shouldSkip(raw, kind: job.kind) else { return .skipped(.tooShort) }
         let deadline = job.deadline ?? self.deadline
 
-        // The Keychain read counts against the deadline: an ACL prompt must not hold the widget.
+        // The route lookup (Keychain) counts against the deadline: an ACL prompt must not hold the widget.
         let clock = ContinuousClock()
         let start = clock.now
-        let key: String
-        switch await keyStore.load(KeyStore.Account.openRouter, timeout: deadline) {
-        case .value(let value?) where !value.isEmpty:
-            key = value
+        let route: AIRoute
+        switch await self.route(deadline) {
+        case .value(let found?) where !found.key.isEmpty:
+            route = found
         case .value:
             return .skipped(.noKey)
         case .timedOut:
@@ -63,16 +69,17 @@ actor Enhancer: TextEnhancing {
             return .failed(.keychainTimeout, ms: Self.milliseconds(clock.now - start))
         }
 
-        let model = modelProvider()
-        let policy = reasoningProvider(model)
+        let model = route.model ?? Self.relayModelPlaceholder
+        // The relay's model is unknown here: reasoning off, the server copes with its own model.
+        let policy = route.isRelay ? .disabled : reasoningProvider(model)
         let baseTokens = Self.maxTokens(forUTF8Count: raw.utf8.count, model: model, kind: job.kind, cap: tokenCap)
         let makeRequest: (ReasoningPolicy) -> URLRequest = { policy in
-            self.client.chatRequest(
+            route.client.chatRequest(
                 model: model,
                 system: job.systemPrompt,
                 transcript: raw,
                 maxTokens: Self.tokens(baseTokens, for: policy),
-                key: key,
+                key: route.key,
                 reasoning: policy
             )
         }
@@ -83,24 +90,29 @@ actor Enhancer: TextEnhancing {
             var (data, http) = try await sendWithRetry(makeRequest(policy), deadline: deadline, start: start, clock: clock)
             // A model missing from the cached list may still require reasoning: OpenRouter then
             // answers 400 about `reasoning`. Retry once with minimal hidden reasoning.
-            if policy == .disabled, Self.isReasoningRejection(status: http.statusCode, body: data),
+            if !route.isRelay, policy == .disabled, Self.isReasoningRejection(status: http.statusCode, body: data),
                deadline - (clock.now - start) > Self.retryBudget {
                 Log.enhancement.notice("\(model, privacy: .public) requires reasoning, retrying with minimal effort")
                 (data, http) = try await sendWithRetry(makeRequest(.minimal(effort: "low")), deadline: deadline, start: start, clock: clock)
             }
             let ms = Self.milliseconds(clock.now - start)
+            if route.isRelay, let refusal = Self.relayRefusal(status: http.statusCode, ms: ms) {
+                Log.enhancement.error("AI relay refused the request: HTTP \(http.statusCode), raw text kept")
+                return refusal
+            }
             if OpenRouterClient.mapStatus(http.statusCode) != nil {
                 Log.enhancement.error("AI failed: HTTP \(http.statusCode) \(HTTP.shortBody(data), privacy: .public)")
                 return .failed(.http(status: http.statusCode), ms: ms)
             }
-            let (content, finishReason) = try client.parseChat(data)
+            let (content, finishReason) = try route.client.parseChat(data)
             let text = Self.stripReasoning(content ?? "")
             if let rejection = Self.rejectionReason(raw: raw, output: text, finishReason: finishReason, kind: job.kind) {
                 Log.enhancement.notice("AI output rejected: \(rejection.errorDescription, privacy: .public)")
                 return .failed(.rejected(rejection), ms: ms)
             }
-            Log.enhancement.info("AI \(job.kind.rawValue, privacy: .public) ok in \(ms) ms with \(model, privacy: .public)")
-            return .enhanced(text: text, ms: ms, model: model)
+            let served = Self.servedModel(route: route, answer: data)
+            Log.enhancement.info("AI \(job.kind.rawValue, privacy: .public) ok in \(ms) ms with \(served, privacy: .public)\(route.isRelay ? " (relay)" : "", privacy: .public)")
+            return .enhanced(text: text, ms: ms, model: served)
         } catch {
             let ms = Self.milliseconds(clock.now - start)
             let failure = Self.failure(for: error, deadline: deadline)
@@ -109,26 +121,30 @@ actor Enhancer: TextEnhancing {
         }
     }
 
-    /// Warms DNS + TLS + H2 with the key check; debounced by the `Prewarmer`.
+    /// Warms DNS + TLS + H2 on the route's host: the key check with an own key, the relay's
+    /// health endpoint (no session sent) for Pro. Debounced by the `Prewarmer`.
     func prewarm() async {
-        guard case .value(let key?) = await keyStore.load(KeyStore.Account.openRouter), !key.isEmpty else { return }
-        await prewarmer.fire(client.keyCheckRequest(key: key), using: session)
+        guard case .value(let found?) = await route(Self.utilityDeadline), !found.key.isEmpty else { return }
+        let request = found.isRelay ? Self.healthRequest(baseURL: found.client.baseURL) : found.client.keyCheckRequest(key: found.key)
+        await prewarmer.fire(request, using: session)
     }
 
     // MARK: Settings helpers
 
-    /// One-token chat call; returns the round trip in milliseconds.
+    /// One-token chat call; returns the round trip in milliseconds. On the Pro relay the server's
+    /// model answers whatever `model` says.
     func test(model: String) async -> Result<Int, any Error> {
-        guard case .value(let key?) = await keyStore.load(KeyStore.Account.openRouter), !key.isEmpty else {
+        guard case .value(let found?) = await route(Self.utilityDeadline), !found.key.isEmpty else {
             return .failure(OpenRouterError.missingKey)
         }
-        let policy = reasoningProvider(model)
-        let request = client.chatRequest(
-            model: model,
+        let tested = found.isRelay ? Self.relayModelPlaceholder : model
+        let policy = found.isRelay ? .disabled : reasoningProvider(tested)
+        let request = found.client.chatRequest(
+            model: tested,
             system: "Reply with the word ok.",
             transcript: "ok",
             maxTokens: Self.tokens(1, for: policy),
-            key: key,
+            key: found.key,
             reasoning: policy
         )
         let clock = ContinuousClock()
@@ -136,11 +152,14 @@ actor Enhancer: TextEnhancing {
         do {
             let (data, http) = try await send(request, budget: Self.utilityDeadline)
             let ms = Self.milliseconds(clock.now - start)
+            if found.isRelay, let refusal = Self.relayRefusal(status: http.statusCode, ms: ms) {
+                return .failure(refusal.errorMessage.map(RelayRefusal.init) ?? OpenRouterError.missingKey)
+            }
             if let error = OpenRouterClient.mapStatus(http.statusCode) {
                 Log.enhancement.error("Model test failed: HTTP \(http.statusCode) \(HTTP.shortBody(data), privacy: .public)")
                 return .failure(error)
             }
-            _ = try client.parseChat(data)
+            _ = try found.client.parseChat(data)
             return .success(ms)
         } catch {
             return .failure(Self.wrapped(error))
@@ -237,6 +256,36 @@ actor Enhancer: TextEnhancing {
         return nil
     }
 
+    /// The Pro relay's own answers: 402 (the monthly AI limit) fails with `quotaExceeded`; 401
+    /// (revoked session) and 403 (no longer Pro) read as no route. Nil for anything else.
+    nonisolated static func relayRefusal(status: Int, ms: Int) -> EnhancementOutcome? {
+        switch status {
+        case 402: return .failed(.quotaExceeded, ms: ms)
+        case 401, 403: return .skipped(.noKey)
+        default: return nil
+        }
+    }
+
+    /// The model name kept in history: the chosen one with an own key, otherwise the one the
+    /// relay's answer names, else the placeholder.
+    nonisolated static func servedModel(route: AIRoute, answer: Data) -> String {
+        route.model ?? OpenRouterClient.responseModel(answer) ?? relayModelPlaceholder
+    }
+
+    /// `GET <relay>/health`: no session, only warms the connection.
+    nonisolated static func healthRequest(baseURL: URL) -> URLRequest {
+        var request = URLRequest(url: baseURL.appending(path: "health"))
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        return request
+    }
+
+    /// A relay refusal as a thrown error for the settings test call.
+    private struct RelayRefusal: LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+
     /// Maps a thrown transport or parse error to the failure kept in the outcome.
     nonisolated static func failure(for error: any Error, deadline: Duration) -> EnhancementFailure {
         switch error {
@@ -328,7 +377,7 @@ actor Enhancer: TextEnhancing {
     }
 
     private nonisolated static func wrapped(_ error: any Error) -> any Error {
-        if error is OpenRouterError || error is EnhancerError { return error }
+        if error is OpenRouterError || error is EnhancerError || error is RelayRefusal { return error }
         return OpenRouterError.network(error.localizedDescription)
     }
 

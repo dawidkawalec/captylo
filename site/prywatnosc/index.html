@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Wersja robocza do przeglądu prawnego (M5). Draft for legal review. -->
+<title>Polityka prywatności Captylo</title>
+<meta name="description" content="Jakie dane przetwarza Captylo, kiedy cokolwiek opuszcza Twojego Maca i kto pomaga nam świadczyć Captylo Pro.">
+<meta name="theme-color" content="#F2F7F4">
+<link rel="canonical" href="https://captylo.com/prywatnosc/">
+<link rel="icon" href="../favicon.ico?v=20260928c" sizes="any">
+<link rel="icon" href="../assets/brand/icon.svg?v=20260928c" type="image/svg+xml">
+<link rel="icon" href="../assets/icon-32.png?v=20260928c" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png?v=20260928c" sizes="180x180">
+<link rel="stylesheet" href="../assets/css/site.css?v=20260930a">
+<style>
+.doc-top{width:min(760px,100% - 2*var(--gut));margin:0 auto;padding:28px 0 0;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.doc-top img{width:132px;height:auto}
+.doc-top a.home{font-size:15px;color:var(--ink-2)}
+.doc-top a.home:hover{color:var(--ink)}
+.doc{width:min(760px,100% - 2*var(--gut));margin:0 auto;padding:clamp(40px,7vw,72px) 0 clamp(64px,9vw,110px)}
+.doc h1{font-weight:800;font-size:clamp(34px,5.4vw,52px);line-height:1.04;letter-spacing:-.035em}
+.doc .meta{margin-top:14px;font-size:15px;color:var(--ink-3)}
+.doc .lead{margin-top:22px;font-size:19px;line-height:1.6;color:var(--ink-2)}
+.doc h2{margin-top:48px;font-weight:700;font-size:clamp(22px,3vw,27px);line-height:1.2;letter-spacing:-.02em}
+.doc h3{margin-top:26px;font-weight:700;font-size:19px;line-height:1.3}
+.doc p{margin-top:14px;line-height:1.65}
+.doc ul{margin-top:12px;padding-left:22px;list-style:disc;display:grid;gap:8px}
+.doc li{line-height:1.6}
+.doc a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line-2)}
+.doc a:hover{text-decoration-color:currentColor}
+.doc .table-wrap{margin-top:16px;overflow-x:auto;border-radius:var(--r-card);box-shadow:inset 0 0 0 1px var(--line)}
+.doc table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.5}
+.doc th,.doc td{padding:12px 14px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+.doc thead th{border-top:0;font-weight:600;color:var(--ink-2);background:rgba(16,39,44,.04)}
+.doc .box{margin-top:18px;padding:18px 20px;border-radius:var(--r-card);background:rgba(47,143,136,.08);box-shadow:inset 0 0 0 1px rgba(47,143,136,.24)}
+.doc .box p:first-child{margin-top:0}
+.doc hr{margin:64px 0 0;border:0;border-top:1px solid var(--line)}
+.doc-foot{width:min(760px,100% - 2*var(--gut));margin:0 auto;padding:0 0 48px;font-size:14px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:8px 22px}
+.doc-foot a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+<header class="doc-top">
+  <a href="../" aria-label="Captylo, strona główna"><img src="../assets/brand/wordmark.svg" alt="Captylo" width="648" height="173"></a>
+  <a class="home" href="../">Wróć na captylo.com</a>
+</header>
+
+<main class="doc">
+  <h1>Polityka prywatności</h1>
+  <p class="meta">Ostatnia zmiana: 3 października 2026 · <a href="#english">English version below</a></p>
+  <p class="lead">Captylo działa na Twoim Macu. W planie Free nic nie opuszcza komputera, dopóki sam nie włączysz funkcji w chmurze. Ta strona opisuje, co dzieje się z danymi wtedy, gdy z chmury korzystasz: z własnym kluczem albo w Captylo Pro.</p>
+
+  <h2>1. Administrator danych</h2>
+  <p>Administratorem danych osobowych związanych z kontem Captylo, subskrypcją Captylo Pro i stroną captylo.com jest:</p>
+  <p>CraftWeb Sp. z o.o.<br>Osiedle Pod Wiatrakami 9, 62-261 Lednogóra, Polska<br>KRS 0001039024 · NIP 7842535739 · REGON 525423100<br>Kontakt: <a href="mailto:hello@kawalec.pl">hello@kawalec.pl</a></p>
+
+  <h2>2. Co aplikacja wysyła i kiedy</h2>
+  <h3>Domyślnie: nic</h3>
+  <p>Dyktowanie, transkrypcja na Macu, historia z nagraniami, słownik, nauka z Twoich poprawek, spotkania, wyszukiwarka i serwer MCP dla asystentów AI działają lokalnie. Nagrania, transkrypty i notatki leżą na Twoim dysku. Aplikacja nie ma telemetrii ani statystyk użycia wysyłanych do nas. Do korzystania z Free nie potrzebujesz konta.</p>
+  <p>Jedyne połączenie w Free bez Twojej decyzji to jednorazowe pobranie modeli mowy (z serwisu Hugging Face). Pobranie nie zawiera żadnych Twoich danych poza tym, co każde połączenie internetowe ujawnia serwerowi (adres IP).</p>
+
+  <h3>Własne klucze API (każdy plan)</h3>
+  <p>Gdy wkleisz w Ustawieniach własny klucz, aplikacja łączy się bezpośrednio z wybranym przez Ciebie dostawcą: z ElevenLabs przy transkrypcji w chmurze, z OpenRouter przy trybach AI i funkcjach AI w spotkaniach. Te zapytania nie przechodzą przez nasz serwer i ich nie widzimy. Dane przetwarza dostawca na podstawie Twojej umowy z nim.</p>
+
+  <h3>Captylo Pro</h3>
+  <p>W Pro, gdy nie masz własnego klucza, zapytania idą przez nasz serwer <code>api.captylo.com</code>, który przekazuje je dalej z naszym kluczem. Serwer przesyła dane strumieniowo i niczego z treści nie zapisuje. Wysyłane jest tylko to, czego wymaga funkcja, którą uruchomisz:</p>
+  <ul>
+    <li>transkrypcja w chmurze: nagranie dyktowania albo ścieżka nagrania spotkania, język i słowa ze słownika;</li>
+    <li>tryby AI: tekst dyktowania, polecenie trybu i podpowiedzi ze słownika;</li>
+    <li>notatki AI, poprawki transkryptu i „Zapytaj”: transkrypt i notatki spotkania (przy pytaniu o wszystkie spotkania tylko pasujące fragmenty), tytuł, data i imiona uczestników z kalendarza, jeśli kalendarz jest włączony.</li>
+  </ul>
+
+  <h2>3. Kto nam pomaga (podmioty przetwarzające)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Podmiot</th><th scope="col">Rola</th><th scope="col">Jakie dane</th></tr></thead>
+      <tbody>
+        <tr><td>ElevenLabs</td><td>zamiana mowy na tekst w Pro</td><td>nagranie, język, słowa ze słownika</td></tr>
+        <tr><td>OpenRouter oraz dostawca modelu, do którego kieruje zapytanie</td><td>przetwarzanie tekstu przez AI w Pro</td><td>tekst dyktowania albo fragmenty spotkania, jak w punkcie 2</td></tr>
+        <tr><td>Stripe</td><td>płatności, faktury, zarządzanie subskrypcją</td><td>e-mail, dane karty (widzi je tylko Stripe), adres i numer podatkowy, jeśli je podasz</td></tr>
+        <tr><td>Resend</td><td>wysyłka e-maili z kodem logowania</td><td>adres e-mail i jednorazowy kod</td></tr>
+        <tr><td>Hetzner Online GmbH</td><td>hosting serwera i strony w UE (Finlandia)</td><td>wszystko, co przechowuje serwer (punkt 4)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Część tych dostawców przetwarza dane także poza Europejskim Obszarem Gospodarczym, głównie w USA. Przekazanie odbywa się na podstawie standardowych klauzul umownych Komisji Europejskiej albo programu EU-US Data Privacy Framework.</p>
+
+  <h2>4. Co przechowuje nasz serwer</h2>
+  <ul>
+    <li>Twój adres e-mail i identyfikator konta;</li>
+    <li>sesje logowania: skrót (hash) tokenu, nazwa urządzenia, daty utworzenia i ostatniego użycia;</li>
+    <li>kody logowania jako skrót, ważne 10 minut i usuwane dobę po wygaśnięciu;</li>
+    <li>stan subskrypcji od Stripe: identyfikatory klienta i subskrypcji, status, plan, koniec okresu;</li>
+    <li>miesięczne liczniki użycia Pro: sekundy nagrań i liczba tokenów AI.</li>
+  </ul>
+  <p>Serwer nigdy nie zapisuje nagrań, transkryptów, tekstów ani pytań, ani na dysku, ani w logach. Logi techniczne zawierają identyfikator zapytania, ścieżkę, status, czas i pseudonim konta (skrót), nigdy adres e-mail, kod, token ani treść. Mają stały, mały rozmiar i są nadpisywane automatycznie.</p>
+
+  <h2>5. Jak długo</h2>
+  <ul>
+    <li>dane konta i subskrypcji: do usunięcia konta. Usunięcie zlecisz, pisząc na <a href="mailto:hello@kawalec.pl">hello@kawalec.pl</a> z adresu konta;</li>
+    <li>sesja nieużywana przez 180 dni wygasa; „Wyloguj” w aplikacji kończy ją od razu;</li>
+    <li>miesięczne liczniki użycia: 13 miesięcy;</li>
+    <li>dokumenty płatności i faktury: przez okres wymagany przepisami podatkowymi (5 lat od końca roku), u nas i w Stripe.</li>
+  </ul>
+
+  <h2>6. Podstawy prawne</h2>
+  <ul>
+    <li>wykonanie umowy (art. 6 ust. 1 lit. b RODO): konto, logowanie, subskrypcja i funkcje Pro;</li>
+    <li>obowiązek prawny (art. 6 ust. 1 lit. c RODO): rozliczenia i dokumenty księgowe;</li>
+    <li>prawnie uzasadniony interes (art. 6 ust. 1 lit. f RODO): bezpieczeństwo, limity chroniące przed nadużyciami, dochodzenie roszczeń.</li>
+  </ul>
+
+  <h2>7. Twoje prawa</h2>
+  <p>Masz prawo dostępu do swoich danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, przeniesienia oraz sprzeciwu wobec przetwarzania opartego na uzasadnionym interesie. Napisz na <a href="mailto:hello@kawalec.pl">hello@kawalec.pl</a>. Możesz też złożyć skargę do Prezesa Urzędu Ochrony Danych Osobowych.</p>
+
+  <h2>8. Nagrania spotkań</h2>
+  <div class="box">
+    <p>Nagrywając spotkanie, decydujesz o danych innych osób, więc to Ty jesteś ich administratorem. Poinformuj uczestników, że nagrywasz, i w razie potrzeby poproś o zgodę. Aplikacja przypomina o tym przed pierwszym nagraniem.</p>
+    <p>Nagrania i transkrypty zostają na Twoim Macu. Jeśli uruchomisz funkcje Pro w chmurze, przetwarzamy fragmenty spotkania wyłącznie w Twoim imieniu i tylko po to, by zwrócić wynik.</p>
+  </div>
+
+  <h2>9. Strona captylo.com</h2>
+  <p>Strona nie używa plików cookie, analityki ani narzędzi śledzących. Zapamiętuje tylko wybrany język w pamięci Twojej przeglądarki. Serwer strony zapisuje standardowe logi dostępu (m.in. adres IP i ścieżkę) na potrzeby bezpieczeństwa.</p>
+
+  <h2>10. Zmiany</h2>
+  <p>O istotnych zmianach tej polityki poinformujemy na tej stronie, a posiadaczy konta także e-mailem.</p>
+
+  <hr>
+
+  <section id="english" lang="en">
+    <h2>Privacy policy (English summary)</h2>
+    <p>The Polish text above is the binding version; this is a faithful summary.</p>
+    <p><b>Controller:</b> CraftWeb Sp. z o.o., Osiedle Pod Wiatrakami 9, 62-261 Lednogóra, Poland, KRS 0001039024, NIP 7842535739, REGON 525423100, <a href="mailto:hello@kawalec.pl">hello@kawalec.pl</a>.</p>
+    <p><b>By default nothing leaves your Mac.</b> Dictation, on-device transcription, history, meetings, search and the MCP server run locally, with no telemetry and no account needed in Free. The speech models are downloaded once from Hugging Face.</p>
+    <p><b>Your own API keys</b> (any plan) send requests straight to the provider you chose (ElevenLabs for cloud transcription, OpenRouter for AI), not through our server.</p>
+    <p><b>Captylo Pro</b> requests without your own key go through <code>api.captylo.com</code>, which streams them to our processors with our key and stores none of the content: audio for cloud transcription; the dictated text, or meeting transcript, notes, title, date and calendar participants (excerpts only when you ask across all meetings) for AI features.</p>
+    <p><b>Processors:</b> ElevenLabs (speech to text), OpenRouter and the model provider it routes to (AI text), Stripe (payments), Resend (sign-in emails), Hetzner Online GmbH (hosting in the EU, Finland). Some process data in the US under the EU Standard Contractual Clauses or the EU-US Data Privacy Framework.</p>
+    <p><b>What our server stores:</b> your email address, sign-in sessions (token hashes, device name, dates), hashed one-time codes (10 minutes, deleted a day after expiry), your subscription state from Stripe and monthly usage counts (audio seconds, AI tokens). Never audio, transcripts, text or questions, neither on disk nor in logs; logs hold request ids and a hashed account pseudonym, never an email address, code, token or content.</p>
+    <p><b>Retention:</b> account data until you ask us to delete it at hello@kawalec.pl; sessions expire after 180 days unused; usage counts 13 months; payment records as tax law requires (5 years).</p>
+    <p><b>Your rights</b> under the GDPR: access, rectification, erasure, restriction, portability and objection; you may complain to the Polish data protection authority (Prezes UODO).</p>
+    <p><b>Meeting recordings:</b> you decide to record other people, so you are the controller of that data: tell the participants and ask for consent where needed. Recordings stay on your Mac; when you run a Pro cloud feature we process meeting excerpts only on your behalf.</p>
+    <p><b>captylo.com</b> uses no cookies, analytics or trackers; it remembers only your language choice in your browser.</p>
+  </section>
+</main>
+
+<footer class="doc-foot">
+  <a href="../">captylo.com</a>
+  <a href="../regulamin/">Regulamin</a>
+  <a href="mailto:hello@kawalec.pl">hello@kawalec.pl</a>
+</footer>
+</body>
+</html>

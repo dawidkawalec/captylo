@@ -10,18 +10,116 @@ struct EnhancementEnhancerTests {
         _ handler: @escaping StubURLProtocol.Handler,
         key: String? = "sk-or-test",
         model: String = "openai/gpt-4.1-mini",
-        deadline: Duration = .seconds(3)
+        deadline: Duration = .seconds(3),
+        relay: Bool = false
     ) -> (Enhancer, URL) {
         let baseURL = StubURLProtocol.register(handler)
-        let store = KeyStore(service: "com.captylo.app.tests", seed: key.map { ["openrouter": $0] } ?? [:])
+        let client = OpenRouterClient(baseURL: baseURL)
+        // The relay route has no model: the server picks it.
+        let route = key.map { AIRoute(client: client, key: $0, model: relay ? nil : model) }
         let enhancer = Enhancer(
-            client: OpenRouterClient(baseURL: baseURL),
-            keyStore: store,
-            modelProvider: { model },
+            client: client,
+            route: { _ in .value(route) },
             session: StubURLProtocol.makeSession(),
             deadline: deadline
         )
         return (enhancer, baseURL)
+    }
+
+    private static func json(of request: URLRequest) -> [String: Any] {
+        AccountFixtures.body(of: request)
+    }
+
+    // MARK: The Pro relay
+
+    @Test func relayRouteSendsThePlaceholderModelAndTheSessionAndReportsTheServedModel() async throws {
+        let cleaned = "Więc to jest dłuższy testowy transkrypt, który ma zdecydowanie więcej niż trzy słowa."
+        let (enhancer, baseURL) = makeEnhancer({ request in
+            let body = Self.json(of: request)
+            #expect(request.url?.path().hasSuffix("/chat/completions") == true)
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer session-token")
+            #expect(body["model"] as? String == Enhancer.relayModelPlaceholder)
+            #expect((body["reasoning"] as? [String: Any])?["enabled"] as? Bool == false)
+            return .json(Fixtures.chat(content: "\"\(cleaned)\"", finish: "stop"))
+        }, key: "session-token", relay: true)
+        defer { StubURLProtocol.unregister(baseURL) }
+
+        let outcome = await enhancer.enhance(Self.raw, systemPrompt: Self.systemPrompt)
+        guard case .enhanced(let text, _, let model) = outcome else {
+            Issue.record("Expected .enhanced, got \(outcome)")
+            return
+        }
+        #expect(text == cleaned)
+        // The model the relay used, from the answer.
+        #expect(model == "openai/gpt-4.1-mini")
+        #expect(Enhancer.relayModelPlaceholder == "captylo-pro")
+    }
+
+    @Test func relayAnswerWithoutAModelNamesThePlaceholder() async {
+        let cleaned = "Więc to jest dłuższy testowy transkrypt, który ma zdecydowanie więcej niż trzy słowa."
+        let (enhancer, baseURL) = makeEnhancer({ _ in
+            .json(#"{"choices":[{"message":{"content":"\#(cleaned)"},"finish_reason":"stop"}]}"#)
+        }, key: "session-token", relay: true)
+        defer { StubURLProtocol.unregister(baseURL) }
+        guard case .enhanced(_, _, let model) = await enhancer.enhance(Self.raw, systemPrompt: Self.systemPrompt) else {
+            Issue.record("Expected .enhanced")
+            return
+        }
+        #expect(model == Enhancer.relayModelPlaceholder)
+    }
+
+    @Test func relayQuotaFailsWithQuotaExceeded() async {
+        let (enhancer, baseURL) = makeEnhancer({ _ in
+            .json(#"{"error":"quota_exceeded","resetsAt":"2026-11-01T00:00:00.000Z"}"#, status: 402)
+        }, key: "session-token", relay: true)
+        defer { StubURLProtocol.unregister(baseURL) }
+        let outcome = await enhancer.enhance(Self.raw, systemPrompt: Self.systemPrompt)
+        guard case .failed(.quotaExceeded, _) = outcome else {
+            Issue.record("Expected .failed(.quotaExceeded), got \(outcome)")
+            return
+        }
+        #expect(outcome.text == nil, "the raw text is pasted")
+        #expect(outcome.errorMessage == "Limit AI w tym miesiącu jest wyczerpany.")
+        #expect(outcome.note == "Limit AI wyczerpany")
+    }
+
+    @Test func relayRefusingTheSessionReadsAsNoKey() async {
+        let (enhancer, baseURL) = makeEnhancer({ _ in
+            .json(#"{"error":"pro_required"}"#, status: 403)
+        }, key: "session-token", relay: true)
+        defer { StubURLProtocol.unregister(baseURL) }
+        #expect(await enhancer.enhance(Self.raw, systemPrompt: Self.systemPrompt) == .skipped(.noKey))
+    }
+
+    @Test func routeTimeoutIsAKeychainTimeout() async {
+        let enhancer = Enhancer(client: OpenRouterClient(), route: { _ in .timedOut }, session: StubURLProtocol.makeSession())
+        guard case .failed(.keychainTimeout, _) = await enhancer.enhance(Self.raw, systemPrompt: Self.systemPrompt) else {
+            Issue.record("Expected .failed(.keychainTimeout)")
+            return
+        }
+    }
+
+    @Test func prewarmOnTheRelayHitsItsHealthEndpoint() async throws {
+        let counter = Counter()
+        let (enhancer, baseURL) = makeEnhancer({ request in
+            #expect(request.url?.path().hasSuffix("/health") == true)
+            #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+            counter.increment()
+            return .json(#"{"ok":true}"#)
+        }, key: "session-token", relay: true)
+        defer { StubURLProtocol.unregister(baseURL) }
+        await enhancer.prewarm()
+        try await waitUntil { counter.value >= 1 }
+        #expect(counter.value == 1)
+    }
+
+    @Test func modelTestOnTheRelayUsesThePlaceholder() async throws {
+        let (enhancer, baseURL) = makeEnhancer({ request in
+            #expect(Self.json(of: request)["model"] as? String == Enhancer.relayModelPlaceholder)
+            return .json(Fixtures.chat(content: "\"ok\"", finish: "stop"))
+        }, key: "session-token", relay: true)
+        defer { StubURLProtocol.unregister(baseURL) }
+        _ = try await enhancer.test(model: "openai/gpt-4.1-mini").get()
     }
 
     // MARK: Pure rules

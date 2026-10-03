@@ -1,0 +1,22 @@
+# === captylo.com: downloads and updates (M5) ===
+# Goes inside the existing captylo.com { ... } block, before its file_server line.
+#
+# The DMGs live in their own folder (PUBLISH_DOWNLOADS in deploy/local.env), outside the site's
+# web root: the site deploy syncs site/ with --delete and would remove them otherwise. That
+# folder has to be visible inside the Caddy container; replace DOWNLOADS_DIR below with its
+# path as the container sees it (check with "test -d" inside the container).
+# Only *.dmg goes there, so captylo.com/download/ (site/download/index.html) stays a site page.
+# Captylo.dmg is a relative symlink to the newest Captylo-<version>.dmg (scripts/publish-release.sh).
+    @dmg path /download/*.dmg
+    handle @dmg {
+        uri strip_prefix /download
+        root * DOWNLOADS_DIR
+        header Cache-Control "no-cache"
+        # Caddy has no type for .dmg and would send none
+        header Content-Type "application/x-apple-diskimage"
+        file_server
+    }
+    # The appcast and the release notes come from the site itself (site/updates/), never cached,
+    # so Sparkle sees a new release as soon as it is published.
+    header /updates/* Cache-Control "no-cache"
+# === /captylo.com: downloads and updates ===
