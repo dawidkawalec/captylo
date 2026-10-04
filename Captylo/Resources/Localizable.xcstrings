@@ -7003,9 +7003,59 @@
         "en": { "stringUnit": { "state": "translated", "value": "Your own key comes before Pro." } }
       }
     },
-    "W Pro bez własnego klucza model wybiera Captylo.": {
+    "W Pro bez własnego klucza tekst poprawia Captylo AI. Z własnym kluczem wybierzesz inny model.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "With Pro and no key of your own, Captylo picks the model." } }
+        "en": { "stringUnit": { "state": "translated", "value": "With Pro and no key of your own, Captylo AI cleans up the text. With your own key you can pick another model." } }
+      }
+    },
+    "Captylo AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo AI" } }
+      }
+    },
+    "Usuń klucz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove key" } }
+      }
+    },
+    "Usunąć klucz?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove the key?" } }
+      }
+    },
+    "Klucz usunięty.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Key removed." } }
+      }
+    },
+    "Klucz usunięty. Działa Captylo AI.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Key removed. Captylo AI is on." } }
+      }
+    },
+    "Transkrypcja w chmurze przejdzie na Captylo w ramach Pro.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cloud transcription will go through Captylo as part of Pro." } }
+      }
+    },
+    "Bez klucza Captylo przepisze nagrania na Macu, dopóki nie dodasz klucza albo nie przejdziesz na Pro.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Without a key, Captylo transcribes on your Mac until you add a key or switch to Pro." } }
+      }
+    },
+    "W Pro bez własnego klucza chmura działa przez Captylo.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "With Pro and no key of your own, the cloud runs through Captylo." } }
+      }
+    },
+    "Poprawianie przez AI przejdzie na Captylo AI w ramach Pro.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI cleanup will run on Captylo AI as part of Pro." } }
+      }
+    },
+    "Bez klucza poprawianie przez AI nie zadziała, dopóki nie dodasz klucza albo nie przejdziesz na Pro.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Without a key, AI cleanup will not work until you add a key or switch to Pro." } }
       }
     },
     "Masz Captylo Pro? Zalogujesz się w Ustawieniach po zakończeniu.": {

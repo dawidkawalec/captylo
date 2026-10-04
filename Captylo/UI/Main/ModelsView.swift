@@ -65,10 +65,17 @@ struct ModelsView: View {
                     onKeyPresence: { hasOwnAIKey = $0 }
                 )
                 GlassRowSeparator()
-                ModelPicker(models: appState.openRouterModels, selection: $settings.aiModel)
                 if isPro, !hasOwnAIKey {
-                    ToolCaption("W Pro bez własnego klucza model wybiera Captylo.")
-                        .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+                    // Pro without an own key runs on Captylo AI: there is no model to pick.
+                    GlassRow(
+                        title: Text("Model"),
+                        subtitle: Text("W Pro bez własnego klucza tekst poprawia Captylo AI. Z własnym kluczem wybierzesz inny model."),
+                        systemImage: "sparkles"
+                    ) {
+                        GlassBadge("Captylo AI", systemImage: "checkmark", tone: .success)
+                    }
+                } else {
+                    ModelPicker(models: appState.openRouterModels, selection: $settings.aiModel)
                 }
                 TestButtonRow(enhancer: appState.enhancer, model: settings.aiModel)
             }
@@ -243,8 +250,9 @@ private struct LegacyParakeetRow: View {
 
 // MARK: - API key field
 
-/// "Klucz API ..." label, the glass secure field with Zapisz / Sprawdź, then the status line and
-/// the link to the provider's key page. Shared by ElevenLabs and OpenRouter.
+/// "Klucz API ..." label, the glass secure field with Zapisz / Sprawdź and, while a key is saved,
+/// "Usuń klucz" (asks first, `removeMessage` says what happens without it), then the status line
+/// and the link to the provider's key page. Shared by ElevenLabs and OpenRouter.
 @MainActor
 private struct APIKeyField: View {
     let title: LocalizedStringKey
@@ -254,8 +262,14 @@ private struct APIKeyField: View {
     let isChecking: Bool
     let linkTitle: LocalizedStringKey
     let linkURL: URL
+    /// A key is saved in the Keychain (not only typed in the field).
+    let isSaved: Bool
+    let removeMessage: String
     let onSave: () -> Void
     let onVerify: () -> Void
+    let onRemove: () -> Void
+
+    @State private var confirmRemove = false
 
     private var isEmpty: Bool {
         key.trimmingCharacters(in: .whitespaces).isEmpty
@@ -300,6 +314,19 @@ private struct APIKeyField: View {
                     }
                 }
                 .disabled(isEmpty || isChecking)
+                if isSaved {
+                    Button {
+                        confirmRemove = true
+                    } label: {
+                        Label {
+                            Text("Usuń klucz")
+                        } icon: {
+                            Image(systemName: "trash")
+                                .foregroundStyle(GlassColor.destructive)
+                        }
+                    }
+                    .disabled(isChecking)
+                }
             }
             .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
             .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
@@ -309,6 +336,12 @@ private struct APIKeyField: View {
             }
         }
         .padding(.bottom, 4)
+        .alert("Usunąć klucz?", isPresented: $confirmRemove) {
+            Button("Usuń klucz", role: .destructive, action: onRemove)
+            Button("Anuluj", role: .cancel) {}
+        } message: {
+            Text(verbatim: removeMessage)
+        }
     }
 }
 
@@ -334,6 +367,7 @@ private struct ElevenLabsSection: View {
     let isPro: Bool
 
     @State private var key = ""
+    @State private var isSaved = false
     @State private var status: (text: String, tone: InlineStatus.Tone)?
     @State private var isChecking = false
 
@@ -347,25 +381,43 @@ private struct ElevenLabsSection: View {
                 isChecking: isChecking,
                 linkTitle: "Skąd wziąć klucz",
                 linkURL: ModelsView.elevenLabsKeysURL,
+                isSaved: isSaved,
+                removeMessage: isPro
+                    ? String(localized: "Transkrypcja w chmurze przejdzie na Captylo w ramach Pro.")
+                    : String(localized: "Bez klucza Captylo przepisze nagrania na Macu, dopóki nie dodasz klucza albo nie przejdziesz na Pro."),
                 onSave: save,
-                onVerify: verify
+                onVerify: verify,
+                onRemove: remove
             )
             ToolCaption("Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.")
                 .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             if isPro {
-                ToolCaption("Własny klucz ma pierwszeństwo przed Pro.")
+                ToolCaption(isSaved ? "Własny klucz ma pierwszeństwo przed Pro." : "W Pro bez własnego klucza chmura działa przez Captylo.")
                     .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             }
         }
         .onAppear {
             key = keyStore.get(KeyStore.Account.elevenLabs) ?? ""
+            isSaved = !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
     private func save() {
         do {
             try keyStore.set(key.trimmingCharacters(in: .whitespacesAndNewlines), account: KeyStore.Account.elevenLabs)
+            isSaved = true
             status = (String(localized: "Klucz zapisany w pęku kluczy."), .success)
+        } catch {
+            status = ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription, .error)
+        }
+    }
+
+    private func remove() {
+        do {
+            try keyStore.delete(account: KeyStore.Account.elevenLabs)
+            key = ""
+            isSaved = false
+            status = (String(localized: "Klucz usunięty."), .success)
         } catch {
             status = ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription, .error)
         }
@@ -441,10 +493,11 @@ private struct OpenRouterKeySection: View {
     let settings: AppSettings
     /// Pro runs the AI through Captylo when no own key is saved.
     let isPro: Bool
-    /// Whether an own key is saved (on appear and after "Zapisz").
+    /// Whether an own key is saved (on appear, after "Zapisz" and after "Usuń klucz").
     let onKeyPresence: (Bool) -> Void
 
     @State private var key = ""
+    @State private var isSaved = false
     @State private var status: (text: String, tone: InlineStatus.Tone)?
     @State private var isChecking = false
 
@@ -458,23 +511,42 @@ private struct OpenRouterKeySection: View {
                 isChecking: isChecking,
                 linkTitle: "Skąd wziąć klucz",
                 linkURL: ModelsView.openRouterKeysURL,
+                isSaved: isSaved,
+                removeMessage: isPro
+                    ? String(localized: "Poprawianie przez AI przejdzie na Captylo AI w ramach Pro.")
+                    : String(localized: "Bez klucza poprawianie przez AI nie zadziała, dopóki nie dodasz klucza albo nie przejdziesz na Pro."),
                 onSave: save,
-                onVerify: verify
+                onVerify: verify,
+                onRemove: remove
             )
-            if isPro {
+            if isPro, isSaved {
                 ToolCaption("Własny klucz ma pierwszeństwo przed Pro.")
                     .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             }
         }
         .onAppear {
             key = keyStore.get(KeyStore.Account.openRouter) ?? ""
-            onKeyPresence(!key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            isSaved = !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            onKeyPresence(isSaved)
+        }
+    }
+
+    private func remove() {
+        do {
+            try keyStore.delete(account: KeyStore.Account.openRouter)
+            key = ""
+            isSaved = false
+            onKeyPresence(false)
+            status = (isPro ? String(localized: "Klucz usunięty. Działa Captylo AI.") : String(localized: "Klucz usunięty."), .success)
+        } catch {
+            status = ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription, .error)
         }
     }
 
     private func save() {
         do {
             try keyStore.set(key.trimmingCharacters(in: .whitespacesAndNewlines), account: KeyStore.Account.openRouter)
+            isSaved = true
             onKeyPresence(true)
             status = (String(localized: "Klucz zapisany w pęku kluczy."), .success)
             // Gotcha 67: validate the chosen model id against the live list once a key is saved.
