@@ -27,7 +27,7 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_APPROACHABLE_CONCURRENCY: YES
-    MARKETING_VERSION: "1.0.3"
+    MARKETING_VERSION: "1.0.4"
     CURRENT_PROJECT_VERSION: "1"
     # Sparkle's EdDSA public key (public, fine in the repo). The private half lives only in the
     # owner's login Keychain; REPLACE_ME here would keep the updater off (AppUpdaterConfiguration.isConfigured).
