@@ -1,0 +1,768 @@
+<meta charset="utf-8">
+<title>Pulpit Lab</title>
+<style>
+[hidden]{display:none!important}
+/* Strona galerii: ciemna, jak nocne tło Captylo. Okna w podglądach mają własne tokeny (.win). */
+:root{
+  color-scheme:dark;
+  --page:#0C0D20;--page2:#16173A;--line:rgba(255,255,255,.1);
+  --txt:#F2F1FB;--txt2:rgba(242,241,251,.66);--txt3:rgba(242,241,251,.42);
+  --acc:#9A96F4;--pink:#EE8FB5;--orange:#F59A64;--gut:clamp(16px,3vw,40px);
+}
+html{background:var(--page)}
+body{background:var(--page);color:var(--txt);font:14px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;padding-inline:var(--gut);padding-block:0 80px}
+button,textarea{font:inherit;color:inherit}
+.top{max-width:1500px;margin:0 auto;padding-block:40px 18px}
+.top .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3)}
+.top h1{font-size:34px;line-height:1.1;font-weight:650;letter-spacing:-.02em;margin:6px 0 0;text-wrap:balance}
+.top h1 em{font-style:normal;background:linear-gradient(90deg,#B9B6FF,#EE8FB5 55%,#F59A64);-webkit-background-clip:text;background-clip:text;color:transparent}
+.top p{max-width:74ch;color:var(--txt2);margin:12px 0 0}
+.top p b{color:var(--txt);font-weight:600}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:calc(-1 * var(--gut));padding:10px var(--gut);background:rgba(12,13,32,.84);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1500px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{border:0;cursor:pointer;height:32px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--line);color:var(--txt2);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.chip small{color:var(--txt3);font-size:12px;font-variant-numeric:tabular-nums}
+.chip:hover{color:var(--txt)}
+.chip[aria-pressed="true"]{background:rgba(154,150,244,.22);box-shadow:inset 0 0 0 1px rgba(154,150,244,.55);color:var(--txt)}
+.chip:focus-visible,.fav:focus-visible,.stage:focus-visible,.primary:focus-visible,.lb button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.spacer{flex:1}
+.primary{border:0;cursor:pointer;height:32px;padding:0 16px;border-radius:999px;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(180deg,#8C88F0,#6F6BD8);box-shadow:0 6px 18px -8px #6F6BD8,inset 0 1px 0 rgba(255,255,255,.3)}
+.favcount{color:var(--txt3);font-size:13px;font-variant-numeric:tabular-nums}
+.copybox{max-width:1500px;margin:10px auto 0}
+.copybox textarea{width:100%;height:140px;border-radius:12px;border:1px solid var(--line);background:#101129;padding:12px;font:12px/1.5 ui-monospace,"SF Mono",Menlo,monospace}
+main{max-width:1500px;margin:0 auto}
+.group{margin-top:44px}
+.ghead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ghead h2{font-size:21px;font-weight:650;letter-spacing:-.01em;margin:0}
+.ghead .range{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;color:var(--acc)}
+.gdesc{color:var(--txt2);margin:6px 0 18px;max-width:80ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:30px 22px}
+.card{content-visibility:auto;contain-intrinsic-size:auto 430px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.stage{position:relative;aspect-ratio:1120/720;max-width:100%;border-radius:12px;overflow:hidden;cursor:zoom-in;background:var(--page2);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 22px 40px -22px rgba(0,0,0,.8)}
+.stage .win{position:absolute;left:0;top:0;transform-origin:0 0}
+.meta{display:flex;gap:12px;align-items:flex-start}
+.num{font:600 13px/1 ui-monospace,"SF Mono",Menlo,monospace;color:var(--acc);padding-top:3px;font-variant-numeric:tabular-nums}
+.meta h3{font-size:15px;line-height:1.3;margin:0;font-weight:600}
+.meta p{margin:3px 0 0;color:var(--txt2);font-size:13px}
+.fav{margin-left:auto;flex:none;border:0;cursor:pointer;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--line);color:var(--txt3)}
+.fav svg{width:17px;height:17px}
+.fav[aria-pressed="true"]{color:#FF7A9A;background:rgba(255,122,154,.14);box-shadow:inset 0 0 0 1px rgba(255,122,154,.45)}
+.fav[aria-pressed="true"] svg{fill:currentColor}
+.note{width:100%;min-height:38px;resize:vertical;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);padding:9px 11px;font-size:13px;color:var(--txt)}
+.note::placeholder{color:var(--txt3)}
+.note:focus{outline:none;border-color:rgba(154,150,244,.6);background:rgba(154,150,244,.06)}
+.empty{color:var(--txt2);padding:40px 0}
+
+/* Podgląd na pełnym ekranie */
+.lb{position:fixed;inset:0;z-index:60;background:rgba(6,6,18,.95);display:flex;flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) var(--gut) calc(14px + env(safe-area-inset-bottom,0px))}
+.lb-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:44px}
+.lb-head h3{margin:0;font-size:16px;font-weight:600}
+.lb-head p{margin:0;color:var(--txt2);font-size:13px;flex-basis:100%;order:5}
+.lb-body{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:12px;padding-block:10px}
+.lb-fit{flex:1;height:100%;min-width:0;display:flex;align-items:center;justify-content:center}
+.lb .stage{cursor:default;flex:none}
+.lb .arrow,.lb .close{border:0;cursor:pointer;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px var(--line);display:grid;place-items:center;flex:none}
+.lb .arrow svg,.lb .close svg{width:18px;height:18px}
+.lb-foot{display:flex;gap:10px;align-items:center;max-width:1100px;width:100%;margin:0 auto}
+.lb-foot .note{flex:1}
+.hint{color:var(--txt3);font-size:12px}
+@media (max-width:640px){.lb .arrow{display:none}}
+
+/* ------------------------------------------------------------------ */
+/* Okno Captylo (1120 x 720, skalowane w podglądzie). Tokeny = Dusk Glass (GlassTokens.swift). */
+.win{
+  width:1120px;height:720px;overflow:hidden;border-radius:12px;position:relative;isolation:isolate;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;font-size:14px;line-height:1.35;color:#fff;
+  --ink:rgba(255,255,255,.95);--ink2:rgba(255,255,255,.70);--ink3:rgba(255,255,255,.50);
+  --title:#fff;--title2:rgba(255,255,255,.72);
+  --rp:28px;--rt:22px;--rc:18px;
+  --pf:rgba(255,255,255,.17);--pb:blur(28px) saturate(160%);
+  --rim:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.10) 55%,rgba(255,255,255,.16));
+  --ps:0 18px 44px -16px rgba(12,8,44,.42);
+  --cf:rgba(255,255,255,.08);--track:rgba(10,8,40,.18);--sel:rgba(255,255,255,.24);--sep:rgba(255,255,255,.12);
+  --bar:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.36));--barhi:linear-gradient(180deg,#FFD7BF,#F59A64);
+  --wave:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.55));--waveglow:drop-shadow(0 0 6px rgba(255,255,255,.45));
+  --line1:#fff;--area1:rgba(255,255,255,.42);--area2:rgba(255,255,255,0);
+  --pill:rgba(255,255,255,.20);--tint:rgba(111,107,216,.18);--ringtrack:rgba(255,255,255,.12);
+}
+.win *{box-sizing:border-box}
+.win .L{position:absolute;inset:0}
+.win .tl{position:absolute;left:22px;top:20px;display:flex;gap:8px;z-index:6}
+.win .tl i{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25)}
+.win .tl i:nth-child(1){background:#FF5F57}.win .tl i:nth-child(2){background:#FEBC2E}.win .tl i:nth-child(3){background:#28C840}
+
+/* Tła */
+.bg-photo{background:#2A2350 url("assets/dusk-wallpaper.jpg") center/cover no-repeat}
+.bg-video{background:#2A2350 url("assets/dusk-wallpaper.jpg") center/cover no-repeat}
+.bg-video video{width:100%;height:100%;object-fit:cover;display:block}
+.blurred{filter:blur(var(--bgblur,26px));transform:scale(1.14)}
+.bg-brand{background:linear-gradient(160deg,#23285A 0%,#3A3993 30%,#6F6BD8 58%,#EE8FB5 84%,#F59A64 100%)}
+.bg-mesh{background:
+  radial-gradient(55% 55% at 12% 18%,rgba(111,107,216,.95),transparent 70%),
+  radial-gradient(45% 50% at 88% 20%,rgba(238,143,181,.8),transparent 70%),
+  radial-gradient(60% 55% at 72% 100%,rgba(245,154,100,.85),transparent 70%),
+  radial-gradient(50% 60% at 8% 95%,rgba(58,57,147,.95),transparent 70%),#2A2760}
+.bg-horizon{background:
+  radial-gradient(75% 48% at 50% 112%,rgba(245,154,100,.9),rgba(238,143,181,.45) 45%,transparent 76%),
+  linear-gradient(180deg,#0D0E27 0%,#17173F 42%,#2C2A70 74%,#523C84 100%)}
+.bg-night{background:radial-gradient(60% 50% at 82% 0%,rgba(111,107,216,.38),transparent 70%),radial-gradient(50% 50% at 0% 100%,rgba(238,143,181,.2),transparent 70%),#141433}
+.bg-mist{background:radial-gradient(50% 55% at 85% 10%,rgba(238,143,181,.35),transparent 70%),radial-gradient(55% 55% at 10% 95%,rgba(140,136,240,.35),transparent 70%),linear-gradient(160deg,#E9E6FB,#F4E6EF 55%,#FBE8DC)}
+.bg-aurora{background:#1A1943;overflow:hidden}
+.bg-aurora .blob{position:absolute;width:72%;aspect-ratio:1;border-radius:50%;filter:blur(50px);opacity:.9;animation:drift var(--d,30s) ease-in-out infinite alternate}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(16%,9%) scale(1.14)}100%{transform:translate(-10%,16%) scale(.94)}}
+.noise{position:absolute;inset:0;opacity:.1;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.stars{position:absolute;inset:0;background-image:radial-gradient(1px 1px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 32% 8%,#fff,transparent),radial-gradient(1.5px 1.5px at 58% 22%,#fff,transparent),radial-gradient(1px 1px at 76% 12%,#fff,transparent),radial-gradient(1px 1px at 88% 30%,#fff,transparent),radial-gradient(1px 1px at 44% 34%,#fff,transparent),radial-gradient(1px 1px at 22% 40%,#fff,transparent),radial-gradient(1.5px 1.5px at 66% 6%,#fff,transparent);opacity:.5}
+/* Udawany pulpit macOS za przezroczystym oknem */
+.desk{overflow:hidden}
+.desk .dw{position:absolute;border-radius:12px;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.45)}
+.desk .dwt{height:34px;background:rgba(0,0,0,.05);border-bottom:1px solid rgba(0,0,0,.06)}
+.desk .dwb{padding:22px 28px;display:flex;flex-direction:column;gap:11px}
+.desk .ln{height:9px;border-radius:5px}
+.desk .h{height:22px;border-radius:6px;background:#1F2233;margin-bottom:6px}
+.desk .img{height:150px;border-radius:10px;margin-block:6px}
+.dl-wall{background:linear-gradient(135deg,#9CC2F2 0%,#D9C8EE 48%,#F7D6B6 100%)}
+.dd-wall{background:radial-gradient(60% 60% at 70% 20%,#2B3A67,transparent 70%),linear-gradient(180deg,#141A2C,#0A0D17)}
+.frost{position:absolute;inset:0;-webkit-backdrop-filter:blur(var(--fb,34px)) saturate(var(--fs,150%));backdrop-filter:blur(var(--fb,34px)) saturate(var(--fs,150%));background:var(--ft,rgba(24,22,60,.3))}
+.frost::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,30,var(--band,.3)) 0%,transparent 20%)}
+
+/* Tekst poza panelami na jasnym tle */
+.b-mist,.ink-dark{--title:#23285A;--title2:rgba(35,40,90,.62)}
+
+/* Szkielet okna */
+.shell{position:absolute;inset:0;display:flex;z-index:2}
+.content{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px;padding:44px 28px 24px 20px;overflow:hidden}
+.n-rail .content{padding-left:18px}
+.n-att .content,.n-bare .content{padding-left:26px}
+.n-top{flex-direction:column}
+.n-top .content{padding:22px 32px 24px}
+.ph{display:flex;align-items:baseline;gap:12px;flex:none}
+.ph h1{font-size:26px;font-weight:600;margin:0;color:var(--title);letter-spacing:-.01em}
+.ph .sub{color:var(--title2);font-size:13px}
+
+/* Panele */
+.gp{position:relative;border-radius:var(--rp);background:var(--pf);-webkit-backdrop-filter:var(--pb);backdrop-filter:var(--pb);box-shadow:var(--ps);color:var(--ink);padding:22px;min-width:0}
+.gp::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:var(--rim);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);pointer-events:none}
+.gp.tile{border-radius:var(--rt);padding:16px}
+.gp.hero{background:linear-gradient(var(--tint),var(--tint)),var(--pf)}
+.inset{position:relative;border-radius:var(--rc);background:var(--cf);padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px rgba(255,255,255,.06)}
+.col{display:flex;flex-direction:column;min-height:0;min-width:0}
+.stack{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.grow{flex:1;min-height:0}
+
+/* Materiały paneli */
+.t-clear{--pf:rgba(255,255,255,.07);--pb:blur(14px) saturate(130%);--rim:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.08) 55%,rgba(255,255,255,.14));--cf:rgba(255,255,255,.06)}
+.t-frost{--pf:rgba(255,255,255,.27);--pb:blur(54px) saturate(185%);--rim:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,.16) 55%,rgba(255,255,255,.22));--cf:rgba(255,255,255,.12)}
+.t-violet{--pf:rgba(111,107,216,.32);--pb:blur(30px) saturate(170%);--rim:linear-gradient(180deg,rgba(210,208,255,.6),rgba(255,255,255,.08) 55%,rgba(255,255,255,.14));--tint:rgba(238,143,181,.12)}
+.t-smoke{--pf:rgba(18,16,44,.42);--pb:blur(30px) saturate(140%);--rim:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.05) 55%,rgba(255,255,255,.08));--ps:0 18px 44px -16px rgba(0,0,0,.5);--cf:rgba(255,255,255,.06);--track:rgba(0,0,0,.25)}
+.t-hairline{--pf:transparent;--pb:none;--rim:linear-gradient(rgba(255,255,255,.24),rgba(255,255,255,.24));--ps:none;--tint:transparent;--cf:rgba(255,255,255,.05)}
+.t-sunset{--rim:linear-gradient(135deg,#FFB9D4 0%,#F59A64 30%,rgba(255,255,255,.08) 60%,#8C88F0 100%)}
+.t-inner{--ps:0 26px 60px -20px rgba(8,6,36,.6),inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 36px rgba(255,255,255,.08)}
+.t-solid{--pf:#2B2A52;--pb:none;--cf:#232248;--rim:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));--ps:0 14px 32px -14px rgba(0,0,0,.55);--tint:rgba(111,107,216,.14)}
+.t-none{--pf:transparent;--pb:none;--rim:none;--ps:none;--tint:transparent;--cf:rgba(255,255,255,.07)}
+.t-none .gp{padding-inline:4px}
+.t-light .gp,.gp.lightnav{
+  --ink:#23285A;--ink2:rgba(35,40,90,.66);--ink3:rgba(35,40,90,.45);
+  --pf:rgba(255,255,255,.74);--pb:blur(30px) saturate(180%);
+  --rim:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,255,255,.45));
+  --ps:0 18px 44px -18px rgba(35,30,90,.35);
+  --cf:rgba(35,40,90,.05);--track:rgba(35,40,90,.07);--sel:#fff;--sep:rgba(35,40,90,.1);
+  --bar:linear-gradient(180deg,#8C88F0,#CAC8F8);--barhi:linear-gradient(180deg,#F7B089,#EE8FB5);
+  --wave:linear-gradient(180deg,#6F6BD8,#EE8FB5);--waveglow:none;
+  --line1:#6F6BD8;--area1:rgba(111,107,216,.3);--area2:rgba(111,107,216,0);
+  --pill:rgba(111,107,216,.14);--tint:rgba(111,107,216,.07);--ringtrack:rgba(35,40,90,.08)
+}
+
+/* Pasek boczny */
+.nav{width:220px;margin:12px 0 12px 12px;display:flex;flex-direction:column;padding:50px 10px 16px;flex:none;color:var(--ink)}
+.nav .brand{display:flex;align-items:center;gap:9px;padding:0 8px 18px}
+.nav .brand img{width:30px;height:30px;border-radius:7px}
+.nav .brand span{font-size:18px;font-weight:600;letter-spacing:-.01em}
+.nav .items{display:flex;flex-direction:column;gap:3px}
+.nav .it{display:flex;align-items:center;gap:11px;height:36px;padding:0 10px;border-radius:11px;font-size:14px;color:var(--ink)}
+.nav .it svg{opacity:.88;flex:none}
+.nav .it.on{background:var(--pill);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.08)}
+.gp.lightnav .it.on{color:#4B47B8;box-shadow:none}
+.nav .foot{margin-top:auto;padding:0 8px;font-size:11px;color:var(--ink3);display:grid;gap:2px}
+.nav.att{margin:0;border-radius:0;width:232px;box-shadow:none;padding-top:54px;border-right:1px solid var(--sep)}
+.nav.att::before{display:none}
+.nav.bare{background:none;padding-top:54px;margin-left:8px}
+.nav.bare .it.on{background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.nav.rail{width:64px;padding:50px 8px 14px;align-items:center}
+.nav.rail .brand{padding:0 0 16px}
+.nav.rail .brand span,.nav.rail .it span,.nav.rail .foot{display:none}
+.nav.rail .it{width:44px;height:40px;justify-content:center;padding:0}
+.topbar{height:58px;display:flex;align-items:center;justify-content:center;position:relative;flex:none;padding-top:6px}
+.topbar .tb-brand{position:absolute;left:96px;top:18px;display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:var(--title)}
+.topbar .tb-brand img{width:22px;height:22px;border-radius:5px}
+.topbar .seg{--track:rgba(10,8,40,.28)}
+.topbar .seg span{display:inline-flex;align-items:center;gap:6px;color:var(--title2)}
+.topbar .seg span.on{color:#fff}
+
+/* Drobne elementy */
+.sh{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--ink);min-height:22px}
+.sh svg{opacity:.85;flex:none}
+.sh .badge{margin-left:auto}
+.badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--cf);box-shadow:inset 0 0 0 1px var(--sep);color:var(--ink2);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.big{font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--ink);line-height:1.05;white-space:nowrap}
+.p2{color:var(--ink2);font-size:14px}
+.p3{color:var(--ink3);font-size:12px}
+.ib{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;color:#fff;flex:none;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 78%,#fff),var(--c));box-shadow:0 6px 14px -6px var(--c),inset 0 1px 0 rgba(255,255,255,.35)}
+.tile .lab{color:var(--ink2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile{display:flex;flex-direction:column;gap:10px}
+.wave{display:flex;align-items:center;justify-content:center;gap:5px;filter:var(--waveglow);flex:none}
+.wave i{width:4px;border-radius:2px;background:var(--wave)}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--track);box-shadow:inset 0 0 0 1px var(--sep);flex:none}
+.seg span{padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--ink2);white-space:nowrap}
+.seg span.on{background:var(--sel);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.ctrls{display:flex;gap:10px;align-items:center}
+.bars{position:relative}
+.bars.fill{flex:1;min-height:60px}
+.bars .gl{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between}
+.bars .gl i{border-top:1px dashed var(--sep)}
+.bars .cols{position:absolute;inset:0;display:flex;align-items:flex-end;gap:var(--bg,4px)}
+.bars .cols b{flex:1;border-radius:4px 4px 2px 2px;background:var(--bar);min-height:3px}
+.bars .cols b.hi{background:var(--barhi)}
+.bars .cols b.zero{background:var(--sep)}
+.xl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:7px;font-variant-numeric:tabular-nums}
+.xl.even span{flex:1;text-align:center}
+.area{position:relative}
+.area.fill{flex:1;min-height:60px}
+.area svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.area .dot{position:absolute;width:10px;height:10px;border-radius:50%;background:#F59A64;box-shadow:0 0 0 4px rgba(245,154,100,.25),0 0 14px #F59A64;transform:translate(-50%,-50%)}
+.area .gl{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between}
+.area .gl i{border-top:1px dashed var(--sep)}
+.row{display:flex;align-items:center;gap:12px;min-height:42px;font-size:14px;color:var(--ink)}
+.row .v{margin-left:auto;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.row>svg{opacity:.85;flex:none}
+.sep{height:1px;background:var(--sep);flex:none}
+.gbtn{height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:14px;flex:1;background:rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 0 0 0 1px rgba(255,255,255,.12);color:var(--ink)}
+.gbtn.acc{background:linear-gradient(180deg,rgba(140,136,240,.95),rgba(111,107,216,.9));color:#fff;box-shadow:0 10px 22px -10px #6F6BD8,inset 0 1px 0 rgba(255,255,255,.35)}
+.t-light .gbtn:not(.acc){background:rgba(35,40,90,.06)}
+.orb{border-radius:50%;display:grid;place-items:center;flex:none;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.4),rgba(255,255,255,.1) 60%);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.25),0 10px 24px -10px rgba(10,8,40,.6);color:#fff}
+.ringleg{display:grid;gap:12px}
+.ringleg .rl{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;font-size:13px;color:var(--ink2)}
+.ringleg .rl b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.ringleg .rl i{width:10px;height:10px;border-radius:50%}
+.fi{display:grid;gap:5px}
+.fi .fm{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3)}
+.fi .fm .badge{margin-left:auto;font-size:10.5px;padding:3px 8px}
+.fi .ft{font-size:13.5px;color:var(--ink);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.hm{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.hm .d{aspect-ratio:1.5;border-radius:8px;position:relative;font-size:10px;color:rgba(255,255,255,.75);padding:4px 6px}
+.hm .wd{font-size:11px;color:var(--ink3);text-align:center}
+.hbar{display:grid;grid-template-columns:28px 1fr 48px;gap:10px;align-items:center;font-size:12px;color:var(--ink2)}
+.hbar .tr{height:10px;border-radius:5px;background:var(--cf);overflow:hidden}
+.hbar .tr b{display:block;height:100%;border-radius:5px;background:var(--bar)}
+.hbar .val{text-align:right;font-variant-numeric:tabular-nums}
+.istat{display:flex;flex-direction:column;gap:4px}
+.istat .v{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;color:var(--title)}
+.istat .k{font-size:12px;color:var(--title2)}
+.dots7{display:flex;gap:6px}
+.dots7 i{width:14px;height:14px;border-radius:50%;background:var(--sep)}
+.dots7 i.on{background:linear-gradient(160deg,#F7B089,#EE8FB5);box-shadow:0 0 8px rgba(245,154,100,.6)}
+@media (prefers-reduced-motion:reduce){.bg-aurora .blob{animation:none}}
+</style>
+
+<header class="top">
+  <div class="eyebrow">Captylo · Pulpit Lab</div>
+  <h1>50 wariantów okna <em>Pulpit</em></h1>
+  <p>Każdy podgląd to okno aplikacji w skali 1:1 (1120 × 720), zmniejszone do karty. Liczby są prawdziwe, z Twojej bazy: 9423 sesje, 506 839 słów, ostatnie 30 dni dzień po dniu. <b>Kliknij podgląd</b>, żeby powiększyć (strzałki ← → przełączają). Serduszko i uwagi zapisują się w tej przeglądarce, a <b>Kopiuj feedback</b> zbiera je w jeden tekst do wklejenia w czacie.</p>
+</header>
+
+<nav class="bar" aria-label="Filtry">
+  <div class="bar-in" id="filters"></div>
+  <div class="copybox" id="copybox" hidden><textarea id="copytext" readonly aria-label="Feedback do skopiowania"></textarea></div>
+</nav>
+
+<main id="gallery"></main>
+
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-labelledby="lb-title">
+  <div class="lb-head">
+    <span class="num" id="lb-num"></span>
+    <h3 id="lb-title"></h3>
+    <span class="spacer"></span>
+    <span class="hint">← → przełącza · Esc zamyka</span>
+    <button class="fav" id="lb-fav" aria-pressed="false" aria-label="Ulubiony"></button>
+    <button class="close" id="lb-close" aria-label="Zamknij"></button>
+    <p id="lb-desc"></p>
+  </div>
+  <div class="lb-body">
+    <button class="arrow" id="lb-prev" aria-label="Poprzedni"></button>
+    <div class="lb-fit" id="lb-fit"></div>
+    <button class="arrow" id="lb-next" aria-label="Następny"></button>
+  </div>
+  <div class="lb-foot"><textarea class="note" id="lb-note" rows="1" placeholder="Uwagi do tego wariantu…"></textarea></div>
+</div>
+
+<script>
+/*
+  Pulpit Lab. Jak edytować:
+  - VARIANTS (niżej): każdy wariant = tło (bg) + materiał paneli (panel) + układ (layout) + menu (nav) + opcje (o).
+  - Tła: photo, video, aurora, brand, mesh, horizon, night, mist, desk-light, desk-dark.
+  - Panele: milky (dziś), clear, frost, violet, smoke, light, hairline, sunset, inner, solid, none.
+  - Układy: funkcje w LAYOUTS. Menu: floating (dziś), att, rail, top, bare, light.
+*/
+
+// Prawdziwe dane z Captylo.store (27.09.2026): data, sesje, słowa, sekundy nagrań.
+const DAILY = [["2026-08-28",36,2418,1146],["2026-08-29",21,2112,1080],["2026-08-30",54,2686,1385],["2026-08-31",45,2873,1331],["2026-09-01",16,739,343],["2026-09-02",46,2820,1295],["2026-09-03",50,3619,1680],["2026-09-04",20,753,338],["2026-09-05",15,1091,501],["2026-09-06",6,523,283],["2026-09-07",27,1337,563],["2026-09-08",42,2092,1061],["2026-09-09",18,1045,493],["2026-09-10",25,2017,889],["2026-09-11",17,1279,617],["2026-09-12",85,5182,2222],["2026-09-13",41,1759,762],["2026-09-14",20,926,372],["2026-09-15",36,1362,709],["2026-09-16",32,1537,652],["2026-09-17",3,117,60],["2026-09-18",0,0,0],["2026-09-19",11,430,206],["2026-09-20",8,199,70],["2026-09-21",8,549,231],["2026-09-22",43,2635,1327],["2026-09-23",92,5831,2657],["2026-09-24",29,1247,650],["2026-09-25",51,2605,1150],["2026-09-26",86,3212,1537],["2026-09-27",13,354,302]];
+const MONTHS = [["gru",40,2264],["sty",569,38303],["lut",686,37787],["mar",1181,59529],["kwi",2036,91093],["maj",1334,64593],["cze",741,44293],["lip",944,55867],["sie",1052,67850],["wrz",840,45260]];
+const WEEKDAY = [["Pn",1368],["Wt",1360],["Śr",1827],["Cz",1336],["Pt",1075],["So",1484],["Nd",973]];
+const TOT = {words:506839,sessions:9423,wpm:113,rec:"74 godz. 48 min",keys:3041034,saved:"166 godz.",savedN:166,ai:2631,streak:9};
+
+const nf = n => n.toLocaleString("pl-PL");
+const L30 = DAILY.slice(-30);
+const sum = (a, i) => a.reduce((s, d) => s + d[i], 0);
+const W30 = sum(L30, 2), S30 = sum(L30, 1), SEC30 = sum(L30, 3);
+const AVG = Math.round(W30 / 30);
+const BEST = L30.reduce((b, d) => d[2] > b[2] ? d : b);
+const ACTIVE30 = L30.filter(d => d[1] > 0).length;
+const TODAY = L30[L30.length - 1];
+const MON = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+const dlabel = s => { const [y, m, d] = s.split("-").map(Number); return `${d} ${MON[m - 1]}`; };
+
+// Ikony (obrys 24 x 24, jak SF Symbols w aplikacji)
+const P = {
+  chart:"M4 20h16 M7 16v-4 M12 16V7 M17 16v-7",
+  history:"M3 12a9 9 0 1 0 2.6-6.4 M3 4v4h4 M12 8v4l3 2",
+  file:"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5 M12 11v6 M9 14h6",
+  book:"M5 5a2 2 0 0 1 2-2h12v15H7a2 2 0 0 0-2 2z M5 20a2 2 0 0 0 2 1h12v-3",
+  cpu:"M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z M10 10h4v4h-4z M9 2v4 M15 2v4 M9 18v4 M15 18v4 M2 9h4 M2 15h4 M18 9h4 M18 15h4",
+  sliders:"M4 6h9 M17 6h3 M15 4v4 M4 12h3 M11 12h9 M9 10v4 M4 18h11 M19 18h1 M17 16v4",
+  sparkles:"M11 3l1.8 4.7L17.5 9.5l-4.7 1.8L11 16l-1.8-4.7L4.5 9.5l4.7-1.8z M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z",
+  words:"M4 7h16 M4 12h16 M4 17h9",
+  wave:"M3 12h1 M7 8v8 M11 5v14 M15 8v8 M19 10v4",
+  speed:"M5 18a8 8 0 1 1 14 0 M12 14l4-5 M12 14h.01",
+  clock:"M12 3a9 9 0 1 1 0 18a9 9 0 1 1 0-18z M12 7v5l3 2",
+  keys:"M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z M7 10h.01 M11 10h.01 M15 10h.01 M8 14h8",
+  mic:"M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3",
+  flame:"M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 0 2 1 3 2 3 0-3-1-5.5.5-8z",
+  cal:"M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 10h16 M8 3v4 M16 3v4",
+  trophy:"M8 4h8v5a4 4 0 0 1-8 0z M8 6H5a3 3 0 0 0 3 4 M16 6h3a3 3 0 0 1-3 4 M12 13v4 M9 20h6",
+  plus:"M12 5v14 M5 12h14",
+  globe:"M12 3a9 9 0 1 1 0 18a9 9 0 1 1 0-18z M3 12h18 M12 3c3 3.5 3 14.5 0 18 M12 3c-3 3.5-3 14.5 0 18",
+  heart:"M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5c-2.2 4.6-9.2 9-9.2 9z",
+  left:"M15 5l-7 7 7 7", right:"M9 5l7 7-7 7", x:"M6 6l12 12 M18 6L6 18"
+};
+const ic = (n, s = 18, w = 1.8) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P[n]}"/></svg>`;
+const C = {violet:"#6F6BD8",pink:"#EE8FB5",orange:"#F59A64",indigo:"#3A3993",teal:"#4FB7B0"};
+const badgeIc = (n, c, s = 28) => `<span class="ib" style="--c:${c};width:${s}px;height:${s}px;border-radius:${Math.round(s * .32)}px">${ic(n, Math.round(s * .55), 2)}</span>`;
+const fit = (str, box, max) => Math.min(max, Math.floor(box / (String(str).length * .56)));
+
+// Wykresy
+const WAVE = [.08,.14,.3,.2,.46,.62,.38,.84,1,.7,.9,.5,.36,.58,.26,.16,.08];
+function wave(w = 160, h = 64, dim = false) {
+  const n = Math.max(9, Math.round(w / 9.4));
+  const lv = Array.from({length:n}, (_, i) => WAVE[Math.round(i / (n - 1) * (WAVE.length - 1))]);
+  return `<div class="wave" style="width:${w}px;height:${h}px;${dim ? "opacity:.55" : ""}">${lv.map(l => `<i style="height:${Math.max(4, Math.round(h * l))}px"></i>`).join("")}</div>`;
+}
+function bars(vals, {h = 150, labels = null, gap = 4, hiLast = true, grid = true} = {}) {
+  const max = Math.max(...vals) || 1;
+  const hs = h === "fill" ? "" : `height:${h}px`;
+  const cols = vals.map((v, i) => `<b class="${v === 0 ? "zero" : hiLast && i === vals.length - 1 ? "hi" : ""}" style="height:${Math.max(3, v / max * 100)}%"></b>`).join("");
+  const xl = labels ? `<div class="xl ${labels.even ? "even" : ""}">${labels.items.map(t => `<span>${t}</span>`).join("")}</div>` : "";
+  return `<div class="bars ${h === "fill" ? "fill" : ""}" style="${hs};--bg:${gap}px">${grid ? `<div class="gl"><i></i><i></i><i></i></div>` : ""}<div class="cols">${cols}</div></div>${xl}`;
+}
+const DAYLAB = {items:[dlabel(L30[0][0]), dlabel(L30[10][0]), dlabel(L30[20][0]), "dziś"]};
+let gid = 0;
+function area(vals, {h = 200, dot = true} = {}) {
+  const id = "ga" + (++gid), n = vals.length, max = Math.max(...vals) || 1;
+  const pts = vals.map((v, i) => [i / (n - 1) * 300, 100 - (v / max) * 86 - 6]);
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  const last = pts[n - 1];
+  const hs = h === "fill" ? "" : `height:${h}px`;
+  return `<div class="area ${h === "fill" ? "fill" : ""}" style="${hs}"><div class="gl"><i></i><i></i><i></i></div><svg viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--area1)"/><stop offset="1" style="stop-color:var(--area2)"/></linearGradient></defs><path d="${d} L300,100 L0,100 Z" fill="url(#${id})"/><path d="${d}" fill="none" style="stroke:var(--line1)" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>${dot ? `<span class="dot" style="left:100%;top:${last[1]}%"></span>` : ""}</div>`;
+}
+function rings(size, list) {
+  const c = size / 2, sw = 13;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true" style="flex:none">${list.map((r, i) => {
+    const rad = c - sw / 2 - i * (sw + 5), len = 2 * Math.PI * rad, p = Math.min(1, r.p);
+    return `<circle cx="${c}" cy="${c}" r="${rad}" fill="none" style="stroke:var(--ringtrack)" stroke-width="${sw}"/><circle cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="${r.c}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${(len * p).toFixed(1)} ${len.toFixed(1)}" transform="rotate(-90 ${c} ${c})" style="filter:drop-shadow(0 0 6px ${r.c}88)"/>`;
+  }).join("")}</svg>`;
+}
+
+// Klocki Pulpitu
+const ph = (sub = "") => `<div class="ph"><h1>Pulpit</h1>${sub ? `<span class="sub">${sub}</span>` : ""}</div>`;
+const heroSub = `${nf(TOT.words)} słów w ${nf(TOT.sessions)} sesjach`;
+function hero({big = 44, w = 160, h = 64, extra = "", style = ""} = {}) {
+  return `<section class="gp hero" style="${style}"><div style="display:flex;align-items:center;gap:24px;height:100%"><div class="col" style="flex:1;gap:8px"><div class="sh">${ic("sparkles", 16)}Zaoszczędzony czas</div><div class="big" style="font-size:${big}px">${TOT.saved}</div><div class="p2">${heroSub}</div>${extra}</div>${w ? wave(w, h) : ""}</div></section>`;
+}
+function heroSlim(extra = "") {
+  return `<section class="gp hero" style="padding:16px 22px;flex:none"><div style="display:flex;align-items:center;gap:18px"><span style="opacity:.85">${ic("sparkles", 18)}</span><div class="col" style="gap:2px"><div class="p3">Zaoszczędzony czas</div><div class="big" style="font-size:32px">${TOT.saved}</div></div><div class="p2" style="flex:1">${heroSub}</div>${extra}${wave(120, 40)}</div></section>`;
+}
+const STATS = [
+  ["Słowa", nf(TOT.words), "words", C.violet],
+  ["Sesje", nf(TOT.sessions), "wave", C.pink],
+  ["Słowa/min", String(TOT.wpm), "speed", C.orange],
+  ["Nagrany czas", TOT.rec, "clock", C.indigo],
+  ["Oszczędzone klawisze", nf(TOT.keys), "keys", C.violet],
+];
+function tile([label, value, icon, color], box = 125, max = 30, extra = "") {
+  return `<div class="gp tile">${badgeIc(icon, color)}<div class="big" style="font-size:${fit(value, box, max)}px">${value}</div><div class="lab">${label}</div>${extra}</div>`;
+}
+function trend({h = 150, controls = true, title = "Trend", vals = L30.map(d => d[2]), labels = DAYLAB, style = ""} = {}) {
+  const ctr = controls ? `<div class="ctrls"><div class="seg"><span>7 d</span><span class="on">30 d</span><span>90 d</span></div><div class="seg"><span class="on">Dziennie</span><span>Narastająco</span></div><span style="flex:1"></span><div class="seg"><span class="on">Słowa</span><span>Sesje</span><span>Czas</span></div></div>` : "";
+  return `<section class="gp col" style="gap:14px;${style}"><div class="sh">${ic("chart", 16)}${title}<span class="badge">30 dni · ${nf(W30)} słów</span></div>${ctr}<div class="col ${h === "fill" ? "grow" : ""}">${bars(vals, {h, labels})}</div></section>`;
+}
+function rowsHTML(list) {
+  return list.map(r => r === "-" ? `<div class="sep"></div>` : `<div class="row">${ic(r[2], 17)}<span>${r[0]}</span><span class="v">${r[1]}</span></div>`).join("");
+}
+const W7 = L30.slice(-7);
+const weekBars = (h = 110) => bars(W7.map(d => d[2]), {h, labels:{items:["Pn","Wt","Śr","Cz","Pt","So","Nd"], even:true}, gap:10});
+const weekdayBars = (h = 110) => bars(WEEKDAY.map(d => d[1]), {h, labels:{items:WEEKDAY.map(d => d[0]), even:true}, gap:10, hiLast:false});
+const FEED = [
+  ["13:42","Slack","Hej, wrzucam poprawki do makiet, zerknij proszę przed czwartkiem.","Uporządkuj"],
+  ["13:18","Mail","Dzień dobry, w załączniku przesyłam ofertę na kolejny etap prac.","Uporządkuj"],
+  ["12:57","Cursor","Add a guard for empty transcripts before calling the enhancer.","Po angielsku"],
+  ["12:31","Notatki","Pomysły na landing: sekcja z wideo, cennik, FAQ o prywatności.","Bez AI"],
+  ["11:05","Przeglądarka","Porównaj trzy podejścia do cache modeli i wskaż najtańsze.","Uporządkuj"],
+];
+const feedItem = f => `<div class="inset fi"><div class="fm"><span>${f[0]}</span><span>·</span><span>${f[1]}</span><span class="badge">${f[3] === "Bez AI" ? "" : ic("sparkles", 11, 2)}${f[3]}</span></div><div class="ft">${f[2]}</div></div>`;
+
+// Układy treści
+const LAYOUTS = {
+  classic: () => `${ph()}${hero()}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">${STATS.map(s => tile(s)).join("")}</div>${trend()}`,
+
+  split: () => `${ph()}<div style="display:grid;grid-template-columns:1.15fr 1fr;gap:14px;flex:none">
+    <section class="gp hero col" style="gap:8px"><div class="sh">${ic("sparkles", 16)}Zaoszczędzony czas</div><div class="big" style="font-size:66px;margin-top:6px">${TOT.saved}</div><div class="p2">${heroSub}</div><div class="p3">To około 21 dni pracy po 8 godzin.</div><div style="margin-top:auto">${wave(320, 60)}</div></section>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${STATS.slice(0, 4).map(s => tile(s, 150, 30)).join("")}</div></div>${trend({h:"fill", controls:false, style:"flex:1;min-height:0"})}`,
+
+  bento: () => `${ph("sobota, 27 września")}<div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:128px 128px 1fr;gap:12px">
+    <section class="gp hero col" style="grid-column:1/3;grid-row:1/3;gap:8px"><div class="sh">${ic("sparkles", 16)}Zaoszczędzony czas</div><div class="big" style="font-size:58px;margin-top:4px">${TOT.saved}</div><div class="p2">${heroSub}</div><div style="margin-top:auto">${wave(330, 56)}</div></section>
+    ${tile(STATS[0], 150, 28)}${tile(STATS[1], 150, 28)}
+    ${tile(["Seria", `${TOT.streak} dni`, "flame", C.orange], 150, 28)}${tile(["Dziś", `${nf(TODAY[2])} słów`, "mic", C.pink], 150, 28)}
+    <section class="gp col" style="grid-column:1/4;gap:12px"><div class="sh">${ic("chart", 16)}Ostatnie 30 dni<span class="badge">${nf(W30)} słów</span></div><div class="col grow">${bars(L30.map(d => d[2]), {h:"fill", labels:DAYLAB})}</div></section>
+    <section class="gp col" style="gap:12px"><div class="sh">${ic("cal", 16)}Dni tygodnia</div><div class="col grow">${bars(WEEKDAY.map(d => d[1]), {h:"fill", labels:{items:WEEKDAY.map(d => d[0][0]), even:true}, gap:5, hiLast:false})}</div></section></div>`,
+
+  minimal: () => `<div class="col" style="flex:1;padding:36px 20px 0 10px;gap:0">
+    <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--title2)">Zaoszczędzony czas</div>
+    <div style="font-size:128px;font-weight:200;letter-spacing:-.04em;line-height:1;color:var(--title);margin-top:10px">${TOT.savedN}<span style="font-size:44px;font-weight:300;letter-spacing:0;margin-left:10px;color:var(--title2)">godz.</span></div>
+    <p style="font-size:17px;color:var(--title2);max-width:44ch;margin:16px 0 0">Tyle trwałoby przepisanie ${nf(TOT.words)} słów na klawiaturze. Mówisz średnio ${TOT.wpm} słów na minutę.</p>
+    <div style="display:flex;gap:36px;margin-top:34px">${[[nf(TOT.sessions),"sesji"],[TOT.rec,"nagrań"],[`${TOT.streak} dni`,"seria"],[nf(TODAY[2]),"słów dziś"]].map(s => `<div class="istat"><span class="v">${s[0]}</span><span class="k">${s[1]}</span></div>`).join(`<span style="width:1px;background:rgba(255,255,255,.18)"></span>`)}</div>
+    <div class="col" style="flex:1;margin-top:26px;--line1:rgba(255,255,255,.9);--area1:rgba(255,255,255,.22);--sep:rgba(255,255,255,.08)">${area(L30.map(d => d[2]), {h:"fill"})}<div class="xl" style="color:var(--title2)"><span>${dlabel(L30[0][0])}</span><span>ostatnie 30 dni</span><span>dziś</span></div></div></div>`,
+
+  chartfirst: () => `${ph()}<section class="gp col" style="flex:1;min-height:0;gap:14px">
+    <div style="display:flex;align-items:flex-end;gap:16px"><div class="col" style="gap:4px"><div class="p3">Ostatnie 30 dni</div><div class="big" style="font-size:40px">${nf(W30)} <span style="font-size:20px;color:var(--ink2)">słów</span></div><div class="p2">średnio ${nf(AVG)} dziennie · najlepszy dzień ${dlabel(BEST[0])} (${nf(BEST[2])})</div></div><span style="flex:1"></span><div class="seg"><span>7 d</span><span class="on">30 d</span><span>90 d</span></div><div class="seg"><span class="on">Słowa</span><span>Sesje</span><span>Czas</span></div></div>
+    <div class="col grow">${area(L30.map(d => d[2]), {h:"fill"})}<div class="xl"><span>${dlabel(L30[0][0])}</span><span>${dlabel(L30[10][0])}</span><span>${dlabel(L30[20][0])}</span><span>dziś</span></div></div></section>
+    <section class="gp" style="padding:16px 8px;flex:none"><div style="display:grid;grid-template-columns:1.3fr repeat(4,1fr)">${[["Zaoszczędzony czas",TOT.saved],["Słowa",nf(TOT.words)],["Sesje",nf(TOT.sessions)],["Słowa/min",TOT.wpm],["Nagrany czas",TOT.rec]].map((s, i) => `<div class="col" style="gap:4px;padding:0 16px;${i ? "border-left:1px solid var(--sep)" : ""}"><span class="p3">${s[0]}</span><span class="big" style="font-size:${i ? fit(s[1], 130, 24) : 30}px">${s[1]}</span></div>`).join("")}</div></section>`,
+
+  single: () => `${ph()}<section class="gp" style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:26px;padding:26px">
+    <div class="col" style="gap:16px">
+      <div style="display:flex;align-items:center;gap:18px"><div class="orb" style="width:64px;height:64px">${ic("mic", 26, 2)}</div><div class="col" style="gap:4px"><div class="p3">Zaoszczędzony czas</div><div class="big" style="font-size:42px">${TOT.saved}</div></div></div>
+      <div class="p2">${heroSub}</div>
+      <div class="inset col grow" style="gap:12px;padding:16px 18px"><div class="sh" style="font-size:14px">${ic("chart", 16)}Ten tydzień<span class="badge">${nf(sum(W7, 2))} słów</span></div><div class="col grow">${bars(W7.map(d => d[2]), {h:"fill", labels:{items:["Pn","Wt","Śr","Cz","Pt","So","Nd"], even:true}, gap:12})}</div></div>
+    </div>
+    <div class="col">
+      ${rowsHTML([["Słowa",nf(TOT.words),"words"],["Sesje",nf(TOT.sessions),"wave"],["Słowa na minutę",TOT.wpm,"speed"],"-",["Nagrany czas",TOT.rec,"clock"],["Oszczędzone klawisze",nf(TOT.keys),"keys"],["Poprawione przez AI",`${nf(TOT.ai)} · 28%`,"sparkles"],"-",["Seria",`${TOT.streak} dni`,"flame"]])}
+      <div style="display:flex;gap:12px;margin-top:auto"><div class="gbtn">${ic("file", 17)}Transkrybuj plik</div><div class="gbtn acc">${ic("mic", 17, 2)}Nowe dyktowanie</div></div>
+    </div></section>`,
+
+  rows: () => `${ph()}${heroSlim()}<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <section class="gp col" style="gap:6px"><div class="sh" style="margin-bottom:4px">Łącznie</div>${rowsHTML([["Słowa",nf(TOT.words),"words"],["Sesje",nf(TOT.sessions),"wave"],["Słowa na minutę",TOT.wpm,"speed"],"-",["Nagrany czas",TOT.rec,"clock"],["Oszczędzone klawisze",nf(TOT.keys),"keys"],["Poprawione przez AI",nf(TOT.ai),"sparkles"],"-",["Pierwsze dyktowanie","30 gru 2025","cal"]])}</section>
+    <section class="gp col" style="gap:6px"><div class="sh" style="margin-bottom:4px">Ostatnie 30 dni</div>${rowsHTML([["Słowa",nf(W30),"words"],["Sesje",nf(S30),"wave"],["Średnio dziennie",`${nf(AVG)} słów`,"chart"],"-",["Najlepszy dzień",`${dlabel(BEST[0])} · ${nf(BEST[2])}`,"trophy"],["Seria",`${TOT.streak} dni`,"flame"],["Dni z dyktowaniem",`${ACTIVE30} z 30`,"cal"],"-",["Dziś",`${nf(TODAY[2])} słów · ${TODAY[1]} sesji`,"mic"]])}</section></div>`,
+
+  rings: () => {
+    const sAvg = Math.round(S30 / 30), tAvg = Math.round(SEC30 / 30 / 60), tToday = Math.round(TODAY[3] / 60);
+    return `${ph("Dziś, 27 września")}<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:none">
+    <section class="gp col" style="gap:16px"><div class="sh">${ic("cal", 16)}Dziś na tle średniej</div><div style="display:flex;align-items:center;gap:26px">${rings(176, [{p:TODAY[2] / AVG, c:"#EE8FB5"}, {p:TODAY[1] / sAvg, c:"#F59A64"}, {p:tToday / tAvg, c:"#9A96F4"}])}<div class="ringleg"><div class="rl"><i style="background:#EE8FB5"></i>Słowa<b>${nf(TODAY[2])} / ${nf(AVG)}</b></div><div class="rl"><i style="background:#F59A64"></i>Sesje<b>${TODAY[1]} / ${sAvg}</b></div><div class="rl"><i style="background:#9A96F4"></i>Czas<b>${tToday} / ${tAvg} min</b></div></div></div></section>
+    <div class="stack">${hero({big:40, w:110, h:50})}<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${tile(STATS[0], 160, 26)}${tile(["Seria", `${TOT.streak} dni`, "flame", C.orange], 160, 26)}</div></div></div>
+    ${trend({h:"fill", controls:false, style:"flex:1;min-height:0"})}`;
+  },
+
+  feed: () => `${ph()}<div style="flex:1;min-height:0;display:grid;grid-template-columns:1.45fr 1fr;gap:14px">
+    <section class="gp col" style="gap:10px"><div class="sh">${ic("history", 16)}Ostatnie dyktowania<span class="badge">przykładowe teksty</span></div>${FEED.map(feedItem).join("")}<div class="p3" style="margin-top:auto;text-align:center">Pokaż całą historię</div></section>
+    <div class="stack">${hero({big:36, w:0})}<section class="gp col" style="gap:0;padding-block:10px">${rowsHTML([["Słowa",nf(TOT.words),"words"],["Sesje",nf(TOT.sessions),"wave"],["Słowa/min",TOT.wpm,"speed"],["Seria",`${TOT.streak} dni`,"flame"]])}</section>
+    <section class="gp col grow" style="gap:10px"><div class="sh" style="font-size:14px">${ic("chart", 15)}14 dni</div><div class="col grow">${bars(L30.slice(-14).map(d => d[2]), {h:"fill", gap:5})}</div></section></div></div>`,
+
+  heatmap: () => {
+    const first = new Date(L30[0][0] + "T00:00:00Z"), lead = (first.getUTCDay() + 6) % 7;
+    const max = Math.max(...L30.map(d => d[2]));
+    const cell = d => { if (!d) return `<div class="d" style="background:transparent"></div>`; const t = d[2] / max; const col = t === 0 ? "var(--cf)" : `color-mix(in srgb, ${t > .66 ? "#F59A64" : t > .33 ? "#EE8FB5" : "#8C88F0"} ${Math.round(35 + t * 65)}%, transparent)`; return `<div class="d" style="background:${col}">${Number(d[0].slice(8))}</div>`; };
+    const cells = [...Array(lead).fill(null), ...L30];
+    const top = Math.max(...WEEKDAY.map(d => d[1]));
+    return `${ph()}${heroSlim(`<span class="badge" style="color:#FFD2B8">${ic("flame", 12, 2)}seria ${TOT.streak} dni</span>`)}<div style="flex:1;min-height:0;display:grid;grid-template-columns:1.5fr 1fr;gap:14px">
+    <section class="gp col" style="gap:12px"><div class="sh">${ic("cal", 16)}Aktywność<span class="badge">${ACTIVE30} z 30 dni</span></div><div class="hm">${WEEKDAY.map(d => `<div class="wd">${d[0]}</div>`).join("")}${cells.map(cell).join("")}</div><div class="p3" style="display:flex;gap:6px;align-items:center;margin-top:auto">mniej <i style="width:12px;height:12px;border-radius:3px;background:color-mix(in srgb,#8C88F0 45%,transparent)"></i><i style="width:12px;height:12px;border-radius:3px;background:color-mix(in srgb,#EE8FB5 75%,transparent)"></i><i style="width:12px;height:12px;border-radius:3px;background:#F59A64"></i> więcej</div></section>
+    <section class="gp col" style="gap:12px"><div class="sh">${ic("chart", 16)}Dni tygodnia</div>${WEEKDAY.map(d => `<div class="hbar"><span>${d[0]}</span><span class="tr"><b style="width:${d[1] / top * 100}%"></b></span><span class="val">${nf(d[1])}</span></div>`).join("")}<div class="p3" style="margin-top:auto">Najczęściej dyktujesz w środy.</div></section></div>`;
+  },
+
+  twocol: () => `${ph()}<div style="flex:1;min-height:0;display:grid;grid-template-columns:300px 1fr;gap:14px">
+    <div class="stack">${hero({big:40, w:0, extra:`<div style="margin-top:6px">${wave(250, 40)}</div>`})}${STATS.slice(0, 4).map(s => `<div class="gp tile" style="flex-direction:row;align-items:center;gap:12px;padding:12px 16px">${badgeIc(s[2], s[3], 26)}<span class="lab" style="flex:1">${s[0]}</span><span class="big" style="font-size:${fit(s[1], 120, 20)}px">${s[1]}</span></div>`).join("")}</div>
+    <div class="stack">${trend({h:"fill", style:"flex:1;min-height:0"})}<section class="gp col" style="gap:10px;flex:none"><div class="sh">${ic("cal", 16)}Dni tygodnia<span class="badge">wszystkie sesje</span></div>${weekdayBars(80)}</section></div></div>`,
+
+  widget: () => `${ph()}<section class="gp" style="padding:18px 22px;flex:none"><div style="display:flex;align-items:center;gap:20px"><div class="orb" style="width:60px;height:60px">${ic("mic", 24, 2)}</div>${wave(230, 44, true)}<div class="col" style="gap:3px;flex:1"><div style="font-size:16px;font-weight:600">Gotowy do dyktowania</div><div class="p2">Przytrzymaj prawy ⌥ albo stuknij go, żeby zacząć.</div></div><span class="badge">${ic("sparkles", 11, 2)}Uporządkuj</span><span class="badge">${ic("cpu", 11, 2)}Parakeet v3</span></div></section>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;flex:none">
+      <div class="gp tile hero">${badgeIc("sparkles", C.violet)}<div class="big" style="font-size:38px">${TOT.saved}</div><div class="lab">Zaoszczędzony czas</div></div>
+      <div class="gp tile">${badgeIc("mic", C.pink)}<div class="big" style="font-size:38px">${nf(TODAY[2])} <span style="font-size:16px;color:var(--ink2)">słów</span></div><div class="lab">Dziś · ${TODAY[1]} sesji</div></div>
+      <div class="gp tile">${badgeIc("flame", C.orange)}<div class="big" style="font-size:38px">${TOT.streak} <span style="font-size:16px;color:var(--ink2)">dni</span></div><div class="dots7">${W7.map(d => `<i class="${d[1] ? "on" : ""}"></i>`).join("")}</div></div></div>
+    ${trend({h:"fill", controls:false, style:"flex:1;min-height:0"})}`,
+
+  sparks: () => {
+    const series = [
+      ["Zaoszczędzony czas", TOT.saved, "sparkles", C.violet, L30.map(d => Math.max(0, d[2] / 40 - d[3] / 60)), "ok. 1 godz. dziennie"],
+      ["Słowa", nf(TOT.words), "words", C.pink, L30.map(d => d[2]), `średnio ${nf(AVG)} dziennie`],
+      ["Sesje", nf(TOT.sessions), "wave", C.orange, L30.map(d => d[1]), `średnio ${Math.round(S30 / 30)} dziennie`],
+      ["Słowa/min", String(TOT.wpm), "speed", C.indigo, L30.map(d => d[3] ? d[2] / (d[3] / 60) : 0), "ostatnie 30 dni: 120"],
+      ["Nagrany czas", TOT.rec, "clock", C.violet, L30.map(d => d[3]), `ok. ${Math.round(SEC30 / 30 / 60)} min dziennie`],
+      ["Poprawione przez AI", nf(TOT.ai), "sparkles", C.teal, L30.map(d => d[1] * .3), "28% wszystkich sesji"],
+    ];
+    return `${ph()}<div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:12px">${series.map(s => `<div class="gp tile" style="gap:6px"><div style="display:flex;align-items:center;gap:10px">${badgeIc(s[2], s[3], 26)}<span class="lab">${s[0]}</span></div><div class="big" style="font-size:${fit(s[1], 200, 34)}px;margin-top:6px">${s[1]}</div><div class="p3">${s[5]}</div><div class="col grow" style="margin-top:6px">${area(s[4], {h:"fill", dot:false})}</div></div>`).join("")}</div>`;
+  },
+
+  months: () => `${ph()}${heroSlim()}<section class="gp col" style="flex:1;min-height:0;gap:12px"><div class="sh">${ic("chart", 16)}Od pierwszego dyktowania<span class="badge">od 30 grudnia 2025</span></div><div class="p2">Rekord: kwiecień, ${nf(91093)} słów w ${nf(2036)} sesjach.</div><div class="col grow">${bars(MONTHS.map(m => m[2]), {h:"fill", labels:{items:MONTHS.map(m => m[0]), even:true}, gap:14})}</div></section>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:none">${STATS.slice(0, 4).map(s => `<div class="gp tile" style="flex-direction:row;align-items:center;gap:12px;padding:12px 14px">${badgeIc(s[2], s[3], 26)}<div class="col" style="gap:2px"><span class="big" style="font-size:${fit(s[1], 120, 20)}px">${s[1]}</span><span class="lab">${s[0]}</span></div></div>`).join("")}</div>`,
+};
+
+// Menu
+const NAV = [["Pulpit","chart"],["Historia","history"],["Transkrypcja pliku","file"],["Słownik","book"],["Modele","cpu"],["Ustawienia","sliders"]];
+const navItems = () => `<div class="items">${NAV.map((n, i) => `<div class="it ${i ? "" : "on"}">${ic(n[1], 17)}<span>${n[0]}</span></div>`).join("")}</div>`;
+const brand = `<div class="brand"><img src="assets/icon.png" alt=""><span>Captylo</span></div>`;
+const foot = `<div class="foot"><span>Wersja 1.0.0</span><span>captylo.com</span></div>`;
+function navHTML(v) {
+  const light = v.o.navLight ? " lightnav" : "";
+  switch (v.nav) {
+    case "att": return `<aside class="nav gp att${light}">${brand}${navItems()}${foot}</aside>`;
+    case "rail": return `<aside class="nav gp rail${light}">${brand}${navItems()}</aside>`;
+    case "bare": return `<aside class="nav bare">${brand}${navItems()}${foot}</aside>`;
+    case "light": return `<aside class="nav gp lightnav">${brand}${navItems()}${foot}</aside>`;
+    case "top": return `<div class="topbar"><div class="tb-brand"><img src="assets/icon.png" alt="">Captylo</div><div class="seg">${NAV.map((n, i) => `<span class="${i ? "" : "on"}">${ic(n[1], 14)}${n[0] === "Transkrypcja pliku" ? "Plik" : n[0]}</span>`).join("")}</div></div>`;
+    default: return `<aside class="nav gp${light}">${brand}${navItems()}${foot}</aside>`;
+  }
+}
+
+// Tła
+const LINES = [92,78,86,64,90,72,81,58,88,70,76,94,60,84];
+const lines = (n, c, off = 0) => Array.from({length:n}, (_, i) => `<div class="ln" style="width:${LINES[(i + off) % LINES.length]}%;background:${c}"></div>`).join("");
+function bgHTML(v) {
+  const o = v.o;
+  const scrim = s => `<div class="L" style="background:rgba(10,9,34,${s})"></div>`;
+  switch (v.bg) {
+    case "photo": {
+      const img = `<div class="L bg-photo ${o.blur ? "blurred" : ""}" style="${o.blur ? `--bgblur:${o.blur}px` : ""}"></div>`;
+      const sc = o.scrimGrad ? `<div class="L" style="background:linear-gradient(180deg,rgba(10,9,34,.78) 0%,rgba(10,9,34,.42) 38%,rgba(10,9,34,.18) 100%)"></div>` : scrim(o.scrim ?? .34);
+      return img + sc;
+    }
+    case "video":
+      return `<div class="L bg-video ${o.blur ? "blurred" : ""}" style="${o.blur ? `--bgblur:${o.blur}px` : ""}"><video muted loop playsinline preload="none" poster="assets/dusk-wallpaper.jpg" src="assets/dusk-loop.mp4"></video></div>${scrim(o.scrim ?? .3)}`;
+    case "aurora":
+      return `<div class="L bg-aurora"><div class="blob" style="left:-18%;top:-24%;background:radial-gradient(circle,#6F6BD8,transparent 65%);--d:26s"></div><div class="blob" style="left:40%;top:-10%;background:radial-gradient(circle,#EE8FB5,transparent 65%);--d:34s;animation-delay:-8s"></div><div class="blob" style="left:20%;top:40%;background:radial-gradient(circle,#F59A64,transparent 62%);--d:30s;animation-delay:-15s;opacity:.7"></div><div class="blob" style="left:-20%;top:45%;background:radial-gradient(circle,#3A3993,transparent 65%);--d:38s;animation-delay:-4s"></div></div>${scrim(.16)}`;
+    case "brand": return `<div class="L bg-brand"></div>${scrim(.2)}`;
+    case "mesh": return `<div class="L bg-mesh"></div>${scrim(.14)}`;
+    case "horizon": return `<div class="L bg-horizon"></div><div class="stars"></div>`;
+    case "night": return `<div class="L bg-night"></div><div class="noise"></div>`;
+    case "mist": return `<div class="L bg-mist"></div>`;
+    case "desk-light":
+      return `<div class="L desk dl-wall"><div class="dw" style="left:150px;top:64px;width:640px;height:620px;background:#fff"><div class="dwt"></div><div class="dwb"><div class="h" style="width:58%"></div>${lines(7, "#C9CBD6")}<div class="img" style="background:linear-gradient(135deg,#2FB5A6,#F2C14E 55%,#EF6F6C)"></div>${lines(6, "#C9CBD6", 4)}</div></div><div class="dw" style="left:740px;top:230px;width:360px;height:420px;background:#F3F3F6"><div class="dwt"></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:22px">${["#3B82F6","#F59E0B","#10B981","#EF4444","#8B5CF6","#0EA5E9","#F97316","#22C55E","#EC4899"].map(c => `<div style="aspect-ratio:1;border-radius:14px;background:${c}"></div>`).join("")}</div></div></div><div class="frost" style="--ft:${o.tint || "rgba(26,22,64,.32)"};--fb:${o.fb || 34}px;--fs:${o.fs || 150}%;--band:${o.band ?? .3}"></div>`;
+    case "desk-dark":
+      return `<div class="L desk dd-wall"><div class="dw" style="left:120px;top:60px;width:700px;height:600px;background:#1E1F2B"><div class="dwt" style="background:#262838;border:0"></div><div class="dwb">${["#C792EA","#82AAFF","#C3E88D","#FFCB6B","#89DDFF","#F78C6C","#C792EA","#82AAFF","#C3E88D","#FFCB6B","#89DDFF","#82AAFF","#C3E88D"].map((c, i) => `<div class="ln" style="width:${LINES[i]}%;margin-left:${(i % 4) * 22}px;background:${c};opacity:.8"></div>`).join("")}</div></div><div class="dw" style="left:700px;top:330px;width:380px;height:330px;background:#0B0C10"><div class="dwt" style="background:#15161C;border:0"></div><div class="dwb">${lines(8, "#35D07F", 3)}</div></div></div><div class="frost" style="--ft:${o.tint || "rgba(16,14,40,.22)"};--fb:${o.fb || 34}px;--band:.2"></div>`;
+  }
+  return "";
+}
+
+function render(v) {
+  return `<div class="win b-${v.bg} t-${v.panel}${v.o.inkDark ? " ink-dark" : ""}">${bgHTML(v)}<div class="tl"><i></i><i></i><i></i></div><div class="shell n-${v.nav}">${navHTML(v)}<div class="content">${LAYOUTS[v.layout]()}</div></div></div>`;
+}
+
+// 50 wariantów
+const GROUPS = [
+  {k:"bg", title:"Tło okna", desc:"Układ, panele i menu jak dziś. Zmienia się tylko to, co jest za panelami. #01 to obecny wygląd, punkt odniesienia."},
+  {k:"panel", title:"Panele", desc:"Tło: zdjęcie Zmierzch jak dziś. Zmienia się materiał paneli: wypełnienie, rozmycie, krawędź i cień."},
+  {k:"layout", title:"Układ Pulpitu", desc:"Tło i panele jak dziś. Inny podział treści: co jest najważniejsze, ile paneli, jakie wykresy."},
+  {k:"nav", title:"Nawigacja", desc:"Pulpit jak dziś, zmienia się tylko pasek boczny."},
+  {k:"mix", title:"Kierunki", desc:"Gotowe zestawy: tło, panele, układ i menu dobrane razem pod jeden nastrój."},
+];
+const D = {bg:"photo", panel:"milky", layout:"classic", nav:"floating"};
+const V = (g, name, desc, over = {}, o = {}) => ({g, name, desc, ...D, ...over, o});
+const VARIANTS = [
+  V("bg","Zdjęcie Zmierzch (dziś)","Obecny wygląd: zdjęcie z nocnym przyciemnieniem 34%."),
+  V("bg","Zdjęcie bez przyciemnienia","Pełne kolory zachodu, przyciemnienie tylko 10%.",{}, {scrim:.1}),
+  V("bg","Zdjęcie rozmyte","Tło mocno rozmyte, zostają same plamy koloru. Panele mniej walczą z górami.",{}, {blur:26, scrim:.28}),
+  V("bg","Zdjęcie z ciemną górą","Noc u góry, zachód u dołu. Tytuł i menu na ciemnym, wykres na kolorze.",{}, {scrimGrad:true}),
+  V("bg","Wideo Zmierzch","Zapętlone wideo, które jest dziś domyślne w appce.",{bg:"video"}),
+  V("bg","Wideo rozmyte","To samo wideo, ale rozmyte: ruch światła bez szczegółów.",{bg:"video"}, {blur:24, scrim:.22}),
+  V("bg","Gradient aurora (animowany)","Cztery kolorowe plamy wolno dryfują w tle, cykl ok. 30 s.",{bg:"aurora"}),
+  V("bg","Gradient marki","Statyczny gradient z ikony: granat, fiolet, róż, brzoskwinia.",{bg:"brand"}),
+  V("bg","Siatka kolorów","Miękkie plamy w rogach, spokojniejsze niż aurora, bez ruchu.",{bg:"mesh"}),
+  V("bg","Horyzont","Ciemne niebo z gwiazdami i poświata zachodu tylko przy dolnej krawędzi.",{bg:"horizon"}),
+  V("bg","Noc z ziarnem","Prawie jednolity granat z lekkim ziarnem. Najmniej rozpraszające.",{bg:"night"}),
+  V("bg","Szkło: jasny pulpit","Przezroczyste okno nad jasnym pulpitem z oknami. Test szkła, które chciałeś sprawdzić.",{bg:"desk-light"}),
+  V("bg","Szkło: ciemny pulpit","To samo szkło nad ciemnym edytorem kodu.",{bg:"desk-dark"}),
+  V("bg","Szkło: fioletowy szron","Przezroczyste okno z fioletowym zabarwieniem i mocniejszym rozmyciem, żeby nie było szare.",{bg:"desk-light"}, {tint:"rgba(92,86,200,.42)", fb:60, fs:190, band:.2}),
+
+  V("panel","Czystsze szkło","Mniej mleka (7%), mniejsze rozmycie: widać więcej zdjęcia.",{panel:"clear"}),
+  V("panel","Mocny szron","Grube, białe szkło (27%) i duże rozmycie. Góry znikają pod panelem.",{panel:"frost"}),
+  V("panel","Fioletowe szkło","Panele zabarwione na fiolet marki zamiast bieli.",{panel:"violet"}),
+  V("panel","Ciemne szkło","Przydymione panele: ciemniejsze od tła, biały tekst bardzo czytelny.",{panel:"smoke"}),
+  V("panel","Jasne panele","Białe szkło z granatowym tekstem, jak widżety na iPhonie.",{panel:"light"}),
+  V("panel","Sama krawędź","Bez wypełnienia i rozmycia, tylko cienka linia. Tło widać w całości.",{panel:"hairline"}, {scrim:.42}),
+  V("panel","Krawędź w kolorach zachodu","Mleczne szkło z kolorową obwódką: róż, brzoskwinia, fiolet.",{panel:"sunset"}),
+  V("panel","Wewnętrzna poświata","Mleczne szkło z jasnym światłem od góry i głębszym, miękkim cieniem.",{panel:"inner"}),
+  V("panel","Pełne panele","Bez przezroczystości: nieprzezroczysty granat. Najbardziej klasyczne.",{panel:"solid"}),
+  V("panel","Bez paneli","Treść leży prosto na tle, jak tekst na tapecie.",{panel:"none"}, {scrim:.52}),
+
+  V("layout","Wynik obok kafelków","Duży wynik po lewej, cztery kafelki po prawej, wykres na dole.",{layout:"split"}),
+  V("layout","Bento","Siatka różnych rozmiarów: wynik, seria, dziś, wykres i dni tygodnia.",{layout:"bento"}),
+  V("layout","Jedna wielka liczba","Minimum: 166 godz. wielką cyfrą, cztery liczby w linii i spokojna krzywa. Bez paneli.",{layout:"minimal"}),
+  V("layout","Najpierw wykres","Duży wykres ostatnich 30 dni, a pod nim pasek z liczbami.",{layout:"chartfirst"}),
+  V("layout","Jeden panel jak widżet","Wszystko w jednym panelu, jak w makiecie widżetu: wiersze, karta z tygodniem i przyciski.",{layout:"single"}),
+  V("layout","Lista jak Ustawienia","Liczby w wierszach: po lewej łącznie, po prawej ostatnie 30 dni.",{layout:"rows"}),
+  V("layout","Pierścienie dnia","Dzisiejszy dzień na tle średniej: słowa, sesje i czas jak w zegarku.",{layout:"rings"}),
+  V("layout","Ostatnie dyktowania","Na Pulpicie od razu ostatnie teksty z trybem AI, liczby z boku.",{layout:"feed"}),
+  V("layout","Kalendarz aktywności","Pięć tygodni jako kafelki dni, kolor według liczby słów.",{layout:"heatmap"}),
+  V("layout","Dwie kolumny","Wąska kolumna z liczbami, szeroka z wykresem i dniami tygodnia.",{layout:"twocol"}),
+  V("layout","Widżet na górze","Pulpit zaczyna się od paska jak widżet: gotowość, skrót, tryb AI i model.",{layout:"widget"}),
+  V("layout","Kafelki z mini wykresami","Sześć kafelków, każdy z własną krzywą z 30 dni.",{layout:"sparks"}),
+  V("layout","Historia miesięcy","Słowa miesiąc po miesiącu od grudnia 2025 i rekord kwietnia.",{layout:"months"}),
+
+  V("nav","Przyklejony pasek boczny","Menu od krawędzi do krawędzi, bez pływającego panelu.",{nav:"att"}),
+  V("nav","Wąska szyna ikon","Same ikony, 64 pt. Więcej miejsca na treść.",{nav:"rail"}),
+  V("nav","Zakładki u góry","Bez paska bocznego: sekcje jako kapsuła na górze okna.",{nav:"top"}),
+  V("nav","Menu bez panelu","Pozycje menu leżą prosto na tle, szkło tylko pod wybraną.",{nav:"bare"}),
+  V("nav","Jasny pasek boczny","Białe szkło w menu, ciemne panele treści zostają.",{nav:"light"}),
+
+  V("mix","Spokojny wieczór","Rozmyte wideo, ciemne szkło, jedna wielka liczba, menu bez panelu.",{bg:"video", panel:"smoke", layout:"minimal", nav:"bare"}, {blur:20, scrim:.3}),
+  V("mix","Systemowe szkło","Jasne, przezroczyste okno jak aplikacje Apple, jeden panel, przyklejone menu.",{bg:"desk-light", panel:"light", layout:"single", nav:"att"}, {tint:"rgba(246,244,255,.55)", fb:44, fs:170, band:0, navLight:true, inkDark:true}),
+  V("mix","Nocna zmiana","Noc z ziarnem, same krawędzie, bento i szyna ikon.",{bg:"night", panel:"hairline", layout:"bento", nav:"rail"}),
+  V("mix","Pocztówka","Ostre zdjęcie, czyste szkło, widżet na górze i zakładki.",{bg:"photo", panel:"clear", layout:"widget", nav:"top"}, {scrim:.2}),
+  V("mix","Aurora bento","Animowany gradient, mleczne szkło i siatka bento.",{bg:"aurora", layout:"bento"}),
+  V("mix","Horyzont z kalendarzem","Ciemne niebo, przydymione panele, kalendarz aktywności, przyklejone menu.",{bg:"horizon", panel:"smoke", layout:"heatmap", nav:"att"}),
+  V("mix","Jasna mgła","Pełny tryb jasny: pastelowe tło, białe panele, kafelki z krzywymi.",{bg:"mist", panel:"light", layout:"sparks", nav:"light"}),
+  V("mix","Studio","Gradient marki, poświata w panelach, najpierw wykres, szyna ikon.",{bg:"brand", panel:"inner", layout:"chartfirst", nav:"rail"}),
+];
+VARIANTS.forEach((v, i) => { v.id = i + 1; v.key = String(i + 1).padStart(2, "0"); });
+
+// Stan: ulubione i uwagi (tylko w tej przeglądarce)
+const KEY = "captylo-pulpit-lab-v1";
+let state = {fav:{}, notes:{}};
+try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.fav && s.notes) state = s; } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+// Galeria
+const gallery = document.getElementById("gallery");
+gallery.innerHTML = GROUPS.map(g => {
+  const vs = VARIANTS.filter(v => v.g === g.k);
+  return `<section class="group" data-g="${g.k}"><div class="ghead"><h2>${g.title}</h2><span class="range">#${vs[0].key}-${vs[vs.length - 1].key}</span></div><p class="gdesc">${g.desc}</p><div class="grid">${vs.map(v => `
+    <article class="card" data-id="${v.id}">
+      <div class="stage" role="button" tabindex="0" aria-label="Powiększ wariant ${v.key}">${render(v)}</div>
+      <div class="meta"><span class="num">${v.key}</span><div><h3>${v.name}</h3><p>${v.desc}</p></div><button class="fav" aria-pressed="${!!state.fav[v.id]}" aria-label="Ulubiony ${v.key}">${ic("heart", 17)}</button></div>
+      <textarea class="note" id="note-${v.id}" rows="1" placeholder="Uwagi do #${v.key}…">${(state.notes[v.id] || "").replace(/</g, "&lt;")}</textarea>
+    </article>`).join("")}</div></section>`;
+}).join("") + `<p class="empty" id="empty" hidden>Nie masz jeszcze ulubionych. Kliknij serduszko przy wariancie.</p>`;
+
+// Skalowanie okien do kart
+const ro = new ResizeObserver(es => es.forEach(e => { const w = e.target.firstElementChild; if (w) w.style.transform = `scale(${e.contentRect.width / 1120})`; }));
+document.querySelectorAll(".card .stage").forEach(s => ro.observe(s));
+
+// Wideo gra tylko, gdy jest widoczne
+const calm = matchMedia("(prefers-reduced-motion: reduce)");
+const io = new IntersectionObserver(es => es.forEach(e => {
+  const vid = e.target;
+  if (e.isIntersecting && !calm.matches) { vid.preload = "auto"; vid.play().catch(() => {}); } else vid.pause();
+}), {rootMargin:"100px"});
+const watchVideos = root => root.querySelectorAll("video").forEach(v => io.observe(v));
+watchVideos(gallery);
+
+// Filtry
+const filters = document.getElementById("filters");
+let filter = "all";
+filters.innerHTML = `<button class="chip" data-f="all" aria-pressed="true">Wszystkie <small>50</small></button>` +
+  GROUPS.map(g => `<button class="chip" data-f="${g.k}" aria-pressed="false">${g.title} <small>${VARIANTS.filter(v => v.g === g.k).length}</small></button>`).join("") +
+  `<button class="chip" data-f="fav" aria-pressed="false">${ic("heart", 13, 2)}Ulubione</button><span class="spacer"></span><span class="favcount" id="favcount"></span><button class="primary" id="copy">Kopiuj feedback</button>`;
+function applyFilter() {
+  filters.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === filter)));
+  let shown = 0;
+  document.querySelectorAll(".group").forEach(sec => {
+    let any = false;
+    sec.querySelectorAll(".card").forEach(c => {
+      const id = +c.dataset.id, v = VARIANTS[id - 1];
+      const ok = filter === "all" || (filter === "fav" ? state.fav[id] : v.g === filter);
+      c.hidden = !ok; any = any || ok; if (ok) shown++;
+    });
+    sec.hidden = !any;
+  });
+  document.getElementById("empty").hidden = !(filter === "fav" && shown === 0);
+}
+filters.addEventListener("click", e => { const b = e.target.closest("[data-f]"); if (b) { filter = b.dataset.f; applyFilter(); } });
+const updateCount = () => { const n = Object.values(state.fav).filter(Boolean).length; document.getElementById("favcount").textContent = n ? `Ulubione: ${n}` : ""; };
+updateCount();
+
+function setFav(id, on) {
+  state.fav[id] = on; if (!on) delete state.fav[id]; save(); updateCount();
+  document.querySelectorAll(`.card[data-id="${id}"] .fav`).forEach(b => b.setAttribute("aria-pressed", String(on)));
+  if (lbId === id) lbFav.setAttribute("aria-pressed", String(on));
+  if (filter === "fav") applyFilter();
+}
+function setNote(id, text) {
+  if (text.trim()) state.notes[id] = text; else delete state.notes[id];
+  save();
+  const card = document.getElementById("note-" + id); if (card && card.value !== text) card.value = text;
+}
+gallery.addEventListener("click", e => {
+  const fav = e.target.closest(".fav");
+  if (fav) { const id = +fav.closest(".card").dataset.id; setFav(id, !state.fav[id]); return; }
+  const st = e.target.closest(".stage");
+  if (st) openLb(+st.closest(".card").dataset.id);
+});
+gallery.addEventListener("keydown", e => { const st = e.target.closest(".stage"); if (st && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openLb(+st.closest(".card").dataset.id); } });
+gallery.addEventListener("input", e => { if (e.target.classList.contains("note")) setNote(+e.target.closest(".card").dataset.id, e.target.value); });
+
+// Kopiowanie feedbacku
+const copyBtn = document.getElementById("copy");
+copyBtn.addEventListener("click", () => {
+  const ids = [...new Set([...Object.keys(state.fav), ...Object.keys(state.notes)].map(Number))].sort((a, b) => a - b);
+  const text = ids.length ? "Pulpit Lab, feedback:\n" + ids.map(id => { const v = VARIANTS[id - 1]; const n = (state.notes[id] || "").trim(); return `${state.fav[id] ? "♥ " : ""}#${v.key} ${v.name}${n ? `: ${n}` : ""}`; }).join("\n") : "Pulpit Lab: brak ulubionych i uwag.";
+  const box = document.getElementById("copybox"), ta = document.getElementById("copytext");
+  const fallback = () => { ta.value = text; box.hidden = false; ta.focus(); ta.select(); copyBtn.textContent = "Zaznaczone, skopiuj ⌘C"; };
+  try {
+    navigator.clipboard.writeText(text).then(() => { box.hidden = true; copyBtn.textContent = "Skopiowano"; setTimeout(() => copyBtn.textContent = "Kopiuj feedback", 1800); }, fallback);
+  } catch (e) { fallback(); }
+});
+
+// Podgląd pełnoekranowy
+const lb = document.getElementById("lb"), lbFit = document.getElementById("lb-fit"), lbFav = document.getElementById("lb-fav"), lbNote = document.getElementById("lb-note");
+document.getElementById("lb-prev").innerHTML = ic("left", 18, 2);
+document.getElementById("lb-next").innerHTML = ic("right", 18, 2);
+document.getElementById("lb-close").innerHTML = ic("x", 18, 2);
+lbFav.innerHTML = ic("heart", 17);
+let lbId = null, lastFocus = null;
+function fitLb() {
+  const st = lbFit.firstElementChild; if (!st) return;
+  const r = lbFit.getBoundingClientRect();
+  const s = Math.min(r.width / 1120, r.height / 720);
+  st.style.width = `${1120 * s}px`; st.style.height = `${720 * s}px`;
+  st.firstElementChild.style.transform = `scale(${s})`;
+}
+function openLb(id) {
+  if (lbId === null) lastFocus = document.activeElement;
+  lbId = id; const v = VARIANTS[id - 1];
+  document.getElementById("lb-num").textContent = v.key;
+  document.getElementById("lb-title").textContent = v.name;
+  document.getElementById("lb-desc").textContent = v.desc;
+  lbFav.setAttribute("aria-pressed", String(!!state.fav[id]));
+  lbNote.value = state.notes[id] || "";
+  lbNote.placeholder = `Uwagi do #${v.key}…`;
+  lbFit.innerHTML = `<div class="stage">${render(v)}</div>`;
+  lb.hidden = false; document.body.style.overflow = "hidden";
+  fitLb(); watchVideos(lbFit);
+  if (!lb.contains(document.activeElement)) document.getElementById("lb-close").focus();
+}
+function closeLb() {
+  lb.hidden = true; lbFit.innerHTML = ""; lbId = null; document.body.style.overflow = "";
+  if (lastFocus) lastFocus.focus();
+}
+const step = d => openLb(((lbId - 1 + d + VARIANTS.length) % VARIANTS.length) + 1);
+document.getElementById("lb-prev").onclick = () => step(-1);
+document.getElementById("lb-next").onclick = () => step(1);
+document.getElementById("lb-close").onclick = closeLb;
+lbFav.onclick = () => setFav(lbId, !state.fav[lbId]);
+lbNote.addEventListener("input", () => setNote(lbId, lbNote.value));
+addEventListener("resize", () => { if (!lb.hidden) fitLb(); });
+addEventListener("keydown", e => {
+  if (lb.hidden || e.target === lbNote) { if (!lb.hidden && e.key === "Escape") closeLb(); return; }
+  if (e.key === "Escape") closeLb();
+  else if (e.key === "ArrowRight") step(1);
+  else if (e.key === "ArrowLeft") step(-1);
+});
+</script>

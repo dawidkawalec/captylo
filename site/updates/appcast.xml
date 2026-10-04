@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>Captylo</title>
+    <link>https://captylo.com/</link>
+    <description>Aktualizacje Captylo</description>
+    <language>pl</language>
+    <item>
+      <title>Captylo 1.0.2</title>
+      <pubDate>Sun, 04 Oct 2026 22:32:55 +0200</pubDate>
+      <sparkle:version>70</sparkle:version>
+      <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://captylo.com/updates/notes/1.0.2.html</sparkle:releaseNotesLink>
+      <enclosure url="https://captylo.com/download/Captylo-1.0.2.dmg" length="21030985" type="application/octet-stream" sparkle:edSignature="R5bMui1kcVU7GdQr/w8MGxXx62m7EuNvedwZMUFt6PUoTIZ56NFJOqv2JXSq7DkHGST+dLylNuujbKI1ZkdODQ==" />
+    </item>
+    <item>
+      <title>Captylo 1.0.1</title>
+      <pubDate>Sat, 03 Oct 2026 23:04:08 +0200</pubDate>
+      <sparkle:version>64</sparkle:version>
+      <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://captylo.com/updates/notes/1.0.1.html</sparkle:releaseNotesLink>
+      <enclosure url="https://captylo.com/download/Captylo-1.0.1.dmg" length="21025736" type="application/octet-stream" sparkle:edSignature="H46SeeYXwLg3BUgfpLA0vPg302fuqVWwKQlrw2i01guMj5YHmrOcSzriMOVI9oAnu3pCzZn2KXVU28QQljkxBA==" />
+    </item>
+    <item>
+      <title>Captylo 1.0.0</title>
+      <pubDate>Sat, 03 Oct 2026 12:41:27 +0200</pubDate>
+      <sparkle:version>60</sparkle:version>
+      <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://captylo.com/updates/notes/1.0.0.html</sparkle:releaseNotesLink>
+      <enclosure url="https://captylo.com/download/Captylo-1.0.0.dmg" length="21025104" type="application/octet-stream" sparkle:edSignature="MQJrju7CBKdUvytfjLmP9CSpXqU7vgrZycs2UEA0oWzGYj1D4XJ38nBogkRda22/5O1hwK7crnG1egHBqiRaDw==" />
+    </item>
+  </channel>
+</rss>

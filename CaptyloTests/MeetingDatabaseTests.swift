@@ -1,0 +1,334 @@
+import Foundation
+import Testing
+@testable import Captylo
+
+struct MeetingDatabaseTests {
+    private static func db() throws -> Database {
+        Database(modelContainer: try Store.makeInMemoryContainer())
+    }
+
+    private static func meeting(title: String = "Spotkanie w Zoom", createdAt: Date = Date()) -> MeetingRecord {
+        MeetingRecord(createdAt: createdAt, title: title)
+    }
+
+    @Test func createUpdateAndReadBack() async throws {
+        let db = try Self.db()
+        var m = Self.meeting()
+        m.appName = "Zoom"
+        m.noteLines = [MeetingNoteLine(text: "budżet", at: 12)]
+        m.speakerNames = ["1": "Anna"]
+        try await db.createMeeting(m)
+        m.status = .completed
+        m.duration = 3600
+        m.notes = "budżet\nterminy"
+        m.summary = "## Podsumowanie"
+        m.summaryTemplateID = "general"
+        m.summaryModel = "model"
+        m.summaryError = nil
+        m.interruptions = [61.5, 1200]
+        try await db.updateMeeting(m)
+        let read = try #require(try await db.meeting(id: m.id))
+        #expect(read == m)
+    }
+
+    @Test func updatingAMissingMeetingThrowsNotFound() async throws {
+        let db = try Self.db()
+        let m = Self.meeting()
+        await #expect(throws: DatabaseError.notFound(m.id)) {
+            try await db.updateMeeting(m)
+        }
+    }
+
+    @Test func segmentsComeBackInTimeOrder() async throws {
+        let db = try Self.db()
+        let m = Self.meeting()
+        try await db.createMeeting(m)
+        let late = MeetingSegmentRecord(meetingID: m.id, track: .them, start: 10, end: 12, text: "później",
+                                        words: [MeetingWord(text: "później", start: 10, end: 11)])
+        let early = MeetingSegmentRecord(meetingID: m.id, track: .me, start: 1, end: 3, text: "najpierw")
+        try await db.appendSegment(late)
+        try await db.appendSegment(early)
+        let segments = try await db.segments(meetingID: m.id)
+        #expect(segments.map(\.text) == ["najpierw", "później"])
+        #expect(segments.last?.words == late.words)
+        #expect(segments.last == late)
+    }
+
+    @Test func segmentsWithTheSameStartPutTheMicFirst() async throws {
+        let db = try Self.db()
+        let m = Self.meeting()
+        try await db.createMeeting(m)
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: m.id, track: .them, start: 5, end: 6, text: "oni"))
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: m.id, track: .me, start: 5, end: 6, text: "ja"))
+        #expect(try await db.segments(meetingID: m.id).map(\.text) == ["ja", "oni"])
+    }
+
+    @Test func segmentsOfOtherMeetingsStayApart() async throws {
+        let db = try Self.db()
+        let a = Self.meeting(title: "A")
+        let b = Self.meeting(title: "B")
+        try await db.createMeeting(a)
+        try await db.createMeeting(b)
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: a.id, track: .me, start: 0, end: 1, text: "a"))
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: b.id, track: .me, start: 0, end: 1, text: "b"))
+        #expect(try await db.segments(meetingID: a.id).map(\.text) == ["a"])
+    }
+
+    @Test func meetingsByIDComeBackInTheAskedOrder() async throws {
+        let db = try Self.db()
+        var a = Self.meeting(title: "A", createdAt: Date(timeIntervalSince1970: 100))
+        a.notes = "notatka"
+        let b = Self.meeting(title: "B", createdAt: Date(timeIntervalSince1970: 200))
+        let c = Self.meeting(title: "C", createdAt: Date(timeIntervalSince1970: 300))
+        for m in [a, b, c] { try await db.createMeeting(m) }
+        #expect(try await db.meetings(ids: [a.id, c.id]).map(\.id) == [a.id, c.id])
+        #expect(try await db.meetings(ids: [c.id, UUID(), a.id]).map(\.id) == [c.id, a.id])
+        #expect(try await db.meetings(ids: [a.id]).first?.notes == "notatka")
+        #expect(try await db.meetings(ids: []).isEmpty)
+    }
+
+    @Test func segmentsByIDAcrossMeetings() async throws {
+        let db = try Self.db()
+        let a = Self.meeting(title: "A")
+        let b = Self.meeting(title: "B")
+        try await db.createMeeting(a)
+        try await db.createMeeting(b)
+        let late = MeetingSegmentRecord(meetingID: a.id, track: .them, start: 50, end: 51, text: "późno", speaker: "1")
+        let early = MeetingSegmentRecord(meetingID: b.id, track: .me, start: 5, end: 6, text: "wcześnie")
+        let skipped = MeetingSegmentRecord(meetingID: a.id, track: .me, start: 7, end: 8, text: "pominięty")
+        for segment in [late, early, skipped] { try await db.appendSegment(segment) }
+        let read = try await db.segments(ids: [late.id, early.id, UUID()])
+        #expect(read.map(\.id) == [early.id, late.id])
+        #expect(read.last == late)
+        #expect(try await db.segments(ids: []).isEmpty)
+    }
+
+    @Test func searchFindsTitleNotesAndTranscriptWithoutDiacritics() async throws {
+        let db = try Self.db()
+        let a = Self.meeting(title: "Budżet Q4", createdAt: Date(timeIntervalSince1970: 100))
+        var b = Self.meeting(title: "Standup", createdAt: Date(timeIntervalSince1970: 200))
+        b.notes = "omówić zarząd"
+        let c = Self.meeting(title: "Klient", createdAt: Date(timeIntervalSince1970: 300))
+        for m in [a, b, c] { try await db.createMeeting(m) }
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: c.id, track: .them, start: 0, end: 1, text: "Wdrożenie w piątek"))
+        #expect(try await db.meetings(query: "", limit: 10).map(\.id) == [c.id, b.id, a.id])
+        #expect(try await db.meetings(query: "", limit: 2).map(\.id) == [c.id, b.id])
+        #expect(try await db.meetings(query: "budzet", limit: 10).map(\.id) == [a.id])
+        #expect(try await db.meetings(query: "ZARZAD", limit: 10).map(\.id) == [b.id])
+        #expect(try await db.meetings(query: "wdrozenie", limit: 10).map(\.id) == [c.id])
+        #expect(try await db.meetings(query: "  w piątek ", limit: 10).map(\.id) == [c.id])
+        #expect(try await db.meetings(query: "nic takiego", limit: 10).isEmpty)
+    }
+
+    @Test func searchFollowsTitleAndNotesChanges() async throws {
+        let db = try Self.db()
+        var m = Self.meeting(title: "Standup")
+        try await db.createMeeting(m)
+        m.title = "Wyjazd do Łodzi"
+        m.notes = "Zabrać laptopa"
+        try await db.updateMeeting(m)
+        #expect(try await db.meetings(query: "lodzi", limit: 10).map(\.id) == [m.id])
+        #expect(try await db.meetings(query: "LAPTOP", limit: 10).map(\.id) == [m.id])
+        #expect(try await db.meetings(query: "standup", limit: 10).isEmpty)
+    }
+
+    /// What the title field saves: trimmed, one line, never empty, nothing when it did not change.
+    @Test func editedTitleIsTrimmedAndNeverEmpty() {
+        let current = "Spotkanie w Zoom, 30 września 14:00"
+        #expect(MeetingRecord.editedTitle("  Daily zespołu \n", current: current) == "Daily zespołu")
+        #expect(MeetingRecord.editedTitle("Budżet\nQ4", current: current) == "Budżet Q4")
+        #expect(MeetingRecord.editedTitle("   ", current: current) == nil)
+        #expect(MeetingRecord.editedTitle("", current: current) == nil)
+        #expect(MeetingRecord.editedTitle(" \(current) ", current: current) == nil)
+    }
+
+    /// A rename in the details goes through `modifyMeeting`: the new title is searchable, the
+    /// old one is not, and the notes typed meanwhile stay.
+    @Test func renamingThroughModifyMeetingReindexesTheTitle() async throws {
+        let db = try Self.db()
+        var m = Self.meeting(title: "Spotkanie w Zoom, 30 września 14:00")
+        m.notes = "budżet"
+        try await db.createMeeting(m)
+        let saved = try await db.modifyMeeting(id: m.id) { $0.title = "Daily zespołu" }
+        #expect(saved?.title == "Daily zespołu")
+        #expect(saved?.notes == "budżet")
+        #expect(try await db.meetings(query: "daily", limit: 10).map(\.id) == [m.id])
+        #expect(try await db.meetings(query: "zoom", limit: 10).isEmpty)
+    }
+
+    @Test func echoSegmentsAreKeptButNotSearchable() async throws {
+        let db = try Self.db()
+        let m = Self.meeting(title: "Klient")
+        try await db.createMeeting(m)
+        let echo = MeetingSegmentRecord(meetingID: m.id, track: .me, start: 0, end: 1, text: "cennik premium", isEcho: true)
+        try await db.appendSegment(echo)
+        #expect(try await db.meetings(query: "cennik", limit: 10).isEmpty)
+        #expect(try await db.segments(meetingID: m.id) == [echo])
+    }
+
+    @Test func updateSegmentsChangesSpeakerAndEchoAndReindexesSearch() async throws {
+        let db = try Self.db()
+        let m = Self.meeting(title: "Klient")
+        try await db.createMeeting(m)
+        var mine = MeetingSegmentRecord(meetingID: m.id, track: .me, start: 0, end: 2, text: "ustalamy harmonogram")
+        var theirs = MeetingSegmentRecord(meetingID: m.id, track: .them, start: 3, end: 4, text: "zgoda")
+        try await db.appendSegment(mine)
+        try await db.appendSegment(theirs)
+        #expect(try await db.meetings(query: "harmonogram", limit: 10).map(\.id) == [m.id])
+
+        mine.isEcho = true
+        theirs.speaker = "2"
+        try await db.updateSegments([mine, theirs])
+        #expect(try await db.segments(meetingID: m.id) == [mine, theirs])
+        #expect(try await db.meetings(query: "harmonogram", limit: 10).isEmpty)
+        #expect(try await db.meetings(query: "zgoda", limit: 10).map(\.id) == [m.id])
+
+        mine.isEcho = false
+        try await db.updateSegments([mine])
+        #expect(try await db.meetings(query: "harmonogram", limit: 10).map(\.id) == [m.id])
+        try await db.updateSegments([])
+    }
+
+    @Test func deleteRemovesSegmentsToo() async throws {
+        let db = try Self.db()
+        let m = Self.meeting()
+        let other = Self.meeting(title: "Inne")
+        try await db.createMeeting(m)
+        try await db.createMeeting(other)
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: m.id, track: .me, start: 0, end: 1, text: "x"))
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: other.id, track: .me, start: 0, end: 1, text: "y"))
+        try await db.deleteMeeting(id: m.id)
+        #expect(try await db.meeting(id: m.id) == nil)
+        #expect(try await db.segments(meetingID: m.id).isEmpty)
+        #expect(try await db.segments(meetingID: other.id).count == 1)
+        #expect(try await db.meetings(query: "", limit: 10).map(\.id) == [other.id])
+    }
+
+    @Test func interruptedMeetingsAreMarkedOnLaunch() async throws {
+        let db = try Self.db()
+        var done = Self.meeting(title: "gotowe")
+        done.status = .completed
+        let live = Self.meeting(title: "w trakcie")
+        var processing = Self.meeting(title: "notatki AI")
+        processing.status = .processing
+        try await db.createMeeting(done)
+        try await db.createMeeting(live)
+        try await db.createMeeting(processing)
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: live.id, track: .me, start: 0, end: 2, text: "zdążyłem"))
+        let recovery = try await db.markInterruptedMeetings()
+        #expect(recovery.interrupted == [live.id])
+        #expect(recovery.resumed == [processing.id])
+        #expect(try await db.meeting(id: live.id)?.status == .interrupted)
+        // Its transcript, echo marks and length were saved by the stop: only the extras were cut,
+        // and the recorder gets them back as "resumed" to finish the AI steps.
+        #expect(try await db.meeting(id: processing.id)?.status == .completed)
+        #expect(try await db.meeting(id: done.id)?.status == .completed)
+        #expect(try await db.segments(meetingID: live.id).count == 1)
+        #expect(try await db.markInterruptedMeetings() == MeetingRecovery())
+    }
+
+    /// Two meetings cut short while processing come back in stop order (the older first), so
+    /// the resumed AI steps run the way the stops would have.
+    @Test func resumedMeetingsComeBackInStopOrder() async throws {
+        let db = try Self.db()
+        var later = Self.meeting(title: "później", createdAt: Date(timeIntervalSince1970: 2_000))
+        later.status = .processing
+        var earlier = Self.meeting(title: "wcześniej", createdAt: Date(timeIntervalSince1970: 1_000))
+        earlier.status = .processing
+        try await db.createMeeting(later)
+        try await db.createMeeting(earlier)
+        let recovery = try await db.markInterruptedMeetings()
+        #expect(recovery.interrupted.isEmpty)
+        #expect(recovery.resumed == [earlier.id, later.id])
+    }
+
+    /// The stop never ran: the echo the live view hid gets its mark (and leaves the search
+    /// text), and the length comes from the longer of the track files and the last segment.
+    @Test func anInterruptedMeetingGetsItsEchoMarksAndLength() async throws {
+        let db = try Self.db()
+        let live = Self.meeting(title: "bez słuchawek")
+        try await db.createMeeting(live)
+        let them = MeetingSegmentRecord(meetingID: live.id, track: .them, start: 10, end: 14, text: "wyślę ofertę jutro rano")
+        let echo = MeetingSegmentRecord(meetingID: live.id, track: .me, start: 10.4, end: 14.2, text: "wyślę ofertę jutro rano")
+        let mine = MeetingSegmentRecord(meetingID: live.id, track: .me, start: 20, end: 23, text: "dziękuję bardzo za spotkanie")
+        for segment in [them, echo, mine] {
+            try await db.appendSegment(segment)
+        }
+        #expect(try await db.markInterruptedMeetings { _ in 21.5 }.interrupted == [live.id])
+        let saved = try await db.segments(meetingID: live.id)
+        #expect(saved.first { $0.id == echo.id }?.isEcho == true)
+        #expect(saved.first { $0.id == mine.id }?.isEcho == false)
+        #expect(try await db.meeting(id: live.id)?.duration == 23)
+
+        let other = Self.meeting(title: "dłuższe pliki")
+        try await db.createMeeting(other)
+        try await db.appendSegment(MeetingSegmentRecord(meetingID: other.id, track: .me, start: 0, end: 5, text: "halo"))
+        _ = try await db.markInterruptedMeetings { _ in 61 }
+        #expect(try await db.meeting(id: other.id)?.duration == 61)
+    }
+
+    @Test func audioRetentionQueries() async throws {
+        let db = try Self.db()
+        let old = Self.meeting(createdAt: Date(timeIntervalSince1970: 0))
+        let fresh = Self.meeting(createdAt: Date())
+        try await db.createMeeting(old)
+        try await db.createMeeting(fresh)
+        let cutoff = Date(timeIntervalSinceNow: -86_400)
+        #expect(try await db.meetingsWithAudio(olderThan: cutoff) == [old.id])
+        try await db.setMeetingAudioRemoved(ids: [old.id])
+        #expect(try await db.meeting(id: old.id)?.hasAudio == false)
+        #expect(try await db.meeting(id: fresh.id)?.hasAudio == true)
+        #expect(try await db.meetingsWithAudio(olderThan: cutoff).isEmpty)
+        try await db.setMeetingAudioRemoved(ids: [])
+    }
+
+    @Test func modifyMeetingChangesOnlyWhatTheClosureTouches() async throws {
+        let db = try Self.db()
+        var m = Self.meeting(title: "Budżet")
+        m.summary = "## Podsumowanie"
+        m.speakerNames = ["1": "Anna"]
+        try await db.createMeeting(m)
+        let changed = try await db.modifyMeeting(id: m.id) {
+            $0.notes = "budżet reklam"
+            $0.noteLines = [MeetingNoteLine(text: "budżet reklam", at: 12)]
+        }
+        #expect(changed?.notes == "budżet reklam")
+        let read = try #require(try await db.meeting(id: m.id))
+        #expect(read.notes == "budżet reklam")
+        #expect(read.noteLines.map(\.at) == [12])
+        #expect(read.summary == "## Podsumowanie")
+        #expect(read.speakerNames == ["1": "Anna"])
+        #expect(read.createdAt == m.createdAt)
+        // The notes are searchable right away, like `updateMeeting`.
+        #expect(try await db.meetings(query: "reklam", limit: 10).map(\.id) == [m.id])
+    }
+
+    /// Two writers of different fields at the same time (the notes editor and the recorder's
+    /// stop) both land: each change is read, applied and saved in one step on the actor.
+    @Test func concurrentModificationsOfDifferentFieldsBothLand() async throws {
+        let db = try Self.db()
+        let m = Self.meeting()
+        try await db.createMeeting(m)
+        async let notes: MeetingRecord? = db.modifyMeeting(id: m.id) { $0.notes = "notatka" }
+        async let status: MeetingRecord? = db.modifyMeeting(id: m.id) {
+            $0.status = .completed
+            $0.duration = 90
+        }
+        _ = try await (notes, status)
+        let read = try #require(try await db.meeting(id: m.id))
+        #expect(read.notes == "notatka")
+        #expect(read.status == .completed)
+        #expect(read.duration == 90)
+    }
+
+    @Test func modifyingAMissingMeetingReturnsNil() async throws {
+        let db = try Self.db()
+        #expect(try await db.modifyMeeting(id: UUID()) { $0.notes = "x" } == nil)
+    }
+
+    @Test func foldIgnoresCaseAndPolishLetters() {
+        #expect(MeetingSearch.fold("Łódź") == "lodz")
+        #expect(MeetingSearch.fold("ZARZĄD żółć") == "zarzad zolc")
+        #expect(MeetingSearch.fold("Wdrożenie w piątek") == "wdrozenie w piatek")
+    }
+}
