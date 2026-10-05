@@ -6,9 +6,13 @@ import SwiftUI
 /// AI (MCP)" (`MCPSettingsRow`, Free, off by default), the system audio check,
 /// "Redukcja echa (eksperymentalna)" (voice processing on the mic, read at the next meeting start)
 /// and, in debug builds only, "Tryb Pro (dev)", which stands in for a licence until accounts exist.
+/// `level` splits it between the tabs of Ustawienia: detection, consent, shortcut, calendar, the
+/// transcript after the meeting and the track retention in "Podstawowe", MCP, the system audio
+/// check, echo reduction and the dev switch in "Zaawansowane".
 @MainActor
 struct MeetingsSettingsPanel: View {
     @Environment(AppState.self) private var appState
+    var level: SettingsLevel = .basic
 
     /// Why the calendar cannot be read in this access state, with the way to System Settings
     /// next to it; nil when it can (or the system prompt is still to come).
@@ -29,69 +33,83 @@ struct MeetingsSettingsPanel: View {
     }
 
     var body: some View {
-        @Bindable var settings = appState.settings
-
         GlassPanel(spacing: 4) {
             GlassSectionHeader("Spotkania", systemImage: "person.2.wave.2")
                 .padding(.horizontal, GlassTokens.Padding.rowHorizontal)
                 .padding(.top, 2)
                 .padding(.bottom, 4)
-            GlassToggleRow(
-                "Wykrywaj spotkania",
-                subtitle: "Gdy aplikacja do rozmów zacznie używać mikrofonu, Captylo zapyta, czy nagrać spotkanie.",
-                systemImage: "dot.radiowaves.left.and.right",
-                isOn: $settings.meetingsAutoDetect
-            )
-            GlassToggleRow(
-                "Przypominaj o poinformowaniu uczestników",
-                subtitle: "Na początku nagrania pokazuje gotowe zdanie do skopiowania na czat.",
-                systemImage: "megaphone",
-                isOn: $settings.meetingsConsentReminder
-            )
-            GlassToggleRow(
-                "Skrót \(GlobalShortcut.meeting.display)",
-                subtitle: "Zaczyna i kończy nagrywanie spotkania z każdej aplikacji.",
-                systemImage: "command",
-                isOn: $settings.meetingsShortcut
-            )
-            CalendarSettings(settings: settings, calendar: appState.meetingCalendar)
-            GlassRowSeparator()
-                .padding(.vertical, 6)
-            MeetingTranscriptSettings(settings: settings, isPro: appState.proAccess.isPro)
-            GlassRowSeparator()
-                .padding(.vertical, 6)
-            GlassRow(
-                "Zachowuj nagrania spotkań",
-                subtitle: "Dotyczy tylko plików audio; transkrypcje i notatki zostają.",
-                systemImage: "trash"
-            ) {
-                GlassSegmentedPicker(selection: $settings.meetingAudioRetention, title: { $0.title })
-                    .accessibilityLabel(Text("Zachowuj nagrania spotkań"))
+            switch level {
+            case .basic: basic
+            case .advanced: advanced
             }
-            MCPSettingsRow(settings: settings)
-            GlassRowSeparator()
-                .padding(.vertical, 6)
-            SystemAudioCheckRow(
-                recorder: appState.meetingRecorder,
-                isDesignPreview: appState.isDesignPreview
-            )
-            GlassToggleRow(
-                "Redukcja echa (eksperymentalna)",
-                subtitle: "Próbuje usunąć z Twojego mikrofonu to, co słychać z głośników. Zmiana działa od następnego spotkania; z niektórymi słuchawkami Bluetooth się nie włącza.",
-                systemImage: "waveform.badge.minus",
-                isOn: $settings.meetingsVoiceProcessing
-            )
-            #if DEBUG
-            GlassRowSeparator()
-                .padding(.vertical, 6)
-            GlassToggleRow(
-                "Tryb Pro (dev)",
-                subtitle: "Tylko w wersji deweloperskiej: włącza bez konta notatki AI, rozpoznawanie mówców, transkrypt z chmury i poprawki AI.",
-                systemImage: "hammer",
-                isOn: $settings.devPro
-            )
-            #endif
         }
+    }
+
+    @ViewBuilder
+    private var basic: some View {
+        @Bindable var settings = appState.settings
+
+        GlassToggleRow(
+            "Wykrywaj spotkania",
+            subtitle: "Gdy aplikacja do rozmów zacznie używać mikrofonu, Captylo zapyta, czy nagrać spotkanie.",
+            systemImage: "dot.radiowaves.left.and.right",
+            isOn: $settings.meetingsAutoDetect
+        )
+        GlassToggleRow(
+            "Przypominaj o poinformowaniu uczestników",
+            subtitle: "Na początku nagrania pokazuje gotowe zdanie do skopiowania na czat.",
+            systemImage: "megaphone",
+            isOn: $settings.meetingsConsentReminder
+        )
+        GlassToggleRow(
+            "Skrót \(GlobalShortcut.meeting.display)",
+            subtitle: "Zaczyna i kończy nagrywanie spotkania z każdej aplikacji.",
+            systemImage: "command",
+            isOn: $settings.meetingsShortcut
+        )
+        CalendarSettings(settings: settings, calendar: appState.meetingCalendar)
+        GlassRowSeparator()
+            .padding(.vertical, 6)
+        MeetingTranscriptSettings(settings: settings, isPro: appState.proAccess.isPro)
+        GlassRowSeparator()
+            .padding(.vertical, 6)
+        GlassRow(
+            "Zachowuj nagrania spotkań",
+            subtitle: "Dotyczy tylko plików audio; transkrypcje i notatki zostają.",
+            systemImage: "trash"
+        ) {
+            GlassSegmentedPicker(selection: $settings.meetingAudioRetention, title: { $0.title })
+                .accessibilityLabel(Text("Zachowuj nagrania spotkań"))
+        }
+    }
+
+    @ViewBuilder
+    private var advanced: some View {
+        @Bindable var settings = appState.settings
+
+        MCPSettingsRow(settings: settings)
+        GlassRowSeparator()
+            .padding(.vertical, 6)
+        SystemAudioCheckRow(
+            recorder: appState.meetingRecorder,
+            isDesignPreview: appState.isDesignPreview
+        )
+        GlassToggleRow(
+            "Redukcja echa (eksperymentalna)",
+            subtitle: "Próbuje usunąć z Twojego mikrofonu to, co słychać z głośników. Zmiana działa od następnego spotkania; z niektórymi słuchawkami Bluetooth się nie włącza.",
+            systemImage: "waveform.badge.minus",
+            isOn: $settings.meetingsVoiceProcessing
+        )
+        #if DEBUG
+        GlassRowSeparator()
+            .padding(.vertical, 6)
+        GlassToggleRow(
+            "Tryb Pro (dev)",
+            subtitle: "Tylko w wersji deweloperskiej: włącza bez konta notatki AI, rozpoznawanie mówców, transkrypt z chmury i poprawki AI.",
+            systemImage: "hammer",
+            isOn: $settings.devPro
+        )
+        #endif
     }
 }
 

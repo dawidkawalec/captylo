@@ -138,7 +138,7 @@ struct EnhancementClientTests {
             #expect(!text.contains("\u{2014}"))
         }
         #expect(OpenRouterError.server(503).errorDescription?.contains("503") == true)
-        #expect(OpenRouterError.missingKey.errorDescription?.contains("klucza") == true)
+        #expect(OpenRouterError.missingKey.errorDescription?.contains("klucz") == true)
     }
 }
 

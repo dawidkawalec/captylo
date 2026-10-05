@@ -40,7 +40,7 @@ struct AIModeTestPanel: View {
                     .help(Text("Przywróć przykładowy dyktat"))
                 }
             }
-            ToolCaption("Sprawdź tryb na przykładowym dyktacie, także przed zapisaniem zmian. Test używa wybranego modelu i Twojego klucza API do AI.")
+            ToolCaption("Sprawdź tryb na przykładowym dyktacie, także przed zapisaniem zmian. Test używa modelu AI wybranego w Modelach.")
 
             TextField("Wpisz lub wklej przykładowy dyktat", text: $sample, axis: .vertical)
                 .textFieldStyle(.plain)

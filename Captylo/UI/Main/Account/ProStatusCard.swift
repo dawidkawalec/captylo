@@ -40,7 +40,7 @@ struct ProStatusCard: View {
     private var subtitle: Text {
         switch kind {
         case .pro:
-            return Text("Captylo Pro: chmura i Captylo AI działają bez kluczy. Model AI wybierasz poniżej.")
+            return Text("Captylo Pro: chmura i Captylo AI działają bez kluczy.")
         case .stale:
             return Text("Nie mogę sprawdzić subskrypcji. Pro wróci po połączeniu z internetem.")
         case .free:

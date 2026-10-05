@@ -257,9 +257,8 @@ struct ModelStep: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var cloudExpanded = false
-    @State private var apiKey = ""
+    /// "Klucz jest zapisany w pęku kluczy." when an own cloud key is already there.
     @State private var keyMessage: String?
-    @State private var keyMessageIsError = false
 
     private var modelStore: LocalModelStore { model.appState.modelStore }
     private var keyStore: KeyStore { model.appState.keyStore }
@@ -447,22 +446,15 @@ struct ModelStep: View {
                 .font(GlassFont.caption)
                 .foregroundStyle(GlassColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Masz Captylo Pro? Zalogujesz się w Ustawieniach po zakończeniu.")
+            // No key field on day one: own keys live in Modele > Zaawansowane.
+            Text("Chmura działa w Captylo Pro: zalogujesz się w Ustawieniach po zakończeniu. Własny klucz dodasz później w Modele > Zaawansowane.")
                 .font(GlassFont.caption)
                 .foregroundStyle(GlassColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 10) {
-                GlassSecureField("Klucz API chmury", text: $apiKey)
-                Button("Zapisz klucz") {
-                    saveKey()
-                }
-                .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
-                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
             if let keyMessage {
                 Text(verbatim: keyMessage)
                     .font(GlassFont.caption)
-                    .foregroundStyle(keyMessageIsError ? GlassColor.destructive : GlassColor.textSecondary)
+                    .foregroundStyle(GlassColor.textSecondary)
             }
             GlassToggleRow("Transkrybuj w chmurze zamiast lokalnie", isOn: Binding(
                 get: { settings.sttEngine == .elevenLabs },
@@ -470,21 +462,6 @@ struct ModelStep: View {
             ))
             // Pro reaches the cloud without a key (through Captylo).
             .disabled(keyStore.get(KeyStore.Account.elevenLabs) == nil && !model.appState.account.isPro)
-        }
-    }
-
-    private func saveKey() {
-        let value = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return }
-        do {
-            try keyStore.set(value, account: KeyStore.Account.elevenLabs)
-            apiKey = ""
-            keyMessage = String(localized: "Klucz zapisany w pęku kluczy.")
-            keyMessageIsError = false
-            model.settings.sttEngine = .elevenLabs
-        } catch {
-            keyMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            keyMessageIsError = true
         }
     }
 

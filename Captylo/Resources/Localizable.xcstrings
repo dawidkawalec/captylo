@@ -613,14 +613,9 @@
         }
       }
     },
-    "Brak klucza AI. Dodaj go na ekranie Modele, w panelu Poprawianie przez AI.": {
+    "Brak dostępu do AI. Przejdź na Pro albo dodaj własny klucz w Modele > Zaawansowane.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No AI key. Add it on the Models screen, in the AI cleanup panel."
-          }
-        }
+        "en": { "stringUnit": { "state": "translated", "value": "No access to AI. Upgrade to Pro or add your own key in Models > Advanced." } }
       }
     },
     "Brak modeli pasujących do zapytania.": {
@@ -1313,14 +1308,9 @@
         }
       }
     },
-    "Sprawdź tryb na przykładowym dyktacie, także przed zapisaniem zmian. Test używa wybranego modelu i Twojego klucza API do AI.": {
+    "Sprawdź tryb na przykładowym dyktacie, także przed zapisaniem zmian. Test używa modelu AI wybranego w Modelach.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try the mode on a sample dictation, even before saving your changes. The test uses the selected model and your AI API key."
-          }
-        }
+        "en": { "stringUnit": { "state": "translated", "value": "Try the mode on a sample dictation, even before saving your changes. The test uses the AI model chosen in Models." } }
       }
     },
     "Ten prompt nie używa Słownika, więc model nie zobaczy Twoich słów.": {
@@ -2489,16 +2479,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Still no access. macOS often needs the app to be restarted after the permission is turned on."
-          }
-        }
-      }
-    },
-    "Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recordings are sent to cloud transcription. When the cloud does not respond, Captylo uses the local model if it is downloaded."
           }
         }
       }
@@ -5413,16 +5393,6 @@
         }
       }
     },
-    "Zapisz klucz": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save key"
-          }
-        }
-      }
-    },
     "Zapisz zmianę": {
       "localizations": {
         "en": {
@@ -6968,9 +6938,124 @@
         "en": { "stringUnit": { "state": "translated", "value": "No access to the meeting AI. Turn on Captylo Pro." } }
       }
     },
-    "Captylo Pro: chmura i Captylo AI działają bez kluczy. Model AI wybierasz poniżej.": {
+    "Captylo Pro: chmura i Captylo AI działają bez kluczy.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Captylo Pro: the cloud and Captylo AI work without keys. Pick the AI model below." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo Pro: the cloud and Captylo AI work without keys." } }
+      }
+    },
+    "Podstawowe": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Basic" } }
+      }
+    },
+    "Zaawansowane": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Advanced" } }
+      }
+    },
+    "Widok ustawień": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Settings view" } }
+      }
+    },
+    "Nauka jest wyłączona w zakładce Podstawowe.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learning is turned off in the Basic tab." } }
+      }
+    },
+    "Transkrypcja w chmurze": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cloud transcription" } }
+      }
+    },
+    "Chmura Captylo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo Cloud" } }
+      }
+    },
+    "Chmura Captylo, w ramach Pro": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo Cloud, part of Pro" } }
+      }
+    },
+    "Twój klucz API chmury": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your cloud API key" } }
+      }
+    },
+    "Chmura działa w Pro albo z własnym kluczem.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The cloud works with Pro or with your own key." } }
+      }
+    },
+    "Nagrania idą do transkrypcji przez Captylo. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recordings are transcribed through Captylo. When the cloud does not respond, Captylo uses the local model if it is downloaded." } }
+      }
+    },
+    "Nagrania idą z Twojego Maca prosto do dostawcy chmury. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recordings go from your Mac straight to the cloud provider. When the cloud does not respond, Captylo uses the local model if it is downloaded." } }
+      }
+    },
+    "Do tego czasu Captylo przepisuje nagrania na Macu, modelem lokalnym.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Until then Captylo transcribes recordings on your Mac with the local model." } }
+      }
+    },
+    "Dodaj klucz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add key" } }
+      }
+    },
+    "%@, nasz model w ramach Pro": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@, our model, part of Pro" } }
+      }
+    },
+    "%@, przez Twój klucz API do AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@, through your AI API key" } }
+      }
+    },
+    "Poprawianie przez AI działa w Pro albo z własnym kluczem.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI cleanup works with Pro or with your own key." } }
+      }
+    },
+    "Klucz i model AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "AI key and model" } }
+      }
+    },
+    "Własne klucze są opcjonalne. Z kluczem nagrania i tekst idą z Twojego Maca prosto do dostawcy, a klucz zostaje w pęku kluczy macOS.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your own keys are optional. With a key, recordings and text go from your Mac straight to the provider, and the key stays in the macOS Keychain." } }
+      }
+    },
+    "Teraz dyktujesz lokalnie. Chmurę włączysz w zakładce Podstawowe, w Silniku mowy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You are dictating locally now. Turn on the cloud in the Basic tab, under Speech engine." } }
+      }
+    },
+    "W ramach Pro, bez klucza": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Part of Pro, no key needed" } }
+      }
+    },
+    "Własny klucz": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your own key" } }
+      }
+    },
+    "Prosto do dostawcy, z Twojego Maca": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Straight to the provider, from your Mac" } }
+      }
+    },
+    "Najpierw zapisz klucz poniżej": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Save a key below first" } }
       }
     },
     "Z własnym kluczem wybierzesz poniżej inny model niż Captylo AI.": {
@@ -7023,9 +7108,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Upgrade to Pro" } }
       }
     },
-    "Własny klucz ma pierwszeństwo przed Pro.": {
+    "Z własnym kluczem wybierzesz powyżej, czy chmura działa przez Captylo, czy przez Twój klucz.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Your own key comes before Pro." } }
+        "en": { "stringUnit": { "state": "translated", "value": "With your own key you can choose above whether the cloud runs through Captylo or through your key." } }
       }
     },
     "Captylo AI": {
@@ -7063,9 +7148,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Without a key, Captylo transcribes on your Mac until you add a key or switch to Pro." } }
       }
     },
-    "W Pro bez własnego klucza chmura działa przez Captylo.": {
+    "Klucz usunięty. Działa Chmura Captylo.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "With Pro and no key of your own, the cloud runs through Captylo." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Key removed. Captylo Cloud is on." } }
       }
     },
     "Poprawianie przez AI przejdzie na Captylo AI w ramach Pro.": {
@@ -7078,9 +7163,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Without a key, AI cleanup will not work until you add a key or switch to Pro." } }
       }
     },
-    "Masz Captylo Pro? Zalogujesz się w Ustawieniach po zakończeniu.": {
+    "Chmura działa w Captylo Pro: zalogujesz się w Ustawieniach po zakończeniu. Własny klucz dodasz później w Modele > Zaawansowane.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Have Captylo Pro? You will sign in in Settings when you are done." } }
+        "en": { "stringUnit": { "state": "translated", "value": "The cloud works with Captylo Pro: you will sign in in Settings when you are done. You can add your own key later in Models > Advanced." } }
       }
     },
     "Po spotkaniu wysyła nagranie do chmury i zastępuje nim transkrypt z Maca. W Pro działa bez własnego klucza.": {

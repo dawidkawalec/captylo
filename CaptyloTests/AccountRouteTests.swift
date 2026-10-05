@@ -32,6 +32,22 @@ struct AccountRouteTests {
         #expect(calls.withLock { $0 } == 0, "the account is not asked while an own key exists")
     }
 
+    /// "Chmura Captylo" chosen: Pro goes to the relay even with an own cloud key; without Pro the
+    /// own key still works; a slow account answer is a timeout.
+    @Test func captyloCloudChoiceWinsOverTheOwnKeyOnlyInPro() async {
+        let pro = router(keys: [KeyStore.Account.elevenLabs: "xi-own"]) { _ in .value(Self.token) }
+        let relay = await pro.sttCredential(timeout: .seconds(1), preferRelay: true)
+        #expect(relay == .value(CloudCredential(baseURL: Self.relay, authorization: .bearer(Self.token), isRelay: true)))
+        let own = await pro.sttCredential(timeout: .seconds(1), preferRelay: false)
+        #expect(own == .value(CloudCredential(baseURL: ElevenLabsSTT.apiBaseURL, authorization: .apiKey("xi-own"), isRelay: false)))
+
+        let free = router(keys: [KeyStore.Account.elevenLabs: "xi-own"])
+        let freeRoute = await free.sttCredential(timeout: .seconds(1), preferRelay: true)
+        #expect(freeRoute == .value(CloudCredential(baseURL: ElevenLabsSTT.apiBaseURL, authorization: .apiKey("xi-own"), isRelay: false)))
+        #expect(await router().sttCredential(timeout: .seconds(1), preferRelay: true) == .value(nil))
+        #expect(await router { _ in .timedOut }.sttCredential(timeout: .seconds(1), preferRelay: true) == .timedOut)
+    }
+
     @Test func proSessionGoesToTheRelayWithTheBearer() async {
         let router = router { _ in .value(Self.token) }
         let route = await router.sttCredential(timeout: .seconds(1))

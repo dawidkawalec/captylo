@@ -108,8 +108,8 @@ struct EnhancementAIModeTests {
 
     @Test func noKeyMessagePointsAtModele() {
         let message = OpenRouterError.missingKeyMessage
-        #expect(message.contains("Modele"))
-        #expect(message.contains("Poprawianie przez AI"))
+        #expect(message.contains("Modele > Zaawansowane"))
+        #expect(message.contains("Pro"))
         #expect(!message.contains("Ustawieni"))
         #expect(OpenRouterError.missingKey.errorDescription == message)
     }

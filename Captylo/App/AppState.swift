@@ -140,6 +140,8 @@ final class AppState {
     /// The dictation AI route runs off the main actor, so it reads this snapshot of `settings.aiModel`.
     @ObservationIgnored private let aiModelSnapshot: OSAllocatedUnfairLock<String>
     @ObservationIgnored private let aiCaptyloSnapshot: OSAllocatedUnfairLock<Bool>
+    /// The cloud transcription route runs off the main actor too: `settings.sttCaptylo`.
+    @ObservationIgnored private let sttCaptyloSnapshot: OSAllocatedUnfairLock<Bool>
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
     /// ⌃⌥⌘M, registered while "Skrót ⌃⌥⌘M" is on (`applyMeetingShortcut`).
     @ObservationIgnored private var meetingShortcut: GlobalShortcut?
@@ -187,9 +189,17 @@ final class AppState {
             aiClient: openRouter
         )
 
+        // "Chmura Captylo" in Pro while it is chosen in Modele, else the own cloud key.
+        let cloudCaptyloSnapshot = OSAllocatedUnfairLock(initialState: settings.sttCaptylo)
+        sttCaptyloSnapshot = cloudCaptyloSnapshot
         elevenLabs = ElevenLabsSTT(
             session: HTTP.uploadSession,
-            credentialProvider: { await cloudRouter.sttCredential(timeout: ElevenLabsSTT.keyLookupTimeout) },
+            credentialProvider: {
+                await cloudRouter.sttCredential(
+                    timeout: ElevenLabsSTT.keyLookupTimeout,
+                    preferRelay: cloudCaptyloSnapshot.withLock { $0 }
+                )
+            },
             retrySession: { HTTP.makeEphemeral() }
         )
         transcriptionRouter = TranscriptionRouter(
@@ -763,6 +773,7 @@ final class AppState {
             _ = settings.hotkey
             _ = settings.aiModel
             _ = settings.aiCaptylo
+            _ = settings.sttCaptylo
             _ = settings.paragraphs
             _ = settings.menuBarOnly
             _ = settings.meetingsShortcut
@@ -785,6 +796,8 @@ final class AppState {
         aiModelSnapshot.withLock { $0 = model }
         let captylo = settings.aiCaptylo
         aiCaptyloSnapshot.withLock { $0 = captylo }
+        let cloudCaptylo = settings.sttCaptylo
+        sttCaptyloSnapshot.withLock { $0 = cloudCaptylo }
         if dictionary.paragraphs != settings.paragraphs {
             dictionary.setParagraphs(settings.paragraphs)
         }

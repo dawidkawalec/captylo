@@ -10,6 +10,7 @@ final class AppSettings {
         case hotkey
         case language
         case sttEngine
+        case sttCaptylo = "stt.captylo"
         case livePreview
         case aiEnabled = "ai.enabled"
         case aiModel = "ai.model"
@@ -94,6 +95,14 @@ final class AppSettings {
     var sttEngine: STTEngine {
         get { track(\.sttEngine); return STTEngine(rawValue: string(.sttEngine, default: "")) ?? .local }
         set { withMutation(keyPath: \.sttEngine) { defaults.set(newValue.rawValue, forKey: Key.sttEngine.rawValue) } }
+    }
+
+    /// In Pro, cloud transcription runs through Captylo (the relay), even with an own cloud key
+    /// saved: "Chmura Captylo" in Modele > Zaawansowane, on by default, so turning Pro on switches
+    /// to it. Off = the own key. Without Pro it changes nothing.
+    var sttCaptylo: Bool {
+        get { track(\.sttCaptylo); return bool(.sttCaptylo, default: true) }
+        set { withMutation(keyPath: \.sttCaptylo) { defaults.set(newValue, forKey: Key.sttCaptylo.rawValue) } }
     }
 
     var livePreview: Bool {

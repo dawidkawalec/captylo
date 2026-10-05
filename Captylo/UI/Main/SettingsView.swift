@@ -1,131 +1,26 @@
 import AppKit
 import SwiftUI
 
-/// "Ustawienia": grouped Dusk Glass panels of rows and blue switches (mockup 03): the Captylo
-/// account first (`AccountSettingsPanel`, the target of `openAccount()`), the shortcut
-/// recorder as a glass keycap, microphone menu, recording toggles, meetings
-/// (`MeetingsSettingsPanel`), pasting / history toggles, login item, onboarding reset, the import
-/// from the old VocaType ("Dane"), updates (`UpdatesRow`) and the version footer.
+/// "Ustawienia": grouped Dusk Glass panels of rows and blue switches (mockup 03) in two tabs
+/// (`SettingsLevel`). "Podstawowe": the Captylo account first (`AccountSettingsPanel`, the target
+/// of `openAccount()`, which switches back to this tab), the shortcut recorder as a glass keycap,
+/// the window background, microphone and recording toggles, meetings (`MeetingsSettingsPanel`),
+/// history and learning (privacy stays one click away), login item, updates (`UpdatesRow`).
+/// "Zaawansowane": the tone sliders, system mute, the rest of meetings, pasting, learning
+/// details, onboarding reset. The version footer closes both.
 @MainActor
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
+    @State private var level: SettingsLevel = .basic
 
     var body: some View {
-        @Bindable var settings = appState.settings
-
         ToolPage {
-            // The reader only needs the anchored panel; its proxy scrolls the page's scroll view.
-            ScrollViewReader { proxy in
-                AccountSettingsPanel(account: appState.account)
-                    .id(SettingsAnchor.account)
-                    .onAppear {
-                        scrollToAnchor(proxy)
-                    }
-                    .onChange(of: appState.windowPresenter.settingsAnchor) {
-                        scrollToAnchor(proxy)
-                    }
+            SettingsLevelPicker(level: $level)
+        } content: {
+            switch level {
+            case .basic: basic
+            case .advanced: advanced
             }
-
-            GlassPanel(spacing: 14) {
-                sectionHeader("Skrót", systemImage: "keyboard")
-                VStack(alignment: .leading, spacing: 12) {
-                    HotkeyRecorderView(settings: settings, tap: appState.hotkeyTap)
-                    ToolCaption("Krótkie naciśnięcie włącza dyktowanie do następnego naciśnięcia. Przytrzymanie nagrywa tak długo, jak trzymasz klawisz. Esc dwa razy anuluje.")
-                }
-                .padding(.horizontal, GlassTokens.Padding.rowHorizontal)
-                .padding(.bottom, 4)
-            }
-
-            GlassPanel(spacing: 4) {
-                sectionHeader("Wygląd", systemImage: "paintpalette")
-                GlassRow("Tło okna", subtitle: "Ciemny i Jasny to ruchomy gradient w kolorach marki, Zmierzch to żywe jezioro o zachodzie słońca, a Gradient to spokojne niebo.", systemImage: "macwindow.on.rectangle") {
-                    GlassSegmentedPicker(
-                        selection: $settings.windowBackground,
-                        segments: WindowBackgroundStyle.pickerOrder.map {
-                            GlassSegment($0, $0.title, systemImage: $0.systemImage)
-                        }
-                    )
-                    .accessibilityLabel(Text("Tło okna"))
-                }
-                GlassRowSeparator()
-                    .padding(.vertical, 6)
-                ToneSliderRow(
-                    title: "Przyciemnienie tła",
-                    subtitle: "Ciemniejsze tło za panelami. Domyślnie 10%.",
-                    systemImage: "circle.lefthalf.filled",
-                    value: $settings.backgroundDim,
-                    range: WindowTone.backgroundDimRange
-                )
-                ToneSliderRow(
-                    title: "Przydymienie paneli",
-                    subtitle: "Ciemniejsze szkło paneli i paska bocznego. Domyślnie 20%.",
-                    systemImage: "square.stack",
-                    value: $settings.panelSmoke,
-                    range: WindowTone.panelSmokeRange
-                )
-            }
-
-            GlassPanel(spacing: 4) {
-                sectionHeader("Nagrywanie", systemImage: "waveform")
-                MicrophoneRow(devices: appState.audioDevices)
-                if appState.audioDevices.isLidClosed {
-                    ToolStatusLine(text: String(localized: "Pokrywa jest zamknięta: wbudowany mikrofon jest pomijany."))
-                        .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
-                        .padding(.bottom, 6)
-                }
-                GlassRowSeparator()
-                    .padding(.vertical, 6)
-                GlassToggleRow("Dźwięki", systemImage: "speaker.wave.2", isOn: $settings.sounds)
-                GlassToggleRow("Wycisz system podczas nagrywania", systemImage: "speaker.slash", isOn: $settings.muteWhileRecording)
-                GlassToggleRow("Podgląd na żywo", systemImage: "text.bubble", isOn: $settings.livePreview)
-            }
-
-            MeetingsSettingsPanel()
-
-            GlassPanel(spacing: 4) {
-                sectionHeader("Wklejanie", systemImage: "text.cursor")
-                GlassToggleRow("Przywracaj schowek", systemImage: "doc.on.clipboard", isOn: $settings.restoreClipboard)
-                GlassToggleRow("Spacja po wklejeniu", systemImage: "space", isOn: $settings.trailingSpace)
-                GlassToggleRow("Akapity", systemImage: "text.alignleft", isOn: $settings.paragraphs)
-                GlassRowSeparator()
-                    .padding(.vertical, 6)
-                sectionHeader("Historia", systemImage: "clock")
-                GlassToggleRow("Zapisuj historię", systemImage: "clock.arrow.circlepath", isOn: $settings.saveHistory)
-                RetentionRow(days: $settings.audioRetentionDays)
-                    .disabled(!settings.saveHistory)
-                    .opacity(settings.saveHistory ? 1 : 0.5)
-            }
-
-            GlassPanel(spacing: 4) {
-                sectionHeader("Nauka", systemImage: "brain")
-                GlassToggleRow(
-                    "Ucz się z moich poprawek",
-                    subtitle: "Gdy przeliterujesz słowo na głos albo poprawisz wklejony tekst, Captylo zapamięta poprawną wersję. Wszystko zostaje na tym Macu, a nauczone słowa zobaczysz i cofniesz w Słowniku.",
-                    systemImage: "sparkles",
-                    isOn: $settings.learningEnabled
-                )
-                Group {
-                    GlassToggleRow("Pokazuj powiadomienia o nauce", systemImage: "bell", isOn: $settings.learningNotifications)
-                    GlassRowSeparator()
-                        .padding(.vertical, 6)
-                    ExcludedAppsRow(settings: settings)
-                }
-                .disabled(!settings.learningEnabled)
-                .opacity(settings.learningEnabled ? 1 : 0.5)
-            }
-
-            GlassPanel(spacing: 4) {
-                sectionHeader("Aplikacja", systemImage: "macwindow")
-                GlassToggleRow("Ukryj ikonę w Docku", systemImage: "dock.rectangle", isOn: $settings.menuBarOnly)
-                LaunchAtLoginRow(launchAtLogin: appState.launchAtLogin)
-                GlassRowSeparator()
-                    .padding(.vertical, 6)
-                UpdatesRow(updater: appState.updater)
-                GlassRowSeparator()
-                    .padding(.vertical, 6)
-                OnboardingResetRow(settings: settings)
-            }
-
             VersionFooter(versionLine: appState.updater.versionLine)
                 .padding(.horizontal, 8)
                 .padding(.top, 4)
@@ -133,6 +28,159 @@ struct SettingsView: View {
         .onAppear {
             appState.launchAtLogin.refresh()
             appState.audioDevices.refresh()
+            showAnchoredTab()
+        }
+        .onChange(of: appState.windowPresenter.settingsAnchor) {
+            showAnchoredTab()
+        }
+    }
+
+    /// The anchored panels (`SettingsAnchor`) live in "Podstawowe".
+    private func showAnchoredTab() {
+        if appState.windowPresenter.settingsAnchor != nil {
+            level = .basic
+        }
+    }
+
+    @ViewBuilder
+    private var basic: some View {
+        @Bindable var settings = appState.settings
+
+        // The reader only needs the anchored panel; its proxy scrolls the page's scroll view.
+        ScrollViewReader { proxy in
+            AccountSettingsPanel(account: appState.account)
+                .id(SettingsAnchor.account)
+                .onAppear {
+                    scrollToAnchor(proxy)
+                }
+                .onChange(of: appState.windowPresenter.settingsAnchor) {
+                    scrollToAnchor(proxy)
+                }
+        }
+
+        GlassPanel(spacing: 14) {
+            sectionHeader("Skrót", systemImage: "keyboard")
+            VStack(alignment: .leading, spacing: 12) {
+                HotkeyRecorderView(settings: settings, tap: appState.hotkeyTap)
+                ToolCaption("Krótkie naciśnięcie włącza dyktowanie do następnego naciśnięcia. Przytrzymanie nagrywa tak długo, jak trzymasz klawisz. Esc dwa razy anuluje.")
+            }
+            .padding(.horizontal, GlassTokens.Padding.rowHorizontal)
+            .padding(.bottom, 4)
+        }
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Wygląd", systemImage: "paintpalette")
+            GlassRow("Tło okna", subtitle: "Ciemny i Jasny to ruchomy gradient w kolorach marki, Zmierzch to żywe jezioro o zachodzie słońca, a Gradient to spokojne niebo.", systemImage: "macwindow.on.rectangle") {
+                GlassSegmentedPicker(
+                    selection: $settings.windowBackground,
+                    segments: WindowBackgroundStyle.pickerOrder.map {
+                        GlassSegment($0, $0.title, systemImage: $0.systemImage)
+                    }
+                )
+                .accessibilityLabel(Text("Tło okna"))
+            }
+        }
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Nagrywanie", systemImage: "waveform")
+            MicrophoneRow(devices: appState.audioDevices)
+            if appState.audioDevices.isLidClosed {
+                ToolStatusLine(text: String(localized: "Pokrywa jest zamknięta: wbudowany mikrofon jest pomijany."))
+                    .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+                    .padding(.bottom, 6)
+            }
+            GlassRowSeparator()
+                .padding(.vertical, 6)
+            GlassToggleRow("Dźwięki", systemImage: "speaker.wave.2", isOn: $settings.sounds)
+            GlassToggleRow("Podgląd na żywo", systemImage: "text.bubble", isOn: $settings.livePreview)
+        }
+
+        MeetingsSettingsPanel(level: .basic)
+
+        // History and learning decide what stays on this Mac, so they never hide in "Zaawansowane".
+        GlassPanel(spacing: 4) {
+            sectionHeader("Historia", systemImage: "clock")
+            GlassToggleRow("Zapisuj historię", systemImage: "clock.arrow.circlepath", isOn: $settings.saveHistory)
+            RetentionRow(days: $settings.audioRetentionDays)
+                .disabled(!settings.saveHistory)
+                .opacity(settings.saveHistory ? 1 : 0.5)
+            GlassRowSeparator()
+                .padding(.vertical, 6)
+            sectionHeader("Nauka", systemImage: "brain")
+            GlassToggleRow(
+                "Ucz się z moich poprawek",
+                subtitle: "Gdy przeliterujesz słowo na głos albo poprawisz wklejony tekst, Captylo zapamięta poprawną wersję. Wszystko zostaje na tym Macu, a nauczone słowa zobaczysz i cofniesz w Słowniku.",
+                systemImage: "sparkles",
+                isOn: $settings.learningEnabled
+            )
+        }
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Aplikacja", systemImage: "macwindow")
+            GlassToggleRow("Ukryj ikonę w Docku", systemImage: "dock.rectangle", isOn: $settings.menuBarOnly)
+            LaunchAtLoginRow(launchAtLogin: appState.launchAtLogin)
+            GlassRowSeparator()
+                .padding(.vertical, 6)
+            UpdatesRow(updater: appState.updater)
+        }
+    }
+
+    @ViewBuilder
+    private var advanced: some View {
+        @Bindable var settings = appState.settings
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Wygląd", systemImage: "paintpalette")
+            ToneSliderRow(
+                title: "Przyciemnienie tła",
+                subtitle: "Ciemniejsze tło za panelami. Domyślnie 10%.",
+                systemImage: "circle.lefthalf.filled",
+                value: $settings.backgroundDim,
+                range: WindowTone.backgroundDimRange
+            )
+            ToneSliderRow(
+                title: "Przydymienie paneli",
+                subtitle: "Ciemniejsze szkło paneli i paska bocznego. Domyślnie 20%.",
+                systemImage: "square.stack",
+                value: $settings.panelSmoke,
+                range: WindowTone.panelSmokeRange
+            )
+        }
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Nagrywanie", systemImage: "waveform")
+            GlassToggleRow("Wycisz system podczas nagrywania", systemImage: "speaker.slash", isOn: $settings.muteWhileRecording)
+        }
+
+        MeetingsSettingsPanel(level: .advanced)
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Wklejanie", systemImage: "text.cursor")
+            GlassToggleRow("Przywracaj schowek", systemImage: "doc.on.clipboard", isOn: $settings.restoreClipboard)
+            GlassToggleRow("Spacja po wklejeniu", systemImage: "space", isOn: $settings.trailingSpace)
+            GlassToggleRow("Akapity", systemImage: "text.alignleft", isOn: $settings.paragraphs)
+        }
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Nauka", systemImage: "brain")
+            Group {
+                GlassToggleRow("Pokazuj powiadomienia o nauce", systemImage: "bell", isOn: $settings.learningNotifications)
+                GlassRowSeparator()
+                    .padding(.vertical, 6)
+                ExcludedAppsRow(settings: settings)
+            }
+            .disabled(!settings.learningEnabled)
+            .opacity(settings.learningEnabled ? 1 : 0.5)
+            if !settings.learningEnabled {
+                ToolStatusLine(text: String(localized: "Nauka jest wyłączona w zakładce Podstawowe."))
+                    .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+                    .padding(.bottom, 4)
+            }
+        }
+
+        GlassPanel(spacing: 4) {
+            sectionHeader("Aplikacja", systemImage: "macwindow")
+            OnboardingResetRow(settings: settings)
         }
     }
 

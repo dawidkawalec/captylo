@@ -31,33 +31,22 @@ struct CloudRouter: Sendable {
         self.sttBaseURL = sttBaseURL
     }
 
-    /// The speech-to-text credential; `.value(nil)` = no route.
-    func sttCredential(timeout: Duration) async -> KeyStore.Lookup<CloudCredential> {
-        await resolve(KeyStore.Account.elevenLabs, timeout: timeout,
-                      own: { CloudCredential.ownKey($0, baseURL: sttBaseURL) },
-                      relay: { CloudCredential.relay(token: $0, baseURL: relayBaseURL) })
+    /// The speech-to-text credential; `.value(nil)` = no route. With `preferRelay` ("Chmura
+    /// Captylo" chosen in Modele) a Pro session goes to the relay even when an own key is saved;
+    /// without Pro the own key still works.
+    func sttCredential(timeout: Duration, preferRelay: Bool = false) async -> KeyStore.Lookup<CloudCredential> {
+        await route(KeyStore.Account.elevenLabs, timeout: timeout, preferRelay: preferRelay,
+                    own: { CloudCredential.ownKey($0, baseURL: sttBaseURL) },
+                    relay: { CloudCredential.relay(token: $0, baseURL: relayBaseURL) })
     }
 
     /// The AI route for `model` (used only with an own key); `.value(nil)` = no route. With
     /// `preferRelay` (Captylo AI chosen in Modele) a Pro session goes to the relay even when an
     /// own key is saved; without Pro the own key still works.
     func aiRoute(timeout: Duration, model: String, preferRelay: Bool = false) async -> KeyStore.Lookup<AIRoute> {
-        var remaining = timeout
-        if preferRelay {
-            let clock = ContinuousClock()
-            let start = clock.now
-            switch await relayAIRoute(timeout: timeout) {
-            case .timedOut:
-                return .timedOut
-            case .value(let route?):
-                return .value(route)
-            case .value(nil):
-                remaining = max(.zero, timeout - (clock.now - start))
-            }
-        }
-        return await resolve(KeyStore.Account.openRouter, timeout: remaining,
-                             own: { AIRoute(client: aiClient, key: $0, model: model) },
-                             relay: { AIRoute(client: OpenRouterClient(baseURL: relayBaseURL), key: $0, model: nil) })
+        await route(KeyStore.Account.openRouter, timeout: timeout, preferRelay: preferRelay,
+                    own: { AIRoute(client: aiClient, key: $0, model: model) },
+                    relay: { AIRoute(client: OpenRouterClient(baseURL: relayBaseURL), key: $0, model: nil) })
     }
 
     /// The Pro relay only, whatever own key there is: the meeting AI runs as "Captylo AI" on the
@@ -69,6 +58,32 @@ struct CloudRouter: Sendable {
         case .value(let token):
             return .value(Self.nonBlank(token).map { AIRoute(client: OpenRouterClient(baseURL: relayBaseURL), key: $0, model: nil) })
         }
+    }
+
+    /// `resolve`, asking the Pro session first when `preferRelay` is set; no session falls
+    /// through to the own key with what is left of the timeout.
+    private func route<Route: Sendable>(
+        _ account: String,
+        timeout: Duration,
+        preferRelay: Bool,
+        own: (String) -> Route,
+        relay: (String) -> Route
+    ) async -> KeyStore.Lookup<Route> {
+        var remaining = timeout
+        if preferRelay {
+            let clock = ContinuousClock()
+            let start = clock.now
+            switch await accountToken(timeout) {
+            case .timedOut:
+                return .timedOut
+            case .value(let token):
+                if let token = Self.nonBlank(token) {
+                    return .value(relay(token))
+                }
+                remaining = max(.zero, timeout - (clock.now - start))
+            }
+        }
+        return await resolve(account, timeout: remaining, own: own, relay: relay)
     }
 
     private func resolve<Route: Sendable>(

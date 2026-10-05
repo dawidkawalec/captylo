@@ -121,7 +121,8 @@ struct AppSettingsTests {
         #expect(raw.contains("account.cache"))
         #expect(raw.contains("account.refreshedAt"))
         #expect(raw.contains("ai.captylo"))
-        #expect(AppSettings.keys.count == 48)
+        #expect(raw.contains("stt.captylo"))
+        #expect(AppSettings.keys.count == 49)
     }
 
     @Test func accountCacheDefaultsEmptyAndPersists() throws {
@@ -197,6 +198,16 @@ struct AppSettingsTests {
         #expect(!settings.aiCaptylo)
         settings.reset()
         #expect(settings.aiCaptylo)
+    }
+
+    /// "Chmura Captylo" is the default cloud in Pro, the same way.
+    @Test func captyloCloudIsOnByDefaultAndResets() throws {
+        let settings = try makeSettings()
+        #expect(settings.sttCaptylo)
+        settings.sttCaptylo = false
+        #expect(!settings.sttCaptylo)
+        settings.reset()
+        #expect(settings.sttCaptylo)
     }
 
     @Test func meetingTranscriptSettingsDefaultOff() throws {

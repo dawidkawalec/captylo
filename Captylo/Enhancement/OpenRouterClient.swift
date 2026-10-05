@@ -319,8 +319,8 @@ enum OpenRouterError: LocalizedError, Sendable, Equatable {
     }
 
     /// The one no-key message of the app ("Przetwórz przez AI", "Testuj tryb", the test call):
-    /// the key field lives in the "Poprawianie przez AI" panel on Modele, not in Ustawienia.
+    /// the key field lives in Modele > Zaawansowane, not in Ustawienia; Pro needs no key.
     static var missingKeyMessage: String {
-        String(localized: "Brak klucza AI. Dodaj go na ekranie Modele, w panelu Poprawianie przez AI.")
+        String(localized: "Brak dostępu do AI. Przejdź na Pro albo dodaj własny klucz w Modele > Zaawansowane.")
     }
 }

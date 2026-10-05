@@ -1,80 +1,279 @@
 import AppKit
 import SwiftUI
 
-/// "Modele": the Captylo Pro card (`ProStatusCard`), speech engine (local model download /
-/// ElevenLabs key, language), the "Tryby AI" list (`AIModesPanel`) and AI cleanup (master switch,
-/// OpenRouter key, model picker, test call), as Dusk Glass panels. With Pro the cloud and AI work
-/// without keys; an own key still wins (`CloudRouter`), and the captions say so.
+/// "Modele" in two tabs (`SettingsLevel`). "Podstawowe": the Captylo Pro card (`ProStatusCard`),
+/// the speech engine (local model download, where the cloud audio goes, language), the "Tryby AI"
+/// list (`AIModesPanel`) and AI cleanup (master switch, the model in use and where it runs, test
+/// call). "Zaawansowane": the own keys, the cloud source ("Chmura Captylo" or the own key) and the
+/// model list. With Pro the cloud and AI run on Captylo by default, even with own keys saved
+/// (`AppSettings.sttCaptylo` / `aiCaptylo`, `CloudRouter`); "Podstawowe" always says which one runs,
+/// so a hidden key never sends anything unseen.
 @MainActor
 struct ModelsView: View {
     static let elevenLabsKeysURL = URL(string: "https://elevenlabs.io/app/settings/api-keys")!
     static let openRouterKeysURL = URL(string: "https://openrouter.ai/settings/keys")!
 
     @Environment(AppState.self) private var appState
-    /// Whether an own AI key is saved: without one, Pro lets Captylo pick the model.
-    @State private var hasOwnAIKey = true
+    @State private var level: SettingsLevel = .basic
+    /// Whether own keys are saved (read on appear, updated by the key fields).
+    @State private var hasOwnCloudKey = false
+    @State private var hasOwnAIKey = false
 
     var body: some View {
+        ToolPage(subtitle: "Silnik, który zamienia mowę na tekst, i opcjonalne poprawianie przez AI.") {
+            SettingsLevelPicker(level: $level)
+        } content: {
+            switch level {
+            case .basic: basic
+            case .advanced: advanced
+            }
+        }
+        .onAppear {
+            hasOwnCloudKey = Self.isSaved(appState.keyStore.get(KeyStore.Account.elevenLabs))
+            hasOwnAIKey = Self.isSaved(appState.keyStore.get(KeyStore.Account.openRouter))
+        }
+    }
+
+    private static func isSaved(_ key: String?) -> Bool {
+        !(key ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var showAdvanced: () -> Void {
+        { withAnimation(GlassMotion.spring) { level = .advanced } }
+    }
+
+    @ViewBuilder
+    private var basic: some View {
         @Bindable var settings = appState.settings
         let isPro = appState.account.isPro
 
-        ToolPage(subtitle: "Silnik, który zamienia mowę na tekst, i opcjonalne poprawianie przez AI.") {
-            ProStatusCard(account: appState.account)
+        ProStatusCard(account: appState.account)
 
-            GlassPanel {
-                GlassSectionHeader("Silnik mowy", systemImage: "waveform")
-                GlassSegmentedPicker(selection: $settings.sttEngine, segments: [
-                    GlassSegment(STTEngine.local, "Lokalnie", systemImage: "cpu"),
-                    GlassSegment(STTEngine.elevenLabs, "Chmura", systemImage: "cloud"),
-                ])
-                .accessibilityLabel(Text("Silnik"))
+        GlassPanel {
+            GlassSectionHeader("Silnik mowy", systemImage: "waveform")
+            GlassSegmentedPicker(selection: $settings.sttEngine, segments: [
+                GlassSegment(STTEngine.local, "Lokalnie", systemImage: "cpu"),
+                GlassSegment(STTEngine.elevenLabs, "Chmura", systemImage: "cloud"),
+            ])
+            .accessibilityLabel(Text("Silnik"))
 
-                if settings.sttEngine == .local {
-                    LocalModelSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: false)
-                } else {
-                    ElevenLabsSection(keyStore: appState.keyStore, client: appState.elevenLabs, isPro: isPro)
-                    // The cloud path still uses the local model for the fallback and the live
-                    // preview, so it stays manageable without switching engines.
-                    GlassRowSeparator()
-                    LocalModelSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: true)
-                }
-                if appState.modelStore.hasLegacyParakeet {
-                    GlassRowSeparator()
-                    LegacyParakeetRow(store: appState.modelStore)
-                }
-
+            if settings.sttEngine == .local {
+                LocalModelSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: false)
+            } else {
+                CloudSummary(
+                    source: CloudSource(isPro: isPro, prefersCaptylo: settings.sttCaptylo, hasOwnKey: hasOwnCloudKey),
+                    onChange: showAdvanced
+                )
+                // The cloud path still uses the local model for the fallback and the live
+                // preview, so it stays manageable without switching engines.
                 GlassRowSeparator()
-                LanguagePicker(language: $settings.language)
+                LocalModelSection(store: appState.modelStore, detector: appState.speechDetectorStatus, showsCloudNote: true)
             }
-            .animation(GlassMotion.spring, value: settings.sttEngine)
-
-            // The modes come before the tall OpenRouter panel (its model list runs past the
-            // window), so the owner reaches them without scrolling two screens.
-            AIModesPanel(settings: settings, tester: appState.modeTester)
-
-            GlassPanel {
-                GlassSectionHeader("Poprawianie przez AI", systemImage: "sparkles")
-                GlassToggleRow("Poprawiaj transkrypcję przez AI", systemImage: "wand.and.stars", isOn: $settings.aiEnabled)
+            if appState.modelStore.hasLegacyParakeet {
                 GlassRowSeparator()
-                OpenRouterKeySection(
-                    keyStore: appState.keyStore,
-                    enhancer: appState.enhancer,
-                    models: appState.openRouterModels,
-                    settings: settings,
-                    isPro: isPro,
-                    onKeyPresence: { hasOwnAIKey = $0 }
-                )
+                LegacyParakeetRow(store: appState.modelStore)
+            }
+
+            GlassRowSeparator()
+            LanguagePicker(language: $settings.language)
+        }
+        .animation(GlassMotion.spring, value: settings.sttEngine)
+
+        AIModesPanel(settings: settings, tester: appState.modeTester)
+
+        GlassPanel {
+            GlassSectionHeader("Poprawianie przez AI", systemImage: "sparkles")
+            GlassToggleRow("Poprawiaj transkrypcję przez AI", systemImage: "wand.and.stars", isOn: $settings.aiEnabled)
+            GlassRowSeparator()
+            AISummary(
+                source: CloudSource(isPro: isPro, prefersCaptylo: settings.aiCaptylo, hasOwnKey: hasOwnAIKey),
+                models: appState.openRouterModels,
+                model: settings.aiModel,
+                onChange: showAdvanced
+            )
+            TestButtonRow(enhancer: appState.enhancer, model: settings.aiModel)
+        }
+    }
+
+    @ViewBuilder
+    private var advanced: some View {
+        @Bindable var settings = appState.settings
+        let isPro = appState.account.isPro
+
+        GlassPanel {
+            GlassSectionHeader("Transkrypcja w chmurze", systemImage: "cloud")
+            ToolCaption("Własne klucze są opcjonalne. Z kluczem nagrania i tekst idą z Twojego Maca prosto do dostawcy, a klucz zostaje w pęku kluczy macOS.")
+                .padding(.horizontal, GlassTokens.Padding.rowHorizontal)
+            if isPro {
+                // Pro: "Chmura Captylo" first; the own key only once one is saved.
+                SourcePicker(captylo: $settings.sttCaptylo, hasOwnKey: hasOwnCloudKey, captyloName: String(localized: "Chmura Captylo"))
                 GlassRowSeparator()
-                // Pro: Captylo AI first; the own key's models below it only while a key is saved.
-                ModelPicker(
-                    models: appState.openRouterModels,
-                    selection: $settings.aiModel,
-                    captylo: isPro ? $settings.aiCaptylo : nil,
-                    showsModels: !isPro || hasOwnAIKey
-                )
-                TestButtonRow(enhancer: appState.enhancer, model: settings.aiModel)
+            }
+            ElevenLabsSection(
+                keyStore: appState.keyStore,
+                client: appState.elevenLabs,
+                settings: settings,
+                isPro: isPro,
+                onKeyPresence: { hasOwnCloudKey = $0 }
+            )
+            if settings.sttEngine == .local {
+                ToolCaption("Teraz dyktujesz lokalnie. Chmurę włączysz w zakładce Podstawowe, w Silniku mowy.")
+                    .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             }
         }
+
+        GlassPanel {
+            GlassSectionHeader("Klucz i model AI", systemImage: "sparkles")
+            OpenRouterKeySection(
+                keyStore: appState.keyStore,
+                enhancer: appState.enhancer,
+                models: appState.openRouterModels,
+                settings: settings,
+                isPro: isPro,
+                onKeyPresence: { hasOwnAIKey = $0 }
+            )
+            GlassRowSeparator()
+            // Pro: Captylo AI first; the own key's models below it only while a key is saved.
+            ModelPicker(
+                models: appState.openRouterModels,
+                selection: $settings.aiModel,
+                captylo: isPro ? $settings.aiCaptylo : nil,
+                showsModels: !isPro || hasOwnAIKey
+            )
+            TestButtonRow(enhancer: appState.enhancer, model: settings.aiModel)
+        }
+    }
+}
+
+// MARK: - Where the cloud and AI run
+
+/// What runs a cloud service (transcription or AI) right now, the same rule as `CloudRouter`:
+/// Pro with the Captylo choice (or without an own key) = Captylo, else the own key, else nothing.
+struct CloudSource: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case captylo
+        case ownKey
+        case none
+    }
+
+    let kind: Kind
+
+    init(isPro: Bool, prefersCaptylo: Bool, hasOwnKey: Bool) {
+        if isPro, prefersCaptylo || !hasOwnKey {
+            kind = .captylo
+        } else if hasOwnKey {
+            kind = .ownKey
+        } else {
+            kind = .none
+        }
+    }
+}
+
+/// "Podstawowe", cloud engine: where the recordings go, with "Zmień" / "Dodaj klucz" opening
+/// "Zaawansowane".
+@MainActor
+private struct CloudSummary: View {
+    let source: CloudSource
+    let onChange: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            GlassRow(title: Text("Transkrypcja w chmurze"), subtitle: subtitle, systemImage: "cloud") {
+                Button(source.kind == .none ? "Dodaj klucz" : "Zmień", action: onChange)
+                    .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+            }
+            ToolCaption(caption)
+                .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+        }
+    }
+
+    private var subtitle: Text {
+        switch source.kind {
+        case .captylo: return Text("Chmura Captylo, w ramach Pro")
+        case .ownKey: return Text("Twój klucz API chmury")
+        case .none: return Text("Chmura działa w Pro albo z własnym kluczem.")
+        }
+    }
+
+    private var caption: LocalizedStringKey {
+        switch source.kind {
+        case .captylo: return "Nagrania idą do transkrypcji przez Captylo. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany."
+        case .ownKey: return "Nagrania idą z Twojego Maca prosto do dostawcy chmury. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany."
+        case .none: return "Do tego czasu Captylo przepisuje nagrania na Macu, modelem lokalnym."
+        }
+    }
+}
+
+/// "Podstawowe", AI cleanup: the model in use and where the text goes, with "Zmień" /
+/// "Dodaj klucz" opening "Zaawansowane".
+@MainActor
+private struct AISummary: View {
+    let source: CloudSource
+    let models: OpenRouterModels
+    let model: String
+    let onChange: () -> Void
+
+    var body: some View {
+        GlassRow(title: Text("Model"), subtitle: subtitle, systemImage: "brain") {
+            Button(source.kind == .none ? "Dodaj klucz" : "Zmień", action: onChange)
+                .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+        }
+        .task {
+            await models.refresh()
+        }
+    }
+
+    private var subtitle: Text {
+        switch source.kind {
+        case .captylo:
+            return Text("\(Enhancer.relayModelName), nasz model w ramach Pro")
+        case .ownKey:
+            let name = models.models.first { $0.id == model }?.name ?? model
+            return Text("\(name), przez Twój klucz API do AI")
+        case .none:
+            return Text("Poprawianie przez AI działa w Pro albo z własnym kluczem.")
+        }
+    }
+}
+
+/// "Zaawansowane", Pro: Captylo's own service first ("Chmura Captylo"), then the own key, which
+/// can be picked only once one is saved below.
+@MainActor
+private struct SourcePicker: View {
+    @Binding var captylo: Bool
+    let hasOwnKey: Bool
+    let captyloName: String
+
+    private var usesCaptylo: Bool { captylo || !hasOwnKey }
+
+    var body: some View {
+        VStack(spacing: 2) {
+            ModelRow(
+                name: captyloName,
+                detail: String(localized: "W ramach Pro, bez klucza"),
+                detailIsID: false,
+                trailing: String(localized: "w Pro"),
+                symbol: "sparkles",
+                isSelected: usesCaptylo
+            ) {
+                withAnimation(GlassMotion.selection) { captylo = true }
+            }
+            ModelRow(
+                name: String(localized: "Własny klucz"),
+                detail: hasOwnKey ? String(localized: "Prosto do dostawcy, z Twojego Maca") : String(localized: "Najpierw zapisz klucz poniżej"),
+                detailIsID: false,
+                trailing: "",
+                symbol: nil,
+                isSelected: !usesCaptylo
+            ) {
+                withAnimation(GlassMotion.selection) { captylo = false }
+            }
+            .disabled(!hasOwnKey)
+            .opacity(hasOwnKey ? 1 : 0.5)
+        }
+        .padding(6)
+        .glassSurface(.card, cornerRadius: GlassTokens.Radius.card, shadow: false)
+        .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
     }
 }
 
@@ -358,8 +557,11 @@ private extension View {
 private struct ElevenLabsSection: View {
     let keyStore: KeyStore
     let client: ElevenLabsSTT
-    /// Pro sends the cloud through Captylo when no own key is saved.
+    let settings: AppSettings
+    /// Pro sends the cloud through Captylo unless the own key is chosen above.
     let isPro: Bool
+    /// Whether an own key is saved (on appear, after "Zapisz" and after "Usuń klucz").
+    let onKeyPresence: (Bool) -> Void
 
     @State private var key = ""
     @State private var isSaved = false
@@ -384,16 +586,15 @@ private struct ElevenLabsSection: View {
                 onVerify: verify,
                 onRemove: remove
             )
-            ToolCaption("Nagrania są wysyłane do transkrypcji w chmurze. Gdy chmura nie odpowie, Captylo użyje modelu lokalnego, jeśli jest pobrany.")
-                .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
-            if isPro {
-                ToolCaption(isSaved ? "Własny klucz ma pierwszeństwo przed Pro." : "W Pro bez własnego klucza chmura działa przez Captylo.")
+            if isPro, isSaved {
+                ToolCaption("Z własnym kluczem wybierzesz powyżej, czy chmura działa przez Captylo, czy przez Twój klucz.")
                     .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             }
         }
         .onAppear {
             key = keyStore.get(KeyStore.Account.elevenLabs) ?? ""
             isSaved = !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            onKeyPresence(isSaved)
         }
     }
 
@@ -401,6 +602,7 @@ private struct ElevenLabsSection: View {
         do {
             try keyStore.set(key.trimmingCharacters(in: .whitespacesAndNewlines), account: KeyStore.Account.elevenLabs)
             isSaved = true
+            onKeyPresence(true)
             status = (String(localized: "Klucz zapisany w pęku kluczy."), .success)
         } catch {
             status = ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription, .error)
@@ -412,7 +614,11 @@ private struct ElevenLabsSection: View {
             try keyStore.delete(account: KeyStore.Account.elevenLabs)
             key = ""
             isSaved = false
-            status = (String(localized: "Klucz usunięty."), .success)
+            onKeyPresence(false)
+            if isPro {
+                settings.sttCaptylo = true
+            }
+            status = (isPro ? String(localized: "Klucz usunięty. Działa Chmura Captylo.") : String(localized: "Klucz usunięty."), .success)
         } catch {
             status = ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription, .error)
         }
