@@ -6803,14 +6803,14 @@
         "en": { "stringUnit": { "state": "translated", "value": "Pro: the cloud and AI with no keys, AI meeting notes, speaker labels, Ask." } }
       }
     },
-    "Rocznie, 159 zł": {
+    "Rocznie, 329 zł": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Yearly, $48" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Yearly, $84" } }
       }
     },
-    "Miesięcznie, 24 zł": {
+    "Miesięcznie, 35 zł": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Monthly, $6" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Monthly, $9" } }
       }
     },
     "Odnawia się %@": {

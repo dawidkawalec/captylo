@@ -130,11 +130,11 @@ struct AccountPlanCard: View {
         VStack(alignment: .leading, spacing: 12) {
             ToolCaption("Pro: chmura i AI bez kluczy, notatki AI ze spotkań, rozpoznawanie mówców, Zapytaj.")
             HStack(spacing: 8) {
-                Button("Rocznie, 159 zł") {
+                Button("Rocznie, 329 zł") {
                     open { await account.checkoutURL(plan: .yearly) }
                 }
                 .buttonStyle(.glass(.accent, size: .small, shape: .capsule))
-                Button("Miesięcznie, 24 zł") {
+                Button("Miesięcznie, 35 zł") {
                     open { await account.checkoutURL(plan: .monthly) }
                 }
                 .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
