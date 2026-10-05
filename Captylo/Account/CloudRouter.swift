@@ -38,11 +38,26 @@ struct CloudRouter: Sendable {
                       relay: { CloudCredential.relay(token: $0, baseURL: relayBaseURL) })
     }
 
-    /// The AI route for `model` (used only with an own key); `.value(nil)` = no route.
-    func aiRoute(timeout: Duration, model: String) async -> KeyStore.Lookup<AIRoute> {
-        await resolve(KeyStore.Account.openRouter, timeout: timeout,
-                      own: { AIRoute(client: aiClient, key: $0, model: model) },
-                      relay: { AIRoute(client: OpenRouterClient(baseURL: relayBaseURL), key: $0, model: nil) })
+    /// The AI route for `model` (used only with an own key); `.value(nil)` = no route. With
+    /// `preferRelay` (Captylo AI chosen in Modele) a Pro session goes to the relay even when an
+    /// own key is saved; without Pro the own key still works.
+    func aiRoute(timeout: Duration, model: String, preferRelay: Bool = false) async -> KeyStore.Lookup<AIRoute> {
+        var remaining = timeout
+        if preferRelay {
+            let clock = ContinuousClock()
+            let start = clock.now
+            switch await relayAIRoute(timeout: timeout) {
+            case .timedOut:
+                return .timedOut
+            case .value(let route?):
+                return .value(route)
+            case .value(nil):
+                remaining = max(.zero, timeout - (clock.now - start))
+            }
+        }
+        return await resolve(KeyStore.Account.openRouter, timeout: remaining,
+                             own: { AIRoute(client: aiClient, key: $0, model: model) },
+                             relay: { AIRoute(client: OpenRouterClient(baseURL: relayBaseURL), key: $0, model: nil) })
     }
 
     /// The Pro relay only, whatever own key there is: the meeting AI runs as "Captylo AI" on the

@@ -65,18 +65,13 @@ struct ModelsView: View {
                     onKeyPresence: { hasOwnAIKey = $0 }
                 )
                 GlassRowSeparator()
-                if isPro, !hasOwnAIKey {
-                    // Pro without an own key runs on Captylo AI: there is no model to pick.
-                    GlassRow(
-                        title: Text("Model"),
-                        subtitle: Text("W Pro bez własnego klucza tekst poprawia Captylo AI. Z własnym kluczem wybierzesz inny model."),
-                        systemImage: "sparkles"
-                    ) {
-                        GlassBadge("Captylo AI", systemImage: "checkmark", tone: .success)
-                    }
-                } else {
-                    ModelPicker(models: appState.openRouterModels, selection: $settings.aiModel)
-                }
+                // Pro: Captylo AI first; the own key's models below it only while a key is saved.
+                ModelPicker(
+                    models: appState.openRouterModels,
+                    selection: $settings.aiModel,
+                    captylo: isPro ? $settings.aiCaptylo : nil,
+                    showsModels: !isPro || hasOwnAIKey
+                )
                 TestButtonRow(enhancer: appState.enhancer, model: settings.aiModel)
             }
         }
@@ -520,7 +515,7 @@ private struct OpenRouterKeySection: View {
                 onRemove: remove
             )
             if isPro, isSaved {
-                ToolCaption("Własny klucz ma pierwszeństwo przed Pro.")
+                ToolCaption("Z własnym kluczem wybierzesz poniżej inny model niż Captylo AI.")
                     .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
             }
         }
@@ -537,6 +532,9 @@ private struct OpenRouterKeySection: View {
             key = ""
             isSaved = false
             onKeyPresence(false)
+            if isPro {
+                settings.aiCaptylo = true
+            }
             status = (isPro ? String(localized: "Klucz usunięty. Działa Captylo AI.") : String(localized: "Klucz usunięty."), .success)
         } catch {
             status = ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription, .error)
@@ -581,10 +579,15 @@ private struct OpenRouterKeySection: View {
 
 // MARK: - Model picker
 
+/// "Model": the search field and the list of the own key's models. In Pro (`captylo` set) the
+/// list starts with Captylo AI, which `captylo` turns on; picking any other model turns it off.
+/// Without an own key in Pro (`showsModels` false) only Captylo AI is listed.
 @MainActor
 private struct ModelPicker: View {
     let models: OpenRouterModels
     @Binding var selection: String
+    var captylo: Binding<Bool>? = nil
+    var showsModels = true
 
     @State private var query = ""
 
@@ -592,10 +595,15 @@ private struct ModelPicker: View {
         models.search(query)
     }
 
+    private var usesCaptylo: Bool {
+        captylo?.wrappedValue == true || (captylo != nil && !showsModels)
+    }
+
     /// The chosen model by its display name ("GPT-4.1 Mini"), the raw id only while the list
     /// is not loaded yet; the ids stay in the list below.
     private var selectionName: String {
-        models.models.first { $0.id == selection }?.name ?? selection
+        if usesCaptylo { return Enhancer.relayModelName }
+        return models.models.first { $0.id == selection }?.name ?? selection
     }
 
     var body: some View {
@@ -606,7 +614,7 @@ private struct ModelPicker: View {
                 systemImage: "brain"
             ) {
                 HStack(spacing: 8) {
-                    if !models.models.isEmpty, !models.isKnown(id: selection) {
+                    if !usesCaptylo, !models.models.isEmpty, !models.isKnown(id: selection) {
                         GlassBadge("Model niedostępny", systemImage: "exclamationmark", tone: .danger)
                     }
                     if models.isLoading {
@@ -621,28 +629,49 @@ private struct ModelPicker: View {
                 }
             }
             VStack(alignment: .leading, spacing: 8) {
-                ToolSearchField("Szukaj modelu (np. gemini, haiku)", text: $query)
-                if let error = models.errorMessage {
-                    ToolStatusLine(text: error, tone: .error)
+                if showsModels {
+                    ToolSearchField("Szukaj modelu (np. gemini, haiku)", text: $query)
+                    if let error = models.errorMessage {
+                        ToolStatusLine(text: error, tone: .error)
+                    }
                 }
                 ScrollView {
                     LazyVStack(spacing: 2) {
-                        if results.isEmpty {
-                            Text(models.models.isEmpty ? "Lista modeli nie jest jeszcze pobrana." : "Brak modeli pasujących do zapytania.")
-                                .font(GlassFont.body)
-                                .foregroundStyle(GlassColor.textTertiary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(12)
-                        }
-                        ForEach(results) { model in
+                        if let captylo {
                             ModelRow(
-                                model: model,
-                                price: models.displayPrice(for: model),
-                                isQuickPick: OpenRouterModel.quickPickIDs.contains(model.id),
-                                isSelected: model.id == selection
+                                name: Enhancer.relayModelName,
+                                detail: String(localized: "Nasz model, w ramach Pro, bez klucza"),
+                                detailIsID: false,
+                                trailing: String(localized: "w Pro"),
+                                symbol: "sparkles",
+                                isSelected: usesCaptylo
                             ) {
                                 withAnimation(GlassMotion.selection) {
-                                    selection = model.id
+                                    captylo.wrappedValue = true
+                                }
+                            }
+                        }
+                        if showsModels {
+                            if results.isEmpty {
+                                Text(models.models.isEmpty ? "Lista modeli nie jest jeszcze pobrana." : "Brak modeli pasujących do zapytania.")
+                                    .font(GlassFont.body)
+                                    .foregroundStyle(GlassColor.textTertiary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(12)
+                            }
+                            ForEach(results) { model in
+                                ModelRow(
+                                    name: model.name,
+                                    detail: model.id,
+                                    detailIsID: true,
+                                    trailing: models.displayPrice(for: model),
+                                    symbol: OpenRouterModel.quickPickIDs.contains(model.id) ? "bolt.fill" : nil,
+                                    isSelected: !usesCaptylo && model.id == selection
+                                ) {
+                                    withAnimation(GlassMotion.selection) {
+                                        selection = model.id
+                                        captylo?.wrappedValue = false
+                                    }
                                 }
                             }
                         }
@@ -650,8 +679,11 @@ private struct ModelPicker: View {
                     .padding(6)
                 }
                 .scrollContentBackground(.hidden)
-                .frame(maxHeight: 250)
+                .frame(maxHeight: showsModels ? 250 : 70)
                 .glassSurface(.card, cornerRadius: GlassTokens.Radius.card, shadow: false)
+                if !showsModels {
+                    ToolCaption("Inny model wybierzesz, gdy zapiszesz własny klucz API do AI.")
+                }
             }
             .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
         }
@@ -661,11 +693,16 @@ private struct ModelPicker: View {
     }
 }
 
+/// One choice of the model list: name, a second line (the model id in monospace, or a plain
+/// note), the price or another short note on the right, an optional symbol after the name
+/// (the bolt of a quick pick, the sparkles of Captylo AI).
 @MainActor
 private struct ModelRow: View {
-    let model: OpenRouterModel
-    let price: String
-    let isQuickPick: Bool
+    let name: String
+    let detail: String
+    let detailIsID: Bool
+    let trailing: String
+    let symbol: String?
     let isSelected: Bool
     let onSelect: () -> Void
 
@@ -680,24 +717,24 @@ private struct ModelRow: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(verbatim: model.name)
+                        Text(verbatim: name)
                             .font(GlassFont.ui(13, isSelected ? .semibold : .regular))
                             .foregroundStyle(GlassColor.textPrimary)
                             .lineLimit(1)
-                        if isQuickPick {
-                            Image(systemName: "bolt.fill")
+                        if let symbol {
+                            Image(systemName: symbol)
                                 .font(.system(size: 9))
-                                .foregroundStyle(GlassColor.warning)
-                                .accessibilityLabel(Text("Polecany"))
+                                .foregroundStyle(symbol == "bolt.fill" ? GlassColor.warning : GlassColor.toggle)
+                                .accessibilityLabel(Text(symbol == "bolt.fill" ? "Polecany" : "Captylo AI"))
                         }
                     }
-                    Text(verbatim: model.id)
-                        .font(.system(size: 11, design: .monospaced))
+                    Text(verbatim: detail)
+                        .font(detailIsID ? .system(size: 11, design: .monospaced) : GlassFont.ui(11))
                         .foregroundStyle(GlassColor.textSecondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                Text(verbatim: price)
+                Text(verbatim: trailing)
                     .font(GlassFont.ui(12).monospacedDigit())
                     .foregroundStyle(GlassColor.textSecondary)
             }

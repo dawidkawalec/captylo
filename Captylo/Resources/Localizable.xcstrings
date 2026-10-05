@@ -6968,9 +6968,34 @@
         "en": { "stringUnit": { "state": "translated", "value": "No access to the meeting AI. Turn on Captylo Pro." } }
       }
     },
-    "Captylo Pro: chmura i AI działają bez kluczy. Własny klucz poniżej ma pierwszeństwo.": {
+    "Captylo Pro: chmura i Captylo AI działają bez kluczy. Model AI wybierasz poniżej.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Captylo Pro: the cloud and AI work without keys. Your own key below comes first." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo Pro: the cloud and Captylo AI work without keys. Pick the AI model below." } }
+      }
+    },
+    "Z własnym kluczem wybierzesz poniżej inny model niż Captylo AI.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "With your own key you can pick a model other than Captylo AI below." } }
+      }
+    },
+    "Nasz model, w ramach Pro, bez klucza": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Our model, included in Pro, no key needed" } }
+      }
+    },
+    "bez zmian": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "unchanged" } }
+      }
+    },
+    "w Pro": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "in Pro" } }
+      }
+    },
+    "Inny model wybierzesz, gdy zapiszesz własny klucz API do AI.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Save your own AI API key to pick another model." } }
       }
     },
     "Masz plan Free. Pro daje chmurę i AI bez kluczy.": {
@@ -7001,11 +7026,6 @@
     "Własny klucz ma pierwszeństwo przed Pro.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Your own key comes before Pro." } }
-      }
-    },
-    "W Pro bez własnego klucza tekst poprawia Captylo AI. Z własnym kluczem wybierzesz inny model.": {
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "With Pro and no key of your own, Captylo AI cleans up the text. With your own key you can pick another model." } }
       }
     },
     "Captylo AI": {

@@ -120,7 +120,8 @@ struct AppSettingsTests {
         #expect(raw.contains("meetings.calendarPromptDismissed"))
         #expect(raw.contains("account.cache"))
         #expect(raw.contains("account.refreshedAt"))
-        #expect(AppSettings.keys.count == 47)
+        #expect(raw.contains("ai.captylo"))
+        #expect(AppSettings.keys.count == 48)
     }
 
     @Test func accountCacheDefaultsEmptyAndPersists() throws {
@@ -186,6 +187,16 @@ struct AppSettingsTests {
         settings.reset()
         #expect(!settings.meetingsCalendar)
         #expect(settings.meetingsCalendarReminderMinutes == 1)
+    }
+
+    /// Captylo AI is the default AI model in Pro, so turning Pro on uses it even with an own key.
+    @Test func captyloAIIsOnByDefaultAndResets() throws {
+        let settings = try makeSettings()
+        #expect(settings.aiCaptylo)
+        settings.aiCaptylo = false
+        #expect(!settings.aiCaptylo)
+        settings.reset()
+        #expect(settings.aiCaptylo)
     }
 
     @Test func meetingTranscriptSettingsDefaultOff() throws {

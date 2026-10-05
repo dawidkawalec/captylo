@@ -99,6 +99,27 @@ struct AccountRouteTests {
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer \(Self.token)")
     }
 
+    /// Captylo AI chosen in Modele: Pro goes to the relay even with an own key; without Pro the
+    /// own key still works with its model; a slow account answer is a timeout.
+    @Test func captyloAIChoiceWinsOverTheOwnKeyOnlyInPro() async {
+        let pro = router(keys: [KeyStore.Account.openRouter: "sk-or-own"]) { _ in .value(Self.token) }
+        guard case .value(let relay?) = await pro.aiRoute(timeout: .seconds(1), model: "openai/gpt-4.1-mini", preferRelay: true) else {
+            Issue.record("expected the relay")
+            return
+        }
+        #expect(relay.isRelay)
+        #expect(relay.key == Self.token)
+        // Captylo AI off: the own key and its model, as before.
+        let own = await pro.aiRoute(timeout: .seconds(1), model: "openai/gpt-4.1-mini", preferRelay: false)
+        #expect(own == .value(AIRoute(client: OpenRouterClient(), key: "sk-or-own", model: "openai/gpt-4.1-mini")))
+
+        let free = router(keys: [KeyStore.Account.openRouter: "sk-or-own"])
+        let freeRoute = await free.aiRoute(timeout: .seconds(1), model: "openai/gpt-4.1-mini", preferRelay: true)
+        #expect(freeRoute == .value(AIRoute(client: OpenRouterClient(), key: "sk-or-own", model: "openai/gpt-4.1-mini")))
+        #expect(await router().aiRoute(timeout: .seconds(1), model: "m", preferRelay: true) == .value(nil))
+        #expect(await router { _ in .timedOut }.aiRoute(timeout: .seconds(1), model: "m", preferRelay: true) == .timedOut)
+    }
+
     /// The meeting AI: the relay only, an own AI key never counts; no Pro session is no route.
     @Test func relayAIRouteIgnoresTheOwnKey() async throws {
         let withKey = router(keys: [KeyStore.Account.openRouter: "sk-or-own"]) { _ in .value(Self.token) }

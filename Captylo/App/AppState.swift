@@ -139,6 +139,7 @@ final class AppState {
     @ObservationIgnored private let hotkeyRelay: HotkeyRelay
     /// The dictation AI route runs off the main actor, so it reads this snapshot of `settings.aiModel`.
     @ObservationIgnored private let aiModelSnapshot: OSAllocatedUnfairLock<String>
+    @ObservationIgnored private let aiCaptyloSnapshot: OSAllocatedUnfairLock<Bool>
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
     /// ⌃⌥⌘M, registered while "Skrót ⌃⌥⌘M" is on (`applyMeetingShortcut`).
     @ObservationIgnored private var meetingShortcut: GlobalShortcut?
@@ -201,11 +202,18 @@ final class AppState {
         openRouterModels = OpenRouterModels(settings: settings, client: openRouter)
         let modelSnapshot = OSAllocatedUnfairLock(initialState: settings.aiModel)
         aiModelSnapshot = modelSnapshot
+        let captyloSnapshot = OSAllocatedUnfairLock(initialState: settings.aiCaptylo)
+        aiCaptyloSnapshot = captyloSnapshot
         let modelsCache = settings.openRouterModelsCacheReader
         let reasoningPolicy: @Sendable (String) -> ReasoningPolicy = { ReasoningPolicy.lookup($0, inCache: modelsCache()) }
-        // Dictation, files and "Testuj tryb": the model chosen in Modele (own key only).
+        // Dictation, files and "Testuj tryb": Captylo AI in Pro while it is chosen in Modele,
+        // else the model chosen there with the own key (or the relay without one).
         let dictationRoute: @Sendable (Duration) async -> KeyStore.Lookup<AIRoute> = { timeout in
-            await cloudRouter.aiRoute(timeout: timeout, model: modelSnapshot.withLock { $0 })
+            await cloudRouter.aiRoute(
+                timeout: timeout,
+                model: modelSnapshot.withLock { $0 },
+                preferRelay: captyloSnapshot.withLock { $0 }
+            )
         }
         enhancer = Enhancer(
             client: openRouter,
@@ -754,6 +762,7 @@ final class AppState {
         withObservationTracking {
             _ = settings.hotkey
             _ = settings.aiModel
+            _ = settings.aiCaptylo
             _ = settings.paragraphs
             _ = settings.menuBarOnly
             _ = settings.meetingsShortcut
@@ -774,6 +783,8 @@ final class AppState {
         }
         let model = settings.aiModel
         aiModelSnapshot.withLock { $0 = model }
+        let captylo = settings.aiCaptylo
+        aiCaptyloSnapshot.withLock { $0 = captylo }
         if dictionary.paragraphs != settings.paragraphs {
             dictionary.setParagraphs(settings.paragraphs)
         }

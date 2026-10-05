@@ -13,6 +13,7 @@ final class AppSettings {
         case livePreview
         case aiEnabled = "ai.enabled"
         case aiModel = "ai.model"
+        case aiCaptylo = "ai.captylo"
         case aiPrompt = "ai.prompt"
         case aiModes = "ai.modes"
         case aiActiveModeID = "ai.activeModeID"
@@ -107,9 +108,18 @@ final class AppSettings {
         set { withMutation(keyPath: \.aiEnabled) { defaults.set(newValue, forKey: Key.aiEnabled.rawValue) } }
     }
 
+    /// The own key's model (`ai.model`); in Pro it runs only while `aiCaptylo` is off.
     var aiModel: String {
         get { track(\.aiModel); return string(.aiModel, default: OpenRouterModel.defaultID) }
         set { withMutation(keyPath: \.aiModel) { defaults.set(newValue, forKey: Key.aiModel.rawValue) } }
+    }
+
+    /// In Pro, dictation AI runs on Captylo AI (the relay), even with an own key saved: the first
+    /// row of the model list in Modele, on by default, so turning Pro on switches to Captylo AI.
+    /// Off = the own key's `aiModel`. Without Pro it changes nothing.
+    var aiCaptylo: Bool {
+        get { track(\.aiCaptylo); return bool(.aiCaptylo, default: true) }
+        set { withMutation(keyPath: \.aiCaptylo) { defaults.set(newValue, forKey: Key.aiCaptylo.rawValue) } }
     }
 
     /// Legacy single prompt from before "Tryby AI". Empty string = the default template. Only
