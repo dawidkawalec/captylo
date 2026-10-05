@@ -130,6 +130,54 @@ struct MeetingTranscriptImprovementTests {
         #expect(reread.length > 0)
     }
 
+    // MARK: Speech-only upload
+
+    private static func line(_ track: MeetingTrack, _ start: Double, _ end: Double, echo: Bool = false, text: String = "tekst") -> MeetingSegmentRecord {
+        MeetingSegmentRecord(meetingID: UUID(), track: track, start: start, end: end, text: text, isEcho: echo)
+    }
+
+    @Test func onlyTheTracksOwnSpeechIsPlannedPaddedAndJoined() {
+        let lines = [Self.line(.them, 10, 14), Self.line(.them, 15, 20), Self.line(.them, 60, 65),
+                     Self.line(.them, 30, 33, echo: true), Self.line(.them, 40, 41, text: "  ")]
+        // 10-14 and 15-20 are under 3 s apart: one stretch. Echo and empty lines are not sent.
+        #expect(SpeechOnlyUpload.plan(segments: lines, duration: 100) == .ranges([9.5...20.5, 59.5...65.5]))
+        // Padding never leaves the track.
+        #expect(SpeechOnlyUpload.plan(segments: [Self.line(.me, 0.1, 3.9)], duration: 20) == .ranges([0...4.4]))
+        #expect(SpeechOnlyUpload.plan(segments: [Self.line(.me, 16, 19.8)], duration: 20) == .ranges([15.5...20]))
+    }
+
+    @Test func aTrackThatSpeaksMostOfTheTimeOrHasNoLiveLinesGoesWhole() {
+        #expect(SpeechOnlyUpload.plan(segments: [Self.line(.me, 0, 90)], duration: 100) == .whole)
+        #expect(SpeechOnlyUpload.plan(segments: [], duration: 100) == .whole)
+        #expect(SpeechOnlyUpload.plan(segments: [Self.line(.me, 1, 2)], duration: 0) == .whole)
+        #expect(SpeechOnlyUpload.plan(segments: [Self.line(.me, 5, 9, echo: true)], duration: 100) == .nothing)
+    }
+
+    @Test func uploadTimesGoBackToTheMeetingClock() {
+        let map = UploadTimeMap(ranges: [9.5...20.5, 59.5...65.5])
+        // The second stretch starts after 11 s of the first and 0.6 s of separator.
+        #expect(map.pieces.map(\.upload) == [0, 11.6])
+        #expect(map.original(0) == 9.5)
+        #expect(map.original(5) == 14.5)
+        #expect(abs(map.original(11.3) - 20.5) < 1e-9) // inside the separator: the end of the stretch before
+        #expect(abs(map.original(12.6) - 60.5) < 1e-9)
+        let words = map.mapped([Self.word("Tak.", 12.0, 12.4)])
+        #expect(abs(words[0].start - 59.9) < 1e-9 && abs(words[0].end - 60.3) < 1e-9)
+    }
+
+    @Test func onlyTheStretchesAreEncodedWithSilenceBetween() throws {
+        let folder = Self.folder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appending(path: "them.caf")
+        try Self.writeTrack(source, seconds: 4)
+        #expect(abs(try TrackUploadEncoder.duration(of: source) - 4) < 0.01)
+        let encoded = try TrackUploadEncoder.encode(source, into: folder.appending(path: "out"), ranges: [0.5...1.5, 2.5...3.0])
+        #expect(abs(encoded.seconds - (1.0 + SpeechOnlyUpload.separator + 0.5)) < 0.01)
+        #expect(encoded.timeMap == UploadTimeMap(ranges: [0.5...1.5, 2.5...3.0]))
+        let whole = try TrackUploadEncoder.encode(source, into: folder.appending(path: "out"))
+        #expect(whole.timeMap == nil)
+    }
+
     // MARK: Cloud processor
 
     private struct CloudFixture {
@@ -166,28 +214,34 @@ struct MeetingTranscriptImprovementTests {
         )
     }
 
-    @Test func theCloudTranscriptReplacesBothTracksAndMarksEcho() async throws {
+    @Test func theCloudTranscriptReplacesBothTracksFromTheirSpeechOnly() async throws {
         let fixture = try await Self.cloudFixture()
         defer { try? FileManager.default.removeItem(at: fixture.folder) }
         let requests = OSAllocatedUnfairLock<[STTRequest]>(initialState: [])
         let processor = Self.cloud(fixture) { request, mimeType in
             requests.withLock { $0.append(request) }
             #expect(["audio/mp4", "audio/wav"].contains(mimeType))
+            // Times on the upload's clock: me sends 0-2 s, them 1.5-4 s of the meeting.
             if request.fileName.hasPrefix("me") {
-                // Without headphones: the mic also heard the other side.
-                return [Self.word("Dam", 0.2, 0.5), Self.word("znać", 0.5, 0.8), Self.word("Annie.", 0.8, 1.4),
-                        Self.word("Wyślę", 2.5, 2.9), Self.word("ofertę", 2.9, 3.2), Self.word("jutro.", 3.2, 3.6)]
+                return [Self.word("Dam", 0.2, 0.5), Self.word("znać", 0.5, 0.8), Self.word("Annie.", 0.8, 1.4)]
             }
-            return [Self.word("Wyślę", 2, 2.4), Self.word("ofertę", 2.4, 2.8), Self.word("jutro.", 2.8, 3.3)]
+            return [Self.word("Wyślę", 0.5, 0.9), Self.word("ofertę", 0.9, 1.3), Self.word("jutro.", 1.3, 1.8)]
         }
         #expect(await processor.run(meetingID: fixture.meetingID))
 
         let sent = requests.withLock { $0 }
         #expect(sent.count == 2)
         #expect(sent.allSatisfy { $0.language == "pl" && $0.vocabulary == ["Anna"] && $0.model == "scribe_v2" })
+        // Only the live lines' stretches (padded) are paid for, not the 4 s tracks.
+        let me = try #require(sent.first { $0.fileName.hasPrefix("me") })
+        let them = try #require(sent.first { $0.fileName.hasPrefix("them") })
+        #expect(abs(me.audioSeconds - 2.0) < 0.05)
+        #expect(abs(them.audioSeconds - 2.5) < 0.05)
         let segments = try await fixture.database.segments(meetingID: fixture.meetingID)
         #expect(segments.filter { !$0.isEcho }.map(\.text) == ["Dam znać Annie.", "Wyślę ofertę jutro."])
-        #expect(segments.contains { $0.track == .me && $0.isEcho && $0.text == "Wyślę ofertę jutro." })
+        let reply = try #require(segments.first { $0.track == .them })
+        #expect(abs(reply.start - 2.0) < 0.001)
+        #expect(abs(reply.end - 3.3) < 0.001)
         let meeting = try #require(try await fixture.database.meeting(id: fixture.meetingID))
         #expect(meeting.transcriptModel == "scribe_v2")
         #expect(meeting.transcriptError == nil)
@@ -195,6 +249,30 @@ struct MeetingTranscriptImprovementTests {
         // The encoded uploads are gone.
         let left = (try? FileManager.default.contentsOfDirectory(atPath: fixture.folder.appending(path: "upload").path(percentEncoded: false))) ?? []
         #expect(left.isEmpty)
+    }
+
+    @Test func aTrackThatOnlyHeardEchoIsNotSent() async throws {
+        let database = try Self.database()
+        let meeting = MeetingRecord(title: "Słuchawki")
+        try await database.createMeeting(meeting)
+        try await database.appendSegment(MeetingSegmentRecord(meetingID: meeting.id, track: .me, start: 2, end: 3.5, text: "wyśle oferte jutro", isEcho: true))
+        try await database.appendSegment(MeetingSegmentRecord(meetingID: meeting.id, track: .them, start: 2, end: 3.5, text: "wyśle oferte jutro"))
+        let folder = Self.folder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for track in MeetingTrack.allCases {
+            try Self.writeTrack(folder.appending(path: track.fileName), seconds: 4)
+        }
+        let fixture = CloudFixture(database: database, meetingID: meeting.id, folder: folder)
+        let sent = OSAllocatedUnfairLock<[String]>(initialState: [])
+        let processor = Self.cloud(fixture) { request, _ in
+            sent.withLock { $0.append(request.fileName) }
+            return [Self.word("Wyślę", 0.5, 0.9), Self.word("ofertę", 0.9, 1.3), Self.word("jutro.", 1.3, 1.8)]
+        }
+        #expect(await processor.run(meetingID: meeting.id))
+        #expect(sent.withLock { $0 }.allSatisfy { $0.hasPrefix("them") })
+        #expect(sent.withLock { $0 }.count == 1)
+        let segments = try await database.segments(meetingID: meeting.id)
+        #expect(segments.contains { $0.track == .me && $0.isEcho && $0.text == "wyśle oferte jutro" })
     }
 
     @Test func aFailedOrEmptyCloudTrackKeepsTheLiveLines() async throws {

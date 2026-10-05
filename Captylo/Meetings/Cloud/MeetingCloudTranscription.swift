@@ -1,8 +1,10 @@
 import Foundation
 import os
 
-/// After a meeting (Pro, "Dokładniejszy transkrypt z chmury"): each track file goes to the cloud
+/// After a meeting (Pro, "Dokładniejszy transkrypt z chmury"): each track goes to the cloud
 /// engine with word times, and its transcript replaces the live local segments of that track.
+/// Only the stretches where the live pass heard that track speak are sent (`SpeechOnlyUpload`),
+/// so the silence of a call is not paid for; a track with only echo is not sent at all.
 /// Runs first among the post-processors, so the speaker labels, the AI fixes and the AI notes all
 /// work on the cloud text. A track that fails, or comes back empty where the live pass heard
 /// speech, keeps its live segments; the meeting row says which engine made the transcript and
@@ -50,7 +52,8 @@ struct MeetingCloudTranscription: MeetingPostProcessing {
             let url = trackURL(meetingID, track)
             guard FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) else { continue }
             do {
-                let segments = try await transcribeTrack(url, track: track, meetingID: meetingID, language: language, vocabulary: vocabulary)
+                let live = existing.filter { $0.track == track }
+                let segments = try await transcribeTrack(url, track: track, live: live, meetingID: meetingID, language: language, vocabulary: vocabulary)
                 guard let segments else { continue }
                 if segments.isEmpty, existing.contains(where: { $0.track == track && !$0.isEcho }) {
                     Log.transcription.notice("Cloud meeting transcript of \(track.rawValue, privacy: .public) came back empty, keeping the live one")
@@ -91,12 +94,20 @@ struct MeetingCloudTranscription: MeetingPostProcessing {
         return didReplace
     }
 
-    /// The segments of one track, or nil when it is too short to send.
-    private func transcribeTrack(_ url: URL, track: MeetingTrack, meetingID: UUID, language: String?, vocabulary: [String]) async throws -> [MeetingSegmentRecord]? {
+    /// The segments of one track, or nil when there is nothing to send (too short, or only echo).
+    private func transcribeTrack(_ url: URL, track: MeetingTrack, live: [MeetingSegmentRecord], meetingID: UUID, language: String?, vocabulary: [String]) async throws -> [MeetingSegmentRecord]? {
         let folder = workFolder
-        let encoded = try await Task.detached(priority: .utility) {
-            try TrackUploadEncoder.encode(url, into: folder)
+        let encoded: TrackUploadEncoder.Encoded? = try await Task.detached(priority: .utility) {
+            switch SpeechOnlyUpload.plan(segments: live, duration: try TrackUploadEncoder.duration(of: url)) {
+            case .nothing:
+                return nil
+            case .whole:
+                return try TrackUploadEncoder.encode(url, into: folder)
+            case .ranges(let ranges):
+                return try TrackUploadEncoder.encode(url, into: folder, ranges: ranges)
+            }
         }.value
+        guard let encoded else { return nil }
         defer { try? FileManager.default.removeItem(at: encoded.url) }
         guard encoded.seconds >= Self.minimumSeconds else { return nil }
         let data = try Data(contentsOf: encoded.url)
@@ -108,7 +119,8 @@ struct MeetingCloudTranscription: MeetingPostProcessing {
             vocabulary: vocabulary,
             audioSeconds: encoded.seconds
         )
-        let words = try await transcribe(request, encoded.mimeType)
+        let uploaded = try await transcribe(request, encoded.mimeType)
+        let words = encoded.timeMap?.mapped(uploaded) ?? uploaded
         return CloudTranscriptSegments.build(words, meetingID: meetingID, track: track)
     }
 }
