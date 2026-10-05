@@ -28,7 +28,7 @@ struct AccountSignInForm: View {
 
     private var emailStep: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ToolCaption("Zaloguj się, żeby używać Captylo Pro: chmury i AI bez własnych kluczy.")
+            ToolCaption("Zaloguj się, żeby używać Captylo Pro: chmury i AI bez własnych kluczy. Nowe konto dostaje 7 dni Pro za darmo, bez karty.")
             HStack(spacing: 8) {
                 TextField("Adres e-mail", text: $email, prompt: Text(verbatim: "twoj@email.pl"))
                     .textFieldStyle(.glass)

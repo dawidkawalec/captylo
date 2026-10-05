@@ -32,9 +32,30 @@ struct AccountInfo: Codable, Sendable, Equatable {
     var status: String?
     var periodEnd: Date?
     var cancelAtPeriodEnd: Bool
+    /// Pro comes from the 7-day reverse trial of a new account (no subscription yet). Optional,
+    /// so an account cached by an older version still decodes.
+    var trial: Bool?
+    /// When the trial ends or ended; nil for an account that never had one.
+    var trialEndsAt: Date?
     var usage: AccountUsage
 
     var isPro: Bool { plan == .pro }
+
+    /// Pro from the trial, as the server said at the last refresh.
+    var isTrial: Bool { trial == true }
+
+    /// Pro right now: a trial is over at its end even before the next refresh (offline).
+    func isPro(at now: Date) -> Bool {
+        guard isPro else { return false }
+        if isTrial, let trialEndsAt, now >= trialEndsAt { return false }
+        return true
+    }
+
+    /// The account had the trial and it is over (no subscription since).
+    func trialEnded(at now: Date) -> Bool {
+        guard let trialEndsAt, !(isPro && !isTrial) else { return false }
+        return now >= trialEndsAt
+    }
 
     /// The last payment failed and Stripe keeps retrying the card (`past_due`, `unpaid`): the
     /// card offers "Zarządzaj subskrypcją" to update it, never a second subscription.

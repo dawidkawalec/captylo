@@ -5,7 +5,8 @@ import SwiftUI
 /// usage against the fair-use caps and "Zarządzaj subskrypcją" (the Portal). A Pro plan the app
 /// could not confirm for over 7 days says so. A failed payment Stripe still retries (`past_due`,
 /// `unpaid`) says so and offers only the Portal to update the card, never a second purchase.
-/// "Wyloguj" in all of them.
+/// The 7-day trial of a new account shows its end, the usage against the trial's caps and the
+/// purchase buttons; after it ends the Free offer says so. "Wyloguj" in all of them.
 @MainActor
 struct AccountPlanCard: View {
     let account: AccountStore
@@ -13,10 +14,16 @@ struct AccountPlanCard: View {
 
     @Environment(\.openURL) private var openURL
 
+    /// Pro right now (a trial past its end is not, even before the next refresh).
+    private var isPro: Bool { info.isPro(at: Date()) }
+    private var isTrial: Bool { isPro && info.isTrial }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
-            if info.isPro {
+            if isTrial {
+                trialDetails
+            } else if isPro {
                 proDetails
             } else if info.needsPaymentUpdate {
                 paymentIssue
@@ -33,7 +40,7 @@ struct AccountPlanCard: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: info.isPro ? "sparkles" : "person")
+            Image(systemName: isPro ? "sparkles" : "person")
                 .font(.system(size: GlassTokens.Size.rowIcon))
                 .foregroundStyle(GlassColor.icon)
                 .frame(width: GlassTokens.Size.rowIconColumn)
@@ -44,12 +51,24 @@ struct AccountPlanCard: View {
                     .foregroundStyle(GlassColor.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text(info.isPro ? "Plan Pro" : "Plan Free")
+                Text(isTrial ? "Pro na próbę" : (isPro ? "Plan Pro" : "Plan Free"))
                     .font(GlassFont.caption)
                     .foregroundStyle(GlassColor.textSecondary)
             }
             Spacer(minLength: 8)
-            GlassBadge(title: Text(verbatim: info.isPro ? "Pro" : "Free"), tone: info.isPro ? .accent : .neutral)
+            GlassBadge(title: Text(verbatim: isPro ? "Pro" : "Free"), tone: isPro ? .accent : .neutral)
+        }
+    }
+
+    // MARK: Trial
+
+    private var trialDetails: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let ends = info.trialEndsAt {
+                ToolCaption(text: Text("Pro na próbę do \(Self.dateText(ends)). Potem wracasz do Free, chyba że wybierzesz Pro."))
+            }
+            usageLines
+            buyRow
         }
     }
 
@@ -61,14 +80,7 @@ struct AccountPlanCard: View {
                 let date = Self.dateText(periodEnd)
                 ToolCaption(text: info.cancelAtPeriodEnd ? Text("Wygasa \(date)") : Text("Odnawia się \(date)"))
             }
-            usageLine(
-                AccountUsageFormat.audio(info.usage.audioSeconds, limit: info.usage.audioSecondsLimit),
-                fraction: AccountUsageFormat.fraction(info.usage.audioSeconds, limit: info.usage.audioSecondsLimit)
-            )
-            usageLine(
-                AccountUsageFormat.tokens(info.usage.aiTokens, limit: info.usage.aiTokensLimit),
-                fraction: AccountUsageFormat.fraction(info.usage.aiTokens, limit: info.usage.aiTokensLimit)
-            )
+            usageLines
             if account.isStale {
                 ToolStatusLine(
                     text: String(localized: "Nie mogę sprawdzić subskrypcji. Pro wróci po połączeniu z internetem."),
@@ -114,6 +126,20 @@ struct AccountPlanCard: View {
         }
     }
 
+    /// This month's cloud and AI use against the caps (the trial's while on it).
+    private var usageLines: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            usageLine(
+                AccountUsageFormat.audio(info.usage.audioSeconds, limit: info.usage.audioSecondsLimit),
+                fraction: AccountUsageFormat.fraction(info.usage.audioSeconds, limit: info.usage.audioSecondsLimit)
+            )
+            usageLine(
+                AccountUsageFormat.tokens(info.usage.aiTokens, limit: info.usage.aiTokensLimit),
+                fraction: AccountUsageFormat.fraction(info.usage.aiTokens, limit: info.usage.aiTokensLimit)
+            )
+        }
+    }
+
     private func usageLine(_ text: String, fraction: Double) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(verbatim: text)
@@ -128,24 +154,32 @@ struct AccountPlanCard: View {
 
     private var freeOffer: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ToolCaption("Pro: chmura i AI bez kluczy, notatki AI ze spotkań, rozpoznawanie mówców, Zapytaj.")
-            HStack(spacing: 8) {
-                Button("Rocznie, 329 zł") {
-                    open { await account.checkoutURL(plan: .yearly) }
-                }
-                .buttonStyle(.glass(.accent, size: .small, shape: .capsule))
-                Button("Miesięcznie, 35 zł") {
-                    open { await account.checkoutURL(plan: .monthly) }
-                }
-                .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
-                if account.isBusy {
-                    ProgressView().controlSize(.mini)
-                }
-                Spacer(minLength: 8)
-                signOutButton
+            if info.trialEnded(at: Date()) {
+                ToolStatusLine(text: String(localized: "Okres próbny Pro się skończył."))
             }
-            .disabled(account.isBusy)
+            ToolCaption("Pro: chmura i AI bez kluczy, notatki AI ze spotkań, rozpoznawanie mówców, Zapytaj.")
+            buyRow
         }
+    }
+
+    /// "Rocznie" / "Miesięcznie" (Checkout in the browser) and "Wyloguj".
+    private var buyRow: some View {
+        HStack(spacing: 8) {
+            Button("Rocznie, 329 zł") {
+                open { await account.checkoutURL(plan: .yearly) }
+            }
+            .buttonStyle(.glass(.accent, size: .small, shape: .capsule))
+            Button("Miesięcznie, 35 zł") {
+                open { await account.checkoutURL(plan: .monthly) }
+            }
+            .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+            if account.isBusy {
+                ProgressView().controlSize(.mini)
+            }
+            Spacer(minLength: 8)
+            signOutButton
+        }
+        .disabled(account.isBusy)
     }
 
     // MARK: Shared

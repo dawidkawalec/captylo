@@ -6748,9 +6748,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Captylo account" } }
       }
     },
-    "Zaloguj się, żeby używać Captylo Pro: chmury i AI bez własnych kluczy.": {
+    "Zaloguj się, żeby używać Captylo Pro: chmury i AI bez własnych kluczy. Nowe konto dostaje 7 dni Pro za darmo, bez karty.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Sign in to use Captylo Pro: the cloud and AI with no keys of your own." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Sign in to use Captylo Pro: the cloud and AI with no keys of your own. A new account gets 7 days of Pro for free, no card needed." } }
       }
     },
     "Adres e-mail": {
@@ -7088,9 +7088,39 @@
         "en": { "stringUnit": { "state": "translated", "value": "You are on the Free plan. Pro gives you the cloud and AI without keys." } }
       }
     },
-    "Masz Captylo Pro? Zaloguj się w Ustawieniach.": {
+    "Zaloguj się, a nowe konto dostanie 7 dni Pro za darmo, bez karty.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Have Captylo Pro? Sign in in Settings." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Sign in and a new account gets 7 days of Pro for free, no card needed." } }
+      }
+    },
+    "Pro na próbę do %@: chmura i Captylo AI działają bez kluczy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pro trial until %@: the cloud and Captylo AI work without keys." } }
+      }
+    },
+    "Okres próbny Pro się skończył. Pro daje chmurę i AI bez kluczy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your Pro trial has ended. Pro gives you the cloud and AI with no keys." } }
+      }
+    },
+    "Okres próbny Pro się skończył.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your Pro trial has ended." } }
+      }
+    },
+    "Kup Pro": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Buy Pro" } }
+      }
+    },
+    "Pro na próbę": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pro trial" } }
+      }
+    },
+    "Pro na próbę do %@. Potem wracasz do Free, chyba że wybierzesz Pro.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pro trial until %@. After that you are back on Free unless you choose Pro." } }
       }
     },
     "Aktywne": {

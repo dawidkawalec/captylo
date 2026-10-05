@@ -190,6 +190,47 @@ struct AccountRouteTests {
         #expect(ProStatusCard.kind(state: .codeSent(email: "anna@example.com"), isPro: false, isStale: false) == .signedOut)
     }
 
+    /// The 7-day trial: Pro until its end, then Free with "Okres próbny Pro się skończył", also
+    /// before the next refresh (offline).
+    @Test func theTrialIsProUntilItsEndThenSaysItEnded() throws {
+        let ends = try AccountFixtures.date("2026-10-12T12:00:00Z")
+        var info = try AccountFixtures.freeInfo()
+        info.plan = .pro
+        info.trial = true
+        info.trialEndsAt = ends
+        let before = ends.addingTimeInterval(-60)
+        let after = ends.addingTimeInterval(60)
+        #expect(info.isPro(at: before))
+        #expect(!info.isPro(at: after))
+        #expect(!info.trialEnded(at: before))
+        #expect(info.trialEnded(at: after))
+        let state = AccountStore.State.signedIn(info)
+        #expect(ProStatusCard.kind(state: state, isPro: true, isStale: false, now: before) == .trial(ends: ends))
+        #expect(ProStatusCard.kind(state: state, isPro: false, isStale: false, now: after) == .trialEnded)
+
+        // The server's answer after the trial: Free, the end kept.
+        info.plan = .free
+        info.trial = false
+        #expect(info.trialEnded(at: after))
+        #expect(ProStatusCard.kind(state: .signedIn(info), isPro: false, isStale: false, now: after) == .trialEnded)
+
+        // A subscription bought later: Pro, the old trial end changes nothing.
+        info.plan = .pro
+        info.status = "active"
+        #expect(info.isPro(at: after))
+        #expect(!info.trialEnded(at: after))
+    }
+
+    @Test func anAccountCachedWithoutTrialFieldsStillDecodes() throws {
+        let info = try AccountFixtures.proInfo()
+        #expect(info.trial == nil && info.trialEndsAt == nil)
+        #expect(!info.isTrial && info.isPro(at: Date()))
+        let json = #"{"email":"a@b.pl","plan":"pro","status":null,"periodEnd":null,"cancelAtPeriodEnd":false,"trial":true,"trialEndsAt":"2026-10-12T12:00:00.000Z","usage":{"month":"2026-10","audioSeconds":0,"audioSecondsLimit":7200,"aiTokens":0,"aiTokensLimit":300000}}"#
+        let trial = try AccountClient.parseMe(Data(json.utf8))
+        #expect(trial.isTrial)
+        #expect(trial.trialEndsAt == (try AccountFixtures.date("2026-10-12T12:00:00Z")))
+    }
+
     // MARK: The account's token
 
     @MainActor

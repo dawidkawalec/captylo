@@ -86,19 +86,26 @@ final class AccountStore {
         return nil
     }
 
-    /// Pro from a signed-in account whose plan the server confirmed in the last 7 days.
+    /// Pro from a signed-in account whose plan the server confirmed in the last 7 days; a trial
+    /// stops at its end even without a refresh.
     var isPro: Bool {
-        guard let info, info.isPro else { return false }
+        guard let info, info.isPro(at: now()) else { return false }
         if pinned != nil {
             return true
         }
         return isFresh
     }
 
+    /// Pro from the reverse trial right now.
+    var isTrial: Bool {
+        guard let info else { return false }
+        return info.isTrial && isPro
+    }
+
     /// A cached Pro plan that could not be confirmed for over 7 days (offline): shown as a
     /// warning, Pro returns after a successful refresh.
     var isStale: Bool {
-        guard let info, info.isPro, pinned == nil else { return false }
+        guard let info, info.isPro(at: now()), pinned == nil else { return false }
         return !isFresh
     }
 

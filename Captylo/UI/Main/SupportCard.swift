@@ -90,8 +90,9 @@ enum SupportPromo: Equatable, Sendable {
     }
 }
 
-/// Small card at the bottom of the main window's sidebar in the Free plan, visible on every
-/// section: today's promo, its action and a close button that hides it for two weeks. Sits inside
+/// Small card at the bottom of the main window's sidebar in the Free plan (and on the Pro trial),
+/// visible on every section; a paying Pro account never sees it, so nobody who pays is asked for
+/// a coffee: today's promo, its action and a close button that hides it for two weeks. Sits inside
 /// the sidebar glass, so it is a raised fill, not glass. Never shown in the recorder widget.
 @MainActor
 struct SupportCard: View {
@@ -102,7 +103,8 @@ struct SupportCard: View {
 
     var body: some View {
         let settings = appState.settings
-        if SupportPromo.isVisible(hiddenUntil: settings.supportCardHiddenUntil, now: now) {
+        let paysForPro = appState.account.isPro && !appState.account.isTrial
+        if !paysForPro, SupportPromo.isVisible(hiddenUntil: settings.supportCardHiddenUntil, now: now) {
             let promo = SupportPromo.current(on: SupportPromo.dayNumber(now), sponsor: SponsorAd.current)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top) {
