@@ -47,6 +47,22 @@ struct SupportPromoTests {
         #expect(SupportPromo.dayNumber(nextDay, calendar: calendar) == SupportPromo.dayNumber(morning, calendar: calendar) + 1)
     }
 
+    @Test func proOffersTheTrialOnlyWhenSignedOut() {
+        #expect(SupportPromo.pro.actionTitle(offer: .trial) == "7 dni Pro za darmo")
+        #expect(SupportPromo.pro.actionTitle(offer: .upgrade) == SupportPromo.pro.actionTitle)
+        #expect(SupportPromo.coffee.actionTitle(offer: .trial) == SupportPromo.coffee.actionTitle)
+    }
+
+    @Test func proBannerShowsOnlyOverAFinishedFreeMeeting() {
+        let now = Date()
+        #expect(MeetingProBanner.isVisible(offer: .trial, status: .completed, hasTranscript: true, hiddenUntil: nil, now: now))
+        #expect(MeetingProBanner.isVisible(offer: .upgrade, status: .completed, hasTranscript: true, hiddenUntil: now, now: now))
+        #expect(!MeetingProBanner.isVisible(offer: .none, status: .completed, hasTranscript: true, hiddenUntil: nil, now: now))
+        #expect(!MeetingProBanner.isVisible(offer: .trial, status: .recording, hasTranscript: true, hiddenUntil: nil, now: now))
+        #expect(!MeetingProBanner.isVisible(offer: .trial, status: .completed, hasTranscript: false, hiddenUntil: nil, now: now))
+        #expect(!MeetingProBanner.isVisible(offer: .trial, status: .completed, hasTranscript: true, hiddenUntil: now.addingTimeInterval(60), now: now))
+    }
+
     @Test func linksPointAtOurSite() {
         // Pro opens the account panel in Ustawienia, not the site.
         #expect(SupportPromo.pro.url == nil)

@@ -117,6 +117,7 @@ struct MeetingDetailView: View {
     let jump: MeetingTranscriptJump?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(MainRouter.self) private var router: MainRouter?
 
     @State private var meeting: MeetingRecord?
     /// The segment whose line is lit up after a jump; back to nil after `highlightDuration`.
@@ -604,6 +605,7 @@ struct MeetingDetailView: View {
             EmptyView()
         case .transcript:
             VStack(alignment: .leading, spacing: 14) {
+                proBanner(meeting)
                 transcriptBar(meeting)
                 MeetingTranscriptView(
                     meeting: meeting,
@@ -615,6 +617,26 @@ struct MeetingDetailView: View {
             }
         case .aiNotes:
             aiNotes(meeting)
+        }
+    }
+
+    /// Free: what Pro would add to this meeting (`MeetingProBanner`), until closed for two weeks.
+    @ViewBuilder
+    private func proBanner(_ meeting: MeetingRecord) -> some View {
+        let offer = proAccess.offer
+        if MeetingProBanner.isVisible(
+            offer: offer,
+            status: meeting.status,
+            hasTranscript: !segments.isEmpty,
+            hiddenUntil: settings.meetingsProBannerHiddenUntil,
+            now: Date()
+        ) {
+            MeetingProBanner(
+                offer: offer,
+                onShowSample: { tab = .aiNotes },
+                onOffer: { router?.openAccount() },
+                onClose: { settings.meetingsProBannerHiddenUntil = Date().addingTimeInterval(SupportPromo.hideInterval) }
+            )
         }
     }
 

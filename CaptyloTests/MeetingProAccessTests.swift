@@ -85,6 +85,22 @@ struct MeetingProAccessTests {
         #expect(s.meetingsAutoDetect)
     }
 
+    @Test func offerFollowsTheAccount() throws {
+        let s = settings()
+        #expect(ProAccess(settings: s, account: account(.signedOut, settings: s), environment: [:]).offer == .trial)
+        #expect(ProAccess(settings: s, account: nil, environment: [:]).offer == .trial)
+        let free = account(.signedIn(try AccountFixtures.freeInfo()), settings: s)
+        #expect(ProAccess(settings: s, account: free, environment: [:]).offer == .upgrade)
+        let pro = account(.signedIn(try AccountFixtures.proInfo()), settings: s)
+        #expect(ProAccess(settings: s, account: pro, environment: [:]).offer == .none)
+    }
+
+    @Test func onlyTheTrialOfferHasSmallPrint() {
+        #expect(ProOffer.trial.note != nil)
+        #expect(ProOffer.upgrade.note == nil)
+        #expect(ProOffer.trial.buttonTitle != ProOffer.upgrade.buttonTitle)
+    }
+
     @Test func trackFilesLiveInTheirOwnMeetingFolder() {
         let id = UUID()
         #expect(AppPaths.meetings.lastPathComponent == "Meetings")

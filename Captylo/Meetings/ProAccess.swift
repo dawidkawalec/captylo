@@ -45,6 +45,11 @@ final class ProAccess {
         return account?.isPro ?? false
     }
 
+    /// What a Pro card or banner offers this user (`ProOffer`).
+    var offer: ProOffer {
+        ProOffer.of(isPro: isPro, isSignedIn: account?.info != nil)
+    }
+
     /// Every Pro feature follows `isPro`; the switch is per feature so plans can split them later.
     func allows(_ feature: ProFeature) -> Bool {
         isPro

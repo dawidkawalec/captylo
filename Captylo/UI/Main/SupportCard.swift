@@ -58,7 +58,7 @@ enum SupportPromo: Equatable, Sendable {
 
     var message: String {
         switch self {
-        case .pro: return String(localized: "Transkrypcja w chmurze i tryby AI: e-mail, lista zadań, tekst po angielsku.")
+        case .pro: return String(localized: "Notatki AI ze spotkań, podpisy mówców i Zapytaj. Do tego chmura i AI bez kluczy.")
         case .coffee: return String(localized: "Captylo jest darmowe i takie zostanie. Jeśli oszczędza Ci czas, postaw kawę za 20 zł.")
         case .sponsor(let ad): return ad.message
         }
@@ -70,6 +70,14 @@ enum SupportPromo: Equatable, Sendable {
         case .coffee: return String(localized: "Postaw kawę")
         case .sponsor(let ad): return ad.actionTitle
         }
+    }
+
+    /// The action for this user: Pro offers the 7-day trial to a signed-out user (`ProOffer`).
+    func actionTitle(offer: ProOffer) -> String {
+        if case .pro = self, offer == .trial {
+            return String(localized: "7 dni Pro za darmo")
+        }
+        return actionTitle
     }
 
     /// The page the action opens; nil for Pro, which opens "Konto Captylo" in Ustawienia.
@@ -130,7 +138,7 @@ struct SupportCard: View {
                     .font(GlassFont.caption)
                     .foregroundStyle(GlassColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button(promo.actionTitle) {
+                Button(promo.actionTitle(offer: appState.proAccess.offer)) {
                     if let url = promo.url {
                         openURL(url)
                     } else {

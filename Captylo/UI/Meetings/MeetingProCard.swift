@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Free: what a Pro feature looks like, as a blurred sample, under a card that leads to the
-/// "Konto Captylo" panel ("Zobacz Pro"), styled like the sidebar's `SupportCard`. "Notatki AI"
-/// and "Zapytaj".
+/// "Konto Captylo" panel ("Wypróbuj Pro 7 dni za darmo" signed out, "Przejdź na Pro" signed in),
+/// styled like the sidebar's `SupportCard`. "Notatki AI" and "Zapytaj".
 @MainActor
 struct MeetingProCard<Sample: View>: View {
     let title: LocalizedStringKey
@@ -15,6 +15,12 @@ struct MeetingProCard<Sample: View>: View {
     @ViewBuilder let sample: () -> Sample
 
     @Environment(MainRouter.self) private var router: MainRouter?
+    @Environment(AppState.self) private var appState: AppState?
+
+    /// The trial for a signed-out user, Pro for a signed-in Free account (`ProOffer`).
+    private var offer: ProOffer {
+        appState?.proAccess.offer ?? .upgrade
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -45,15 +51,23 @@ struct MeetingProCard<Sample: View>: View {
                 .foregroundStyle(GlassColor.textSecondary)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Zobacz Pro") {
+            Button {
                 if let onSeePro {
                     onSeePro()
                 } else {
                     router?.openAccount()
                 }
+            } label: {
+                Text(verbatim: offer.buttonTitle)
             }
             .buttonStyle(.glass(.accent, size: .small, shape: .capsule))
             .padding(.top, 4)
+            if let note = offer.note {
+                Text(verbatim: note)
+                    .font(GlassFont.caption)
+                    .foregroundStyle(GlassColor.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             #if DEBUG
             Text("Włącz Tryb Pro (dev) w Ustawieniach")
                 .font(GlassFont.caption)
