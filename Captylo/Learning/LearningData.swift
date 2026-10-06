@@ -48,6 +48,58 @@ struct StyleSample: Codable, Hashable, Sendable {
     var date: Date
 }
 
+/// One correction Captylo saw and what it decided (Słownik "Ostatnio zauważone"). Only the changed
+/// fragment is kept, cut to `maxFragment` characters, and only on this Mac.
+struct LearningObservation: Codable, Hashable, Identifiable, Sendable {
+    enum Outcome: String, Codable, Sendable {
+        /// Learned as a replacement rule.
+        case rule
+        /// Learned as a hint for AI.
+        case hint
+        /// Not learned; `reason` says why.
+        case skipped
+    }
+
+    static let maxFragment = 80
+
+    var id: UUID
+    var date: Date
+    var appBundleID: String?
+    var source: CorrectionSource
+    /// What was there and what the user made of it; empty when the field could not be read.
+    var before: String
+    var after: String
+    var outcome: Outcome
+    var reason: LearningSkipReason?
+
+    init(
+        id: UUID = UUID(),
+        date: Date = Date(),
+        appBundleID: String?,
+        source: CorrectionSource,
+        before: String,
+        after: String,
+        outcome: Outcome,
+        reason: LearningSkipReason? = nil
+    ) {
+        self.id = id
+        self.date = date
+        self.appBundleID = appBundleID
+        self.source = source
+        self.before = Self.fragment(before)
+        self.after = Self.fragment(after)
+        self.outcome = outcome
+        self.reason = reason
+    }
+
+    /// One line, at most `maxFragment` characters with an ellipsis.
+    static func fragment(_ text: String) -> String {
+        let line = text.split(whereSeparator: \.isNewline).joined(separator: " ")
+            .trimmingCharacters(in: .whitespaces)
+        return line.count > maxFragment ? String(line.prefix(maxFragment - 1)) + "…" : line
+    }
+}
+
 /// Words pasted into watched fields on one day and how many the user changed.
 struct DailyEditStat: Codable, Hashable, Sendable {
     /// "yyyy-MM-dd" in the local calendar.
@@ -74,6 +126,8 @@ struct LearningData: Codable, Hashable, Sendable {
     var samplesSinceDistill: Int
     /// Per-day words pasted into watched fields and words changed, newest last (60 days kept).
     var editStats: [DailyEditStat]
+    /// Recent corrections and decisions, newest last (`SelfLearning.maxObservations` kept).
+    var observations: [LearningObservation]
 
     init(
         version: Int = LearningData.currentVersion,
@@ -84,7 +138,8 @@ struct LearningData: Codable, Hashable, Sendable {
         styleProfile: String = "",
         appStyles: [String: String] = [:],
         samplesSinceDistill: Int = 0,
-        editStats: [DailyEditStat] = []
+        editStats: [DailyEditStat] = [],
+        observations: [LearningObservation] = []
     ) {
         self.version = version
         self.candidates = candidates
@@ -95,12 +150,13 @@ struct LearningData: Codable, Hashable, Sendable {
         self.appStyles = appStyles
         self.samplesSinceDistill = samplesSinceDistill
         self.editStats = editStats
+        self.observations = observations
     }
 
     static let empty = LearningData()
 
     private enum CodingKeys: String, CodingKey {
-        case version, candidates, learned, blocked, styleSamples, styleProfile, appStyles, samplesSinceDistill, editStats
+        case version, candidates, learned, blocked, styleSamples, styleProfile, appStyles, samplesSinceDistill, editStats, observations
     }
 
     init(from decoder: any Decoder) throws {
@@ -114,5 +170,6 @@ struct LearningData: Codable, Hashable, Sendable {
         appStyles = try c.decodeIfPresent([String: String].self, forKey: .appStyles) ?? [:]
         samplesSinceDistill = try c.decodeIfPresent(Int.self, forKey: .samplesSinceDistill) ?? 0
         editStats = try c.decodeIfPresent([DailyEditStat].self, forKey: .editStats) ?? []
+        observations = try c.decodeIfPresent([LearningObservation].self, forKey: .observations) ?? []
     }
 }

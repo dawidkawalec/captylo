@@ -112,7 +112,11 @@ final class EditWatcher: PasteWatching {
             guard let element = AXText.focusedElement(pid: pid) else { return nil }
             return (AXElementRef(element: element), AXText.snapshot(of: element))
         }
-        guard let (element, snapshot) = found ?? nil, !snapshot.isSecure, snapshot.pid == pid else { return }
+        guard let (element, snapshot) = found ?? nil, snapshot.pid == pid else {
+            learning.noteUnreadable(appBundleID: front.bundleIdentifier)
+            return
+        }
+        guard !snapshot.isSecure else { return }
         pending = Target(element: element, pid: pid, bundleID: snapshot.bundleID, before: snapshot.value ?? "")
     }
 
@@ -167,6 +171,7 @@ final class EditWatcher: PasteWatching {
         }
         task = nil
         Log.learning.debug("Paste not readable in \(target.bundleID ?? "?", privacy: .public), not watching")
+        learning.noteUnreadable(appBundleID: target.bundleID)
     }
 
     private func poll() async {

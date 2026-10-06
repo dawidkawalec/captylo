@@ -72,6 +72,8 @@ final class DesignPreviewRunner {
                     .environment(\.windowBackgroundStyle, appState.settings.windowBackground)
                     .environment(\.windowTone, appState.settings.windowTone)
             )
+        case .correction:
+            windowNumber = showCorrection()
         }
 
         // One layout pass and the first frames of the entry animation before reporting (the
@@ -168,6 +170,20 @@ final class DesignPreviewRunner {
         made.controller.show()
         made.driver.start()
         return made.controller.windowNumber
+    }
+
+    /// The "Popraw" panel as ⌃⌥⌘P opens it, with the field already changed.
+    private func showCorrection() -> Int {
+        let original = "klod kod"
+        let model = CorrectionModel(original: original)
+        model.text = "Claude Code"
+        let learning = appState.learning
+        model.previewFor = { learning.preview(original: original, corrected: $0) }
+        let panel = CorrectionPanel(model: model)
+        panel.identifier = NSUserInterfaceItemIdentifier(Self.windowIdentifier)
+        panel.present()
+        window = panel
+        return panel.windowNumber
     }
 
     private func showOnboarding(_ step: OnboardingStep) -> Int {

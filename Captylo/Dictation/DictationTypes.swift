@@ -266,6 +266,8 @@ protocol CorrectionLearning: AnyObject {
     func learn(spelled: [SpellingDetector.Spelled])
     /// The user edited text Captylo pasted (Accessibility watcher).
     func learn(delivered: String, corrected: String, appBundleID: String?)
+    /// The pasted text could not be read back from the field (the app hides it).
+    func noteUnreadable(appBundleID: String?)
     /// Misheard pairs, style profile and target app for the AI prompt (empty when learning is off).
     var promptContext: LearningPromptContext { get }
 }

@@ -273,6 +273,13 @@ enum DesignPreviewData {
             ),
         ])
         learning.editStats = editStats
+        learning.observations = [
+            LearningObservation(date: Date(timeIntervalSinceNow: -7_200), appBundleID: "com.microsoft.VSCode", source: .edit, before: "", after: "", outcome: .skipped, reason: .unreadable),
+            LearningObservation(date: Date(timeIntervalSinceNow: -5_400), appBundleID: "com.apple.mail", source: .edit, before: "piątek", after: "piątku", outcome: .skipped, reason: .ordinaryWords),
+            LearningObservation(date: Date(timeIntervalSinceNow: -3_600), appBundleID: "com.apple.Notes", source: .edit, before: "supa bejs", after: "Supabase", outcome: .rule),
+            LearningObservation(date: Date(timeIntervalSinceNow: -900), appBundleID: "com.apple.mail", source: .edit, before: "jutro", after: "Jutro", outcome: .skipped, reason: .sentenceCase),
+            LearningObservation(date: Date(timeIntervalSinceNow: -120), appBundleID: "com.apple.TextEdit", source: .manual, before: "może", after: "morze", outcome: .hint),
+        ]
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let encoder = JSONEncoder()

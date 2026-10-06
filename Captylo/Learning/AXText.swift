@@ -126,6 +126,14 @@ enum AXText {
         return AXUIElementSetAttributeValue(app, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue) == .success
     }
 
+    /// `AXSelectedText` of the element ("Popraw"); nil for secure fields and apps that do not
+    /// report it.
+    static func selectedText(of element: AXUIElement) -> String? {
+        applyTimeout()
+        guard (copyAttribute(element, kAXSubroleAttribute) as? String) != (kAXSecureTextFieldSubrole as String) else { return nil }
+        return copyAttribute(element, kAXSelectedTextAttribute) as? String
+    }
+
     /// The element's own `AXFocused`; nil when it does not answer (dead or unsupported).
     /// Chrome keeps reporting a closed tab's field as the app's focused element, but the field
     /// itself stops saying it is focused.

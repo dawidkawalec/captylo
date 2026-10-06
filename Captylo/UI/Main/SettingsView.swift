@@ -113,6 +113,12 @@ struct SettingsView: View {
                 systemImage: "sparkles",
                 isOn: $settings.learningEnabled
             )
+            GlassToggleRow(
+                "Popraw zaznaczony tekst: \(GlobalShortcut.correction.display)",
+                subtitle: "Zaznacz źle rozpoznane słowo w dowolnej aplikacji, naciśnij skrót i wpisz poprawną wersję. Captylo podmieni tekst i od razu się tego nauczy. Działa też z menu prawego przycisku: Usługi > Popraw w Captylo.",
+                systemImage: "pencil.and.scribble",
+                isOn: $settings.learningFixShortcut
+            )
         }
 
         GlassPanel(spacing: 4) {

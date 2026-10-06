@@ -21,12 +21,12 @@ struct LearnedPanel: View {
             GlassSectionHeader("Nauczone", systemImage: "sparkles") {
                 GlassBadge(title: Text(verbatim: "\(entries.count)"))
             }
-            ToolCaption("Słowa, których Captylo nauczył się z Twoich poprawek i literowania na głos. Reguła zamiany działa zawsze, podpowiedź pomaga tylko poprawianiu przez AI. Cofnięte słowo nie wróci.")
+            ToolCaption("Słowa, których Captylo nauczył się z Twoich poprawek, z \(GlobalShortcut.correction.display) i z literowania na głos. Reguła zamiany działa zawsze, podpowiedź pomaga tylko poprawianiu przez AI. Cofnięte słowo wróci tylko przez \(GlobalShortcut.correction.display) albo „Odblokuj” niżej.")
             if !isEnabled {
                 ToolStatusLine(text: String(localized: "Nauka jest wyłączona w Ustawieniach. Nauczone słowa nadal działają."))
             }
             if entries.isEmpty {
-                Text("Nic jeszcze. Przeliteruj trudne słowo na głos, np. „Brzęk, pisane B R Z Ę K”.")
+                Text("Nic jeszcze. Zaznacz źle rozpoznane słowo i naciśnij \(GlobalShortcut.correction.display) albo przeliteruj je na głos, np. „Brzęk, pisane B R Z Ę K”.")
                     .font(GlassFont.body)
                     .foregroundStyle(GlassColor.textTertiary)
                     .padding(.vertical, 4)
@@ -76,10 +76,11 @@ struct LearnedPanel: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 6) {
-                GlassBadge(
-                    entry.source == .voice ? "Literowanie" : "Poprawka",
-                    systemImage: entry.source == .voice ? "mic" : "pencil"
-                )
+                switch entry.source {
+                case .voice: GlassBadge("Literowanie", systemImage: "mic")
+                case .manual: GlassBadge("Popraw", systemImage: "pencil.and.scribble")
+                case .edit: GlassBadge("Poprawka", systemImage: "pencil")
+                }
                 GlassBadge(entry.ruleID != nil ? "Reguła" : "Podpowiedź AI", tone: entry.ruleID != nil ? .accent : .neutral)
                 ToolIconButton("arrow.uturn.backward", label: Text("Cofnij"), size: 28) {
                     learning.undo(entry.id)

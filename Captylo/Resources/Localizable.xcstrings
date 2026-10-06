@@ -106,9 +106,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Learning is off in Settings. Learned words still work." } }
       }
     },
-    "Nic jeszcze. Przeliteruj trudne słowo na głos, np. „Brzęk, pisane B R Z Ę K”.": {
+    "Nic jeszcze. Zaznacz źle rozpoznane słowo i naciśnij %@ albo przeliteruj je na głos, np. „Brzęk, pisane B R Z Ę K”.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Nothing yet. Spell a tricky word out loud, for example “Brzęk, spelled B R Z Ę K”." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing yet. Select a misheard word and press %@, or spell it out loud, for example “Brzęk, spelled B R Z Ę K”." } }
       }
     },
     "Podpowiedź AI": {
@@ -126,9 +126,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "Rule" } }
       }
     },
-    "Słowa, których Captylo nauczył się z Twoich poprawek i literowania na głos. Reguła zamiany działa zawsze, podpowiedź pomaga tylko poprawianiu przez AI. Cofnięte słowo nie wróci.": {
+    "Słowa, których Captylo nauczył się z Twoich poprawek, z %@ i z literowania na głos. Reguła zamiany działa zawsze, podpowiedź pomaga tylko poprawianiu przez AI. Cofnięte słowo wróci tylko przez %@ albo „Odblokuj” niżej.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Words Captylo learned from your corrections and from spelling out loud. A replacement rule always applies, a hint only helps the AI cleanup. An undone word never comes back." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Words Captylo learned from your corrections, from %@ and from spelling out loud. A replacement rule always applies, a hint only helps the AI cleanup. An undone word comes back only through %@ or “Unblock” below." } }
       }
     },
     "Ucz się z moich poprawek": {
@@ -5603,12 +5603,12 @@
         }
       }
     },
-    "Transkrypcja w chmurze i tryby AI: e-mail, lista zadań, tekst po angielsku.": {
+    "Notatki AI ze spotkań, podpisy mówców i Zapytaj. Do tego chmura i AI bez kluczy.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cloud transcription and AI modes: email, to-do list, English text."
+            "value": "AI meeting notes, speaker labels and Ask. Plus the cloud and AI with no keys."
           }
         }
       }
@@ -7201,6 +7201,236 @@
     "Po spotkaniu wysyła nagranie do chmury i zastępuje nim transkrypt z Maca. W Pro działa bez własnego klucza.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "After a meeting, sends the recording to the cloud and replaces the transcript from your Mac with it. With Pro it works without a key of your own." } }
+      }
+    },
+    "Cofnięte wcześniej, więc się tego nie uczę": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Undone before, so I don't learn it" } }
+      }
+    },
+    "Już to znam": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Already known" } }
+      }
+    },
+    "Nauka jest wyłączona w Ustawieniach.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learning is off in Settings." } }
+      }
+    },
+    "Nic jeszcze. Popraw coś w wklejonym tekście albo użyj %@.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing yet. Fix something in pasted text or use %@." } }
+      }
+    },
+    "Nie udało się podmienić tekstu. Poprawka jest w schowku.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not replace the text. The fix is on the clipboard." } }
+      }
+    },
+    "Nieznana aplikacja": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unknown app" } }
+      }
+    },
+    "Odblokuj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unblock" } }
+      }
+    },
+    "Ostatnio zauważone": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recently noticed" } }
+      }
+    },
+    "Podmienię tekst, ale nie będę się tego uczyć: to zmiana treści, a nie źle rozpoznane słowo.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I'll replace the text but won't learn it: this changes the content, it is not a misheard word." } }
+      }
+    },
+    "Podmienię tekst. Nauka jest wyłączona w Ustawieniach.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I'll replace the text. Learning is off in Settings." } }
+      }
+    },
+    "Pokaż mniej": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show less" } }
+      }
+    },
+    "Pokaż wszystkie (%lld)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show all (%lld)" } }
+      }
+    },
+    "Pominięte": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Skipped" } }
+      }
+    },
+    "Popraw w Captylo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fix with Captylo" } }
+      }
+    },
+    "Popraw zaznaczony tekst: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fix selected text: %@" } }
+      }
+    },
+    "Popraw: zapamiętane jako reguła zamiany": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fix: learned as a replacement rule" } }
+      }
+    },
+    "Poprawione. Bez nauki: to zmiana treści.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fixed. Not learned: this changes the content." } }
+      }
+    },
+    "Poprawione. Nauka jest wyłączona.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fixed. Learning is off." } }
+      }
+    },
+    "Poprawione. To już znam.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fixed. I already know this one." } }
+      }
+    },
+    "Poprawki, które Captylo zobaczył, i co z nimi zrobił. Gdy słowo nie zostało zapamiętane, zaznacz je w aplikacji i naciśnij %@: wtedy Captylo nauczy się go od razu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Corrections Captylo noticed and what it did with them. When a word was not learned, select it in the app and press %@: Captylo will learn it right away." } }
+      }
+    },
+    "Poprawna wersja": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Correct version" } }
+      }
+    },
+    "Ta aplikacja nie pokazuje tekstu pola, więc nie widzę tu poprawek. Użyj %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This app does not expose the field's text, so I can't see corrections here. Use %@" } }
+      }
+    },
+    "To już znam: %@. Tylko podmienię tekst.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I already know this: %@. I'll just replace the text." } }
+      }
+    },
+    "Tylko wielka litera na początku zdania": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Only the capital letter at the start of a sentence" } }
+      }
+    },
+    "Wpisz poprawną wersję i naciśnij Enter.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Type the correct version and press Return." } }
+      }
+    },
+    "Wyczyść listę": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear list" } }
+      }
+    },
+    "Zapamiętam: %@ jako podpowiedź dla AI. Oba słowa istnieją, więc nie zamieniam ich na sztywno.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I'll remember %@ as a hint for the AI. Both words exist, so I won't replace them automatically." } }
+      }
+    },
+    "Zapamiętam: %@. Następnym razem poprawię to sam.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I'll remember %@. Next time I'll fix it myself." } }
+      }
+    },
+    "Zapamiętane jako podpowiedź dla AI (oba słowa istnieją)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learned as a hint for the AI (both words exist)" } }
+      }
+    },
+    "Zapamiętane jako reguła zamiany": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Learned as a replacement rule" } }
+      }
+    },
+    "Zaznacz krótszy fragment: słowo albo zdanie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Select a shorter piece: a word or a sentence." } }
+      }
+    },
+    "Zaznacz słowo, które chcesz poprawić, i naciśnij %@.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Select the word you want to fix and press %@." } }
+      }
+    },
+    "Zaznacz źle rozpoznane słowo w dowolnej aplikacji, naciśnij skrót i wpisz poprawną wersję. Captylo podmieni tekst i od razu się tego nauczy. Działa też z menu prawego przycisku: Usługi > Popraw w Captylo.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Select a misheard word in any app, press the shortcut and type the correct version. Captylo replaces the text and learns it right away. Also works from the right-click menu: Services > Popraw w Captylo." } }
+      }
+    },
+    "Zaznaczone: „%@”": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Selected: “%@”" } }
+      }
+    },
+    "Zmiana dłuższa niż 3 słowa: trafia do profilu stylu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Change longer than 3 words: goes to the style profile" } }
+      }
+    },
+    "Zmieniła się tylko interpunkcja": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Only punctuation changed" } }
+      }
+    },
+    "Zmieniła się większość tekstu: to przepisanie, nie poprawka": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Most of the text changed: a rewrite, not a correction" } }
+      }
+    },
+    "Znane": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Known" } }
+      }
+    },
+    "Zwykłe słowa po obu stronach, wygląda na zmianę treści. Jeśli to źle rozpoznane słowo, użyj %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ordinary words on both sides, looks like a change of content. If it is a misheard word, use %@" } }
+      }
+    },
+    "„Popraw” potrzebuje uprawnienia Dostępność.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "“Fix” needs the Accessibility permission." } }
+      }
+    },
+    "7 dni Pro za darmo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "7 days of Pro free" } }
+      }
+    },
+    "Nowe konto, bez karty. Po 7 dniach wracasz do Free.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New account, no card. After 7 days you are back on Free." } }
+      }
+    },
+    "Spotkanie zapisane na tym Macu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Meeting saved on this Mac" } }
+      }
+    },
+    "W Captylo Pro miałoby notatki AI z decyzjami i zadaniami, podpisy mówców i Zapytaj o to, co padło w rozmowie.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "With Captylo Pro it would have AI notes with decisions and tasks, speaker labels and Ask about what was said." } }
+      }
+    },
+    "Wypróbuj Pro 7 dni za darmo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Try Pro free for 7 days" } }
+      }
+    },
+    "Zobacz przykład": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "See an example" } }
       }
     }
   },

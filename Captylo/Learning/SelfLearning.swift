@@ -85,13 +85,122 @@ final class SelfLearning: CorrectionLearning {
     func learn(delivered: String, corrected: String, appBundleID: String?) {
         guard isEnabled else { return }
         let analysis = CorrectionLearner.analyze(delivered: delivered, corrected: corrected, isRealWord: isRealWord)
-        guard !analysis.isNoise else { return }
+        guard !analysis.isNoise else {
+            observe(LearningObservation(appBundleID: appBundleID, source: .edit, before: delivered, after: corrected, outcome: .skipped, reason: .rewrite))
+            return
+        }
         recordEditStats(analysis)
         for term in analysis.terms {
-            consider(term, source: .edit)
+            let result = consider(term, source: .edit)
+            observe(result.observation(of: term, appBundleID: appBundleID, source: .edit))
+        }
+        for change in analysis.skipped {
+            observe(LearningObservation(appBundleID: appBundleID, source: .edit, before: change.old, after: change.new, outcome: .skipped, reason: change.reason))
         }
         if analysis.isStyle {
             addStyleSample(delivered: delivered, corrected: corrected, appBundleID: appBundleID)
+        }
+    }
+
+    /// The edit watcher could not read the field Captylo pasted into: listed once per app every
+    /// `unreadableRepeat`, so "Ostatnio zauważone" says which apps hide their text.
+    func noteUnreadable(appBundleID: String?) {
+        guard isEnabled else { return }
+        let now = Date()
+        let recent = store.data.observations.contains {
+            $0.reason == .unreadable && $0.appBundleID == appBundleID && now.timeIntervalSince($0.date) < Self.unreadableRepeat
+        }
+        guard !recent else { return }
+        observe(LearningObservation(date: now, appBundleID: appBundleID, source: .edit, before: "", after: "", outcome: .skipped, reason: .unreadable))
+    }
+
+    // MARK: - "Popraw"
+
+    /// What "Popraw" would do with this change, for the live line under the text field.
+    enum ManualPreview: Equatable {
+        case unchanged
+        /// Replaced, not learned: other words or a reworded sentence.
+        case rewrite
+        /// Replaced, and these pairs are learned (`rule`: at least one becomes a replacement rule).
+        case learn([TermCorrection], rule: Bool)
+        /// Replaced; every pair is already learned.
+        case known([TermCorrection])
+        /// Replaced; learning is off in Ustawienia.
+        case off
+    }
+
+    func preview(original: String, corrected: String) -> ManualPreview {
+        let verdict = CorrectionLearner.manual(original: original, corrected: corrected, isRealWord: isRealWord)
+        switch verdict {
+        case .unchanged: return .unchanged
+        // Learning off: only replaced, and nothing lands in "Ostatnio zauważone" either.
+        case _ where !isEnabled: return .off
+        case .rewrite: return .rewrite
+        case .terms(let pairs):
+            let fresh = pairs.filter { pair in !store.data.learned.contains { Self.samePair($0.pair, pair) } }
+            return fresh.isEmpty ? .known(pairs) : .learn(fresh, rule: fresh.contains(where: canReplace))
+        }
+    }
+
+    /// "Popraw" was confirmed: learns the pairs at once (the user said outright the text was
+    /// wrong, so a pair undone before is unblocked and a reversed lesson is replaced). The
+    /// "Zapamiętałem ... [Cofnij]" toast comes from `apply`; the caller says the rest.
+    @discardableResult
+    func learnManual(original: String, corrected: String, appBundleID: String?) -> ManualPreview {
+        let result = preview(original: original, corrected: corrected)
+        switch result {
+        case .unchanged, .off:
+            break
+        case .rewrite:
+            observe(LearningObservation(appBundleID: appBundleID, source: .manual, before: original, after: corrected, outcome: .skipped, reason: .rewrite))
+        case .known(let pairs):
+            for pair in pairs {
+                observe(LearningObservation(appBundleID: appBundleID, source: .manual, before: pair.misheard, after: pair.correct, outcome: .skipped, reason: .alreadyKnown))
+            }
+        case .learn(let pairs, _):
+            for pair in pairs {
+                unblock(pair)
+                if let reversed = store.data.learned.first(where: { Self.samePair($0.pair, TermCorrection(misheard: pair.correct, correct: pair.misheard)) }) {
+                    undo(reversed.id, block: false)
+                }
+                let result = consider(pair, source: .manual)
+                observe(result.observation(of: pair, appBundleID: appBundleID, source: .manual))
+            }
+        }
+        return result
+    }
+
+    /// Słownik "Odblokuj": the pair can be learned again.
+    func unblock(_ pair: TermCorrection) {
+        guard store.data.blocked.contains(where: { Self.samePair($0, pair) }) else { return }
+        store.update { data in
+            data.blocked.removeAll { Self.samePair($0, pair) }
+        }
+    }
+
+    func isBlocked(_ pair: TermCorrection) -> Bool {
+        store.data.blocked.contains { Self.samePair($0, pair) }
+    }
+
+    /// Słownik "Wyczyść listę" under "Ostatnio zauważone".
+    func clearObservations() {
+        store.update { $0.observations = [] }
+    }
+
+    // MARK: - Observations
+
+    /// Entries kept for "Ostatnio zauważone".
+    static let maxObservations = 40
+    /// An app that hides its text is listed again after this long.
+    static let unreadableRepeat: TimeInterval = 6 * 3600
+
+    private func observe(_ observation: LearningObservation?) {
+        guard let observation else { return }
+        store.update { data in
+            data.observations.append(observation)
+            if data.observations.count > Self.maxObservations {
+                data.observations.removeFirst(data.observations.count - Self.maxObservations)
+            }
         }
     }
 
@@ -126,18 +235,42 @@ final class SelfLearning: CorrectionLearning {
 
     // MARK: - Rules
 
-    private func consider(_ pair: TermCorrection, source: CorrectionSource) {
+    /// What `consider` did with one pair.
+    private enum Consideration {
+        case learned(LearnedTerm)
+        case alreadyKnown
+        case blocked
+        /// The user changed a learned form back (rule dropped or lesson forgotten).
+        case reverted
+        /// Seen, not learned yet (below `threshold`).
+        case candidate
+
+        func observation(of pair: TermCorrection, appBundleID: String?, source: CorrectionSource) -> LearningObservation? {
+            let outcome: LearningObservation.Outcome
+            var reason: LearningSkipReason?
+            switch self {
+            case .learned(let entry): outcome = entry.ruleID != nil ? .rule : .hint
+            case .alreadyKnown: outcome = .skipped; reason = .alreadyKnown
+            case .blocked: outcome = .skipped; reason = .blocked
+            case .reverted, .candidate: return nil
+            }
+            return LearningObservation(appBundleID: appBundleID, source: source, before: pair.misheard, after: pair.correct, outcome: outcome, reason: reason)
+        }
+    }
+
+    @discardableResult
+    private func consider(_ pair: TermCorrection, source: CorrectionSource) -> Consideration {
         let data = store.data
-        guard !data.blocked.contains(where: { Self.samePair($0, pair) }) else { return }
-        guard !data.learned.contains(where: { Self.samePair($0.pair, pair) }) else { return }
+        guard !data.blocked.contains(where: { Self.samePair($0, pair) }) else { return .blocked }
+        guard !data.learned.contains(where: { Self.samePair($0.pair, pair) }) else { return .alreadyKnown }
 
         // The user changed a learned form back: first time drop the rule, second time forget it.
         if let learned = data.learned.first(where: { Self.samePair($0.pair, TermCorrection(misheard: pair.correct, correct: pair.misheard)) }) {
             revert(learned)
-            return
+            return .reverted
         }
 
-        let needed = source == .voice || dictionary.containsVocabulary(pair.correct) ? 1 : Self.threshold
+        let needed = source != .edit || dictionary.containsVocabulary(pair.correct) ? 1 : Self.threshold
         let key = Self.key(pair)
         let seen = (data.candidates.first { Self.key($0.pair) == key }?.count ?? 0) + 1
         guard seen >= needed else {
@@ -149,12 +282,13 @@ final class SelfLearning: CorrectionLearning {
                     data.candidates.append(LearningCandidate(pair: pair, count: seen, lastSeen: Date()))
                 }
             }
-            return
+            return .candidate
         }
-        apply(pair, source: source)
+        return .learned(apply(pair, source: source))
     }
 
-    private func apply(_ pair: TermCorrection, source: CorrectionSource) {
+    @discardableResult
+    private func apply(_ pair: TermCorrection, source: CorrectionSource) -> LearnedTerm {
         let addedToVocabulary = dictionary.addLearnedVocabulary(pair.correct)
         var ruleID: UUID?
         if canReplace(pair) {
@@ -169,13 +303,15 @@ final class SelfLearning: CorrectionLearning {
             data.learned.append(entry)
         }
         Log.learning.info("Learned a term (\(source.rawValue, privacy: .public), rule: \(ruleID != nil))")
-        guard settings.learningNotifications else { return }
+        // "Popraw" always confirms: the user just asked for it.
+        guard settings.learningNotifications || source == .manual else { return entry }
         let id = entry.id
         toasts.showAction(
             message: String(localized: "Zapamiętałem: \(pair.misheard) → \(pair.correct)"),
             buttonTitle: String(localized: "Cofnij"),
             action: { [weak self] in self?.undo(id) }
         )
+        return entry
     }
 
     private func revert(_ entry: LearnedTerm) {

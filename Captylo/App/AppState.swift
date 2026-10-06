@@ -55,6 +55,8 @@ final class AppState {
     @ObservationIgnored let dictionary: DictionaryStore
     /// Self-learning memory and rules (Słownik "Nauczone", Ustawienia "Ucz się z moich poprawek").
     @ObservationIgnored let learning: SelfLearning
+    /// "Popraw" on selected text (⌃⌥⌘P and the Services menu).
+    @ObservationIgnored let manualCorrection: ManualCorrection
     @ObservationIgnored let modelContainer: ModelContainer
     @ObservationIgnored let database: Database
     /// Full-text meeting search (FTS5), kept in step by `database`. Checked against the store and
@@ -145,6 +147,10 @@ final class AppState {
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
     /// ⌃⌥⌘M, registered while "Skrót ⌃⌥⌘M" is on (`applyMeetingShortcut`).
     @ObservationIgnored private var meetingShortcut: GlobalShortcut?
+    /// ⌃⌥⌘P "Popraw", registered while its switch is on (`applyCorrectionShortcut`).
+    @ObservationIgnored private var correctionShortcut: GlobalShortcut?
+    /// Services menu "Popraw w Captylo"; set in `startServices`.
+    @ObservationIgnored private var correctionService: CorrectionServiceProvider?
     @ObservationIgnored private var servicesStarted = false
 
     init(settings: AppSettings = AppSettings(), overrides: AppStateOverrides = .live) {
@@ -430,6 +436,13 @@ final class AppState {
             }
         )
         self.learning = learning
+        let correction = ManualCorrection(
+            learning: learning,
+            output: textOutput,
+            toasts: toasts,
+            outputSettings: { settings.outputSettings }
+        )
+        manualCorrection = correction
 
         // Shell
         let accessibility = AccessibilityWatcher(pinnedTrust: overrides.pinnedAccessibilityTrust)
@@ -512,6 +525,10 @@ final class AppState {
         ))
         hotkeyController = HotkeyController(tap: tap, coordinator: dictationController, toasts: toasts)
         relay.controller = hotkeyController
+        // "Popraw" waits while a take runs, and a take that starts closes its panel.
+        let dictation = dictationController
+        correction.isDictating = { [weak dictation] in (dictation?.phase ?? .idle) != .idle }
+        relay.willHandle = { [weak correction] in correction?.cancel() }
         // Expanded widget: microphone and language menus, output switches, "Pauza".
         recorderModel.controls = RecorderAppControls(
             settings: settings,
@@ -652,6 +669,12 @@ final class AppState {
         windowPresenter.start()
         oldAppDetector.start()
         applyMeetingShortcut()
+        applyCorrectionShortcut()
+        // Services menu "Popraw w Captylo" (`NSServices` in Info.plist).
+        let service = CorrectionServiceProvider(correction: manualCorrection)
+        correctionService = service
+        NSApp.servicesProvider = service
+        NSUpdateDynamicServices()
         // Always polling: it reads "Wykrywaj spotkania" every time and idles while it is off,
         // so switching it on in Ustawienia works without a relaunch.
         meetingDetector.start()
@@ -685,6 +708,7 @@ final class AppState {
         textOutput.flushPendingRestore()
         hotkeyTap.uninstall()
         meetingShortcut?.unregister()
+        correctionShortcut?.unregister()
         accessibility.stop()
         if let wakeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
@@ -722,6 +746,21 @@ final class AppState {
             meetingShortcut?.register()
         } else {
             meetingShortcut?.unregister()
+        }
+    }
+
+    /// Registers or drops ⌃⌥⌘P to match the setting, like `applyMeetingShortcut`.
+    private func applyCorrectionShortcut() {
+        guard servicesStarted else { return }
+        if settings.learningFixShortcut {
+            if correctionShortcut == nil {
+                correctionShortcut = GlobalShortcut(GlobalShortcut.correction) { [weak self] in
+                    self?.manualCorrection.start()
+                }
+            }
+            correctionShortcut?.register()
+        } else {
+            correctionShortcut?.unregister()
         }
     }
 
@@ -777,6 +816,7 @@ final class AppState {
             _ = settings.paragraphs
             _ = settings.menuBarOnly
             _ = settings.meetingsShortcut
+            _ = settings.learningFixShortcut
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -803,6 +843,7 @@ final class AppState {
         }
         windowPresenter.applyDockPolicy()
         applyMeetingShortcut()
+        applyCorrectionShortcut()
     }
 
     private func showStoreFallbackAlert() {

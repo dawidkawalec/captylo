@@ -38,7 +38,7 @@ final class TextOutput: TextDelivering {
     // MARK: - TextDelivering
 
     func deliver(_ text: String, _ settings: OutputSettings) async -> OutputResult {
-        let prepared = Self.prepare(text, trailingSpace: settings.trailingSpace)
+        let prepared = Self.prepare(text, trailingSpace: settings.trailingSpace) + settings.suffix
         let signpostState = Log.signposter.beginInterval("paste")
         defer { Log.signposter.endInterval("paste", signpostState) }
 
@@ -65,6 +65,15 @@ final class TextOutput: TextDelivering {
         }
         Log.output.info("Pasted \(prepared.count) chars, restore \(snapshot == nil ? "off" : "scheduled", privacy: .public)")
         return .pasted
+    }
+
+    /// "Popraw" is about to Cmd+C the selection: the user's own clipboard (the one a pending
+    /// restore would bring back, not our transcript) for the caller to restore, and the pending
+    /// restore dropped so it cannot fire in the middle.
+    func takeOverClipboard() -> PasteboardSnapshot {
+        let snapshot = takeSnapshot()
+        cancelPendingRestore()
+        return snapshot
     }
 
     func copy(_ text: String) {

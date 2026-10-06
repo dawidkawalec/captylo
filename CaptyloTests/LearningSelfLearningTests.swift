@@ -184,6 +184,118 @@ struct LearningSelfLearningTests {
         #expect(reloaded.data.learned.count == 1)
     }
 
+    // MARK: - Observations
+
+    @Test func everyDecisionIsObserved() throws {
+        correct()
+        learning.learn(delivered: "Hej, wrzucam to w piątek.", corrected: "Dzień dobry, wrzucam to w piątek.", appBundleID: "com.apple.mail")
+        learning.learn(delivered: "Wrzucam to na serwer.", corrected: "Całkiem inny tekst o czymś zupełnie innym.", appBundleID: nil)
+        let observations = store.data.observations
+        #expect(observations.count == 3)
+        #expect(observations[0].outcome == .rule)
+        #expect(observations[0].before == "supa bejs")
+        #expect(observations[0].appBundleID == "com.apple.Notes")
+        #expect(observations[1].reason == .ordinaryWords)
+        #expect(observations[2].reason == .rewrite)
+
+        correct()
+        #expect(store.data.observations.last?.reason == .alreadyKnown)
+    }
+
+    @Test func untouchedPasteIsNotObserved() {
+        learning.learn(delivered: "Wrzucam to w piątek.", corrected: "Wrzucam to w piątek.", appBundleID: nil)
+        #expect(store.data.observations.isEmpty)
+    }
+
+    @Test func blockedPairIsObservedAndCanBeUnblocked() throws {
+        correct()
+        let id = try #require(store.data.learned.first?.id)
+        learning.undo(id)
+        correct()
+        #expect(store.data.observations.last?.reason == .blocked)
+        let pair = TermCorrection(misheard: "supa bejs", correct: "Supabase")
+        #expect(learning.isBlocked(pair))
+        learning.unblock(pair)
+        correct()
+        #expect(store.data.learned.count == 1)
+    }
+
+    @Test func unreadableAppIsListedOncePerWindow() {
+        learning.noteUnreadable(appBundleID: "com.microsoft.VSCode")
+        learning.noteUnreadable(appBundleID: "com.microsoft.VSCode")
+        learning.noteUnreadable(appBundleID: "com.tinyspeck.slackmacgap")
+        #expect(store.data.observations.map(\.reason) == [.unreadable, .unreadable])
+    }
+
+    @Test func observationsAreCapped() {
+        for index in 0..<(SelfLearning.maxObservations + 5) {
+            learning.noteUnreadable(appBundleID: "app.\(index)")
+        }
+        #expect(store.data.observations.count == SelfLearning.maxObservations)
+        #expect(store.data.observations.last?.appBundleID == "app.\(SelfLearning.maxObservations + 4)")
+    }
+
+    @Test func fragmentsAreOneShortLine() {
+        let long = String(repeating: "słowo ", count: 40)
+        let observation = LearningObservation(appBundleID: nil, source: .edit, before: "raz\ndwa", after: long, outcome: .skipped, reason: .rewrite)
+        #expect(observation.before == "raz dwa")
+        #expect(observation.after.count == LearningObservation.maxFragment)
+        #expect(observation.after.hasSuffix("…"))
+    }
+
+    // MARK: - "Popraw"
+
+    @Test func manualFixLearnsAtOnceWithAToast() throws {
+        #expect(learning.preview(original: "supa bejs", corrected: "Supabase")
+            == .learn([TermCorrection(misheard: "supa bejs", correct: "Supabase")], rule: true))
+        learning.learnManual(original: "supa bejs", corrected: "Supabase", appBundleID: "com.microsoft.VSCode")
+        let entry = try #require(store.data.learned.first)
+        #expect(entry.source == .manual)
+        #expect(entry.ruleID != nil)
+        #expect(toasts.actions.first?.message == "Zapamiętałem: supa bejs → Supabase")
+        #expect(store.data.observations.last?.source == .manual)
+        #expect(learning.preview(original: "supa bejs", corrected: "Supabase") == .known([TermCorrection(misheard: "supa bejs", correct: "Supabase")]))
+    }
+
+    @Test func manualFixOfRealWordsIsOnlyAHint() throws {
+        #expect(learning.preview(original: "kot", corrected: "kod") == .learn([TermCorrection(misheard: "kot", correct: "kod")], rule: false))
+        learning.learnManual(original: "kot", corrected: "kod", appBundleID: nil)
+        #expect(try #require(store.data.learned.first).ruleID == nil)
+        #expect(learning.promptHints == [TermCorrection(misheard: "kot", correct: "kod")])
+    }
+
+    @Test func manualFixUnblocksAndReplacesAReversedLesson() throws {
+        correct()
+        let id = try #require(store.data.learned.first?.id)
+        learning.undo(id)
+        learning.learnManual(original: "supa bejs", corrected: "Supabase", appBundleID: nil)
+        #expect(store.data.learned.count == 1)
+        #expect(store.data.blocked.isEmpty)
+
+        learning.learnManual(original: "Supabase", corrected: "supa bejs", appBundleID: nil)
+        #expect(store.data.learned.map(\.pair) == [TermCorrection(misheard: "Supabase", correct: "supa bejs")])
+    }
+
+    @Test func manualRewriteIsReplacedNotLearned() {
+        #expect(learning.learnManual(original: "w piątek", corrected: "na serwer", appBundleID: nil) == .rewrite)
+        #expect(store.data.learned.isEmpty)
+        #expect(store.data.observations.last?.reason == .rewrite)
+    }
+
+    @Test func manualFixWithLearningOffOnlyReplaces() {
+        settings.learningEnabled = false
+        #expect(learning.learnManual(original: "supa bejs", corrected: "Supabase", appBundleID: nil) == .off)
+        #expect(learning.learnManual(original: "w piątek", corrected: "na serwer", appBundleID: nil) == .off)
+        #expect(store.data.learned.isEmpty)
+        #expect(store.data.observations.isEmpty)
+    }
+
+    @Test func manualFixToastsEvenWithNotificationsOff() {
+        settings.learningNotifications = false
+        learning.learnManual(original: "supa bejs", corrected: "Supabase", appBundleID: nil)
+        #expect(toasts.actions.count == 1)
+    }
+
     @Test func resetAllCleansTheDictionary() {
         correct()
         correct()

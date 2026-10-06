@@ -4,8 +4,11 @@
 @MainActor
 final class HotkeyRelay {
     weak var controller: HotkeyController?
+    /// Runs before every dictation hotkey event ("Popraw" closes its panel).
+    var willHandle: (() -> Void)?
 
     func handle(_ event: HotkeyEvent) {
+        willHandle?()
         controller?.handle(event)
     }
 }

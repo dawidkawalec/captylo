@@ -105,6 +105,8 @@ struct AppSettingsTests {
         #expect(raw.contains("learning.enabled"))
         #expect(raw.contains("learning.notifications"))
         #expect(raw.contains("learning.excludedApps"))
+        #expect(raw.contains("learning.fixShortcut"))
+        #expect(raw.contains("meetings.proBannerHiddenUntil"))
         #expect(raw.contains("dev.pro"))
         #expect(raw.contains("meetings.autoDetect"))
         #expect(raw.contains("meetings.consentReminder"))
@@ -122,7 +124,7 @@ struct AppSettingsTests {
         #expect(raw.contains("account.refreshedAt"))
         #expect(raw.contains("ai.captylo"))
         #expect(raw.contains("stt.captylo"))
-        #expect(AppSettings.keys.count == 49)
+        #expect(AppSettings.keys.count == 51)
     }
 
     @Test func accountCacheDefaultsEmptyAndPersists() throws {

@@ -104,6 +104,15 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: com.captylo.app
             CFBundleURLSchemes: [captylo]
+        # Right click > Usługi > "Popraw w Captylo" (ManualCorrection, CorrectionServiceProvider).
+        # NSRequiredContext (even empty) makes the service on by default.
+        NSServices:
+          - NSMenuItem:
+              default: Popraw w Captylo
+            NSMessage: fixSelection
+            NSPortName: Captylo
+            NSSendTypes: [public.utf8-plain-text, NSStringPboardType]
+            NSRequiredContext: {}
         # Sparkle: started only by AppState.startServices() and only with a real public key.
         SUFeedURL: https://captylo.com/updates/appcast.xml
         SUPublicEDKey: $(SPARKLE_PUBLIC_ED_KEY)

@@ -24,6 +24,8 @@ enum DesignPreviewTarget: String, CaseIterable, Sendable {
     case mainUstawienia = "main-ustawienia"
     /// Every Glass component over the dusk wallpaper (the catalog in dusk-glass.md).
     case glassGallery = "glass-gallery"
+    /// The "Popraw" panel (⌃⌥⌘P) with a fix that will be learned as a rule.
+    case correction = "popraw"
 
     /// Space separated list for error messages.
     static var listing: String {
@@ -35,6 +37,7 @@ enum DesignPreviewTarget: String, CaseIterable, Sendable {
         case onboarding(OnboardingStep)
         case main(MainSection)
         case gallery
+        case correction
     }
 
     var kind: Kind {
@@ -56,6 +59,7 @@ enum DesignPreviewTarget: String, CaseIterable, Sendable {
         case .mainModele: return .main(.modele)
         case .mainUstawienia: return .main(.ustawienia)
         case .glassGallery: return .gallery
+        case .correction: return .correction
         }
     }
 

@@ -6,16 +6,48 @@ struct TermCorrection: Codable, Hashable, Sendable {
     var correct: String
 }
 
-/// Where a correction came from: an edit of pasted text or a word spelled out loud.
+/// Where a correction came from: an edit of pasted text, a word spelled out loud, or "Popraw"
+/// on selected text (⌃⌥⌘P or the Services menu).
 enum CorrectionSource: String, Codable, Sendable {
     case edit
     case voice
+    case manual
+}
+
+/// Why a change did not become a lesson. Shown in Słownik "Ostatnio zauważone", so the user can
+/// see what Captylo decided instead of guessing.
+enum LearningSkipReason: String, Codable, Sendable {
+    /// Most of the text changed: a rewrite, not a correction.
+    case rewrite
+    /// More than `CorrectionLearner.maxTermWords` words on a side: wording, kept for the style profile.
+    case longChange
+    /// Only the capital at the start of a sentence.
+    case sentenceCase
+    /// Ordinary words on both sides that do not sound alike: a change of meaning, not a mishearing.
+    case ordinaryWords
+    /// Only punctuation or symbols changed.
+    case punctuation
+    /// The user undid this pair before.
+    case blocked
+    /// Already learned.
+    case alreadyKnown
+    /// The app did not expose the field's text, so the edit could not be seen.
+    case unreadable
+}
+
+/// One change of an edit that was not learned, with the reason.
+struct SkippedChange: Equatable, Sendable {
+    var old: String
+    var new: String
+    var reason: LearningSkipReason
 }
 
 /// What one correction teaches.
 struct CorrectionAnalysis: Equatable, Sendable {
     /// Term fixes ("supa bejs" -> "Supabase"), in text order, deduped.
     var terms: [TermCorrection] = []
+    /// Changes that are not terms, with the reason (for "Ostatnio zauważone").
+    var skipped: [SkippedChange] = []
     /// Other edits (wording, punctuation, greetings): worth a style sample.
     var isStyle = false
     /// Not a correction at all (rewritten, deleted, unrelated text): learn nothing.
@@ -23,6 +55,22 @@ struct CorrectionAnalysis: Equatable, Sendable {
     /// Words Captylo pasted, and how many of them the user changed (for "Poprawki na 100 słów").
     var deliveredWords = 0
     var changedWords = 0
+}
+
+/// What "Popraw" on selected text teaches.
+enum ManualVerdict: Equatable, Sendable {
+    /// The new text equals the selection.
+    case unchanged
+    /// Term fixes to learn.
+    case terms([TermCorrection])
+    /// A change of content (other words, a reworded sentence): replaced, never learned.
+    case rewrite
+}
+
+/// A change judged as a possible term.
+enum TermVerdict: Equatable, Sendable {
+    case term(TermCorrection)
+    case skip(LearningSkipReason)
 }
 
 /// Pure rules that turn an edit into lessons (self-learning stage 1). No state, no I/O:
@@ -61,12 +109,14 @@ enum CorrectionLearner {
                 previousWord = words.last ?? previousWord
             case .change(let old, let new):
                 analysis.changedWords += max(old.count, new.count)
-                if let term = termFix(old: old, new: new, atSentenceStart: startsSentence(after: previousWord), isRealWord: isRealWord) {
+                switch termVerdict(old: old, new: new, atSentenceStart: startsSentence(after: previousWord), isRealWord: isRealWord) {
+                case .term(let term):
                     if !analysis.terms.contains(term) {
                         analysis.terms.append(term)
                     }
-                } else {
+                case .skip(let reason):
                     analysis.isStyle = true
+                    analysis.skipped.append(SkippedChange(old: old.joined(separator: " "), new: new.joined(separator: " "), reason: reason))
                 }
                 previousWord = new.last ?? previousWord
             }
@@ -77,18 +127,26 @@ enum CorrectionLearner {
 
     /// A 1...3 word change that fixes a name, brand or misheard word; nil for any other edit.
     static func termFix(old: [String], new: [String], atSentenceStart: Bool, isRealWord: (String) -> Bool) -> TermCorrection? {
-        guard (1...maxTermWords).contains(old.count), (1...maxTermWords).contains(new.count) else { return nil }
+        if case .term(let term) = termVerdict(old: old, new: new, atSentenceStart: atSentenceStart, isRealWord: isRealWord) {
+            return term
+        }
+        return nil
+    }
+
+    /// `termFix` with the reason when the change is not a term.
+    static func termVerdict(old: [String], new: [String], atSentenceStart: Bool, isRealWord: (String) -> Bool) -> TermVerdict {
+        guard (1...maxTermWords).contains(old.count), (1...maxTermWords).contains(new.count) else { return .skip(.longChange) }
         let misheard = stripped(old.joined(separator: " "))
         let correct = stripped(new.joined(separator: " "))
-        guard !misheard.isEmpty, !correct.isEmpty, correct.count <= maxTermLength,
-              correct.contains(where: \.isLetter) else { return nil }
+        guard !misheard.isEmpty, !correct.isEmpty, correct.contains(where: \.isLetter) else { return .skip(.punctuation) }
+        guard correct.count <= maxTermLength else { return .skip(.longChange) }
 
         if misheard.lowercased() == correct.lowercased() {
             // Only the case changed: a term when the capitals are not just a sentence start.
-            guard misheard != correct else { return nil }
+            guard misheard != correct else { return .skip(.punctuation) }
             let capitalsInside = correct.dropFirst().contains(where: \.isUppercase)
             let capitalizedName = correct.first?.isUppercase == true && !atSentenceStart
-            return capitalsInside || capitalizedName ? TermCorrection(misheard: misheard, correct: correct) : nil
+            return capitalsInside || capitalizedName ? .term(TermCorrection(misheard: misheard, correct: correct)) : .skip(.sentenceCase)
         }
 
         let correctWords = correct.split(separator: " ").map(String.init)
@@ -97,14 +155,90 @@ enum CorrectionLearner {
             || correct.contains(where: \.isNumber)
             || correctWords.contains { !isRealWord($0) }
         if looksLikeTerm {
-            return TermCorrection(misheard: misheard, correct: correct)
+            return .term(TermCorrection(misheard: misheard, correct: correct))
         }
         // Lowercase real words on both sides: a misheard non-word close in spelling still counts.
         let misheardIsWord = misheard.split(separator: " ").allSatisfy { isRealWord(String($0)) }
         if !misheardIsWord, normalizedDistance(misheard, correct) <= 0.5 {
-            return TermCorrection(misheard: misheard, correct: correct)
+            return .term(TermCorrection(misheard: misheard, correct: correct))
         }
-        return nil
+        return .skip(.ordinaryWords)
+    }
+
+    // MARK: - "Popraw"
+
+    /// Ordinary words that differ by at most this share of letters sound alike ("może" / "morze").
+    static let soundAlikeDistance = 0.5
+
+    /// "Popraw" on selected text: the user said outright that the selection was wrong, so ordinary
+    /// words that sound alike count too ("może" -> "morze"), which the edit watcher never guesses.
+    /// A short selection (up to `maxTermWords` words) is one pair; a longer one is diffed and each
+    /// changed part judged alone. Other words or a reworded sentence is a rewrite: replaced, not learned.
+    static func manual(original: String, corrected: String, isRealWord: (String) -> Bool) -> ManualVerdict {
+        let old = original.trimmingCharacters(in: .whitespacesAndNewlines)
+        let new = corrected.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard old != new else { return .unchanged }
+        guard !new.isEmpty else { return .rewrite }
+        let oldWords = TokenDiff.words(old)
+        let newWords = TokenDiff.words(new)
+        if oldWords.count <= maxTermWords, newWords.count <= maxTermWords {
+            if case .term(let term) = manualTerm(old: oldWords, new: newWords, isRealWord: isRealWord) {
+                return .terms([term])
+            }
+            return .rewrite
+        }
+        guard let hunks = TokenDiff.hunks(from: old, to: new),
+              TokenDiff.similarity(hunks, oldCount: oldWords.count, newCount: newWords.count) >= minSimilarity else {
+            return .rewrite
+        }
+        var terms: [TermCorrection] = []
+        for case .change(let oldPart, let newPart) in hunks {
+            if case .term(let term) = manualTerm(old: oldPart, new: newPart, isRealWord: isRealWord), !terms.contains(term) {
+                terms.append(term)
+            }
+        }
+        return terms.isEmpty ? .rewrite : .terms(terms)
+    }
+
+    /// One changed part of a "Popraw": a name or brand, a case fix of a non-word, or ordinary
+    /// words that sound alike.
+    static func manualTerm(old: [String], new: [String], isRealWord: (String) -> Bool) -> TermVerdict {
+        guard (1...maxTermWords).contains(old.count), (1...maxTermWords).contains(new.count) else { return .skip(.longChange) }
+        let misheard = stripped(old.joined(separator: " "))
+        let correct = stripped(new.joined(separator: " "))
+        guard !misheard.isEmpty, !correct.isEmpty, correct.contains(where: \.isLetter) else { return .skip(.punctuation) }
+        guard correct.count <= maxTermLength else { return .skip(.longChange) }
+        let pair = TermCorrection(misheard: misheard, correct: correct)
+        let misheardIsWord = misheard.split(separator: " ").allSatisfy { isRealWord(String($0)) }
+
+        if misheard.lowercased() == correct.lowercased() {
+            guard misheard != correct else { return .skip(.punctuation) }
+            // "kod" -> "Kod" is a sentence start; "github" -> "GitHub" and "captylo" -> "Captylo" are names.
+            let capitalsInside = correct.dropFirst().contains(where: \.isUppercase)
+            return capitalsInside || !misheardIsWord ? .term(pair) : .skip(.sentenceCase)
+        }
+
+        let correctWords = correct.split(separator: " ").map(String.init)
+        if correct.dropFirst().contains(where: \.isUppercase)
+            || correct.contains(where: \.isNumber)
+            || correctWords.contains(where: { !isRealWord($0) })
+            || !misheardIsWord {
+            return .term(pair)
+        }
+        // Ordinary words on both sides: "piątek" -> "piątku" is grammar, "może" -> "morze" a mishearing.
+        if !isInflection(misheard, correct), normalizedDistance(misheard, correct) <= soundAlikeDistance {
+            return .term(pair)
+        }
+        return .skip(.ordinaryWords)
+    }
+
+    /// Another form of the same word: a shared stem of all but the last two letters, 5+ letters.
+    static func isInflection(_ a: String, _ b: String) -> Bool {
+        let x = Array(fold(a))
+        let y = Array(fold(b))
+        let shorter = min(x.count, y.count)
+        guard shorter >= 5 else { return false }
+        return zip(x, y).prefix { $0 == $1 }.count >= shorter - 2
     }
 
     /// True when `a` and `b` are the same word, maybe inflected ("Figmę" / "Figma"): diacritic-

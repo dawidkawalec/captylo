@@ -7,6 +7,8 @@ struct OutputSettings: Sendable, Equatable {
     /// Fixed 2 s in the UI; never below 0.25 s (gotcha 52).
     var restoreDelay: Duration
     var trailingSpace: Bool
+    /// Pasted after the trimmed text ("Popraw" keeps the newline a selected line ended with).
+    var suffix = ""
 
     init(restoreClipboard: Bool = true, restoreDelay: Duration = .seconds(2), trailingSpace: Bool = true) {
         self.restoreClipboard = restoreClipboard

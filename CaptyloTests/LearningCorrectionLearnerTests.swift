@@ -72,6 +72,60 @@ struct LearningCorrectionLearnerTests {
         #expect(result.changedWords == 2)
     }
 
+    @Test func skippedChangesSayWhy() {
+        #expect(analyze("jutro spotkanie.", "Jutro spotkanie.").skipped.map(\.reason) == [.sentenceCase])
+        #expect(analyze("Spotkanie w piątek o 10.", "Spotkanie w piątku o 10.").skipped
+            == [SkippedChange(old: "piątek", new: "piątku", reason: .ordinaryWords)])
+        #expect(analyze("Hej, spotkanie jutro o 10. Daj znać, czy pasuje.", "Dzień dobry, spotkanie jutro o 10. Daj znać, czy pasuje.")
+            .skipped.map(\.reason) == [.ordinaryWords])
+        #expect(analyze("Ala ma kota", "Ala ma kota!").skipped.map(\.reason) == [.punctuation])
+        #expect(analyze("Wrzucam to na supa bejs w piątek.", "Wrzucam to na Supabase w piątek.").skipped.isEmpty)
+    }
+
+    // MARK: - "Popraw"
+
+    private func manual(_ original: String, _ corrected: String) -> ManualVerdict {
+        CorrectionLearner.manual(original: original, corrected: corrected, isRealWord: Self.isRealWord)
+    }
+
+    @Test func manualFixOfASelectedTermIsLearned() {
+        #expect(manual("supa bejs", "Supabase") == .terms([TermCorrection(misheard: "supa bejs", correct: "Supabase")]))
+        #expect(manual(" hanczo ", "honcho") == .terms([TermCorrection(misheard: "hanczo", correct: "honcho")]))
+    }
+
+    @Test func manualFixOfSoundAlikeOrdinaryWordsIsLearned() {
+        // The watcher never guesses these; "Popraw" says outright the word was misheard.
+        #expect(manual("ma", "na") == .terms([TermCorrection(misheard: "ma", correct: "na")]))
+    }
+
+    @Test func manualGrammarOrOtherWordsIsARewrite() {
+        #expect(manual("piątek", "piątku") == .rewrite)
+        #expect(manual("spotkanie", "jutro") == .rewrite)
+        #expect(manual("Wrzucam to na supa bejs w piątek.", "Całkiem inny tekst o czymś zupełnie innym tutaj.") == .rewrite)
+    }
+
+    @Test func manualCaseFixNeedsAName() {
+        #expect(manual("jutro", "Jutro") == .rewrite)
+        #expect(manual("supabase", "Supabase") == .terms([TermCorrection(misheard: "supabase", correct: "Supabase")]))
+        #expect(manual("ok", "OK") == .terms([TermCorrection(misheard: "ok", correct: "OK")]))
+    }
+
+    @Test func manualFixInsideALongerSelectionFindsTheTerm() {
+        #expect(manual("Wrzucam to na supa bejs w piątek.", "Wrzucam to na Supabase w piątek.")
+            == .terms([TermCorrection(misheard: "supa bejs", correct: "Supabase")]))
+    }
+
+    @Test func manualUnchangedTeachesNothing() {
+        #expect(manual("Ala ma kota", "Ala ma kota ") == .unchanged)
+    }
+
+    @Test func inflectionNeedsAStemOfFiveLetters() {
+        #expect(CorrectionLearner.isInflection("piątek", "piątku"))
+        #expect(CorrectionLearner.isInflection("spotkanie", "spotkania"))
+        #expect(!CorrectionLearner.isInflection("może", "morze"))
+        #expect(!CorrectionLearner.isInflection("kot", "kod"))
+    }
+
     @Test func sameWordHandlesInflectionAndCase() {
         #expect(CorrectionLearner.isSameWord("Figmę", "Figma"))
         #expect(CorrectionLearner.isSameWord("Brzęk", "BRZĘK"))

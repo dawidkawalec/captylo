@@ -9,6 +9,8 @@ import os
 final class GlobalShortcut {
     /// ⌃⌥⌘M: no system or common app shortcut uses it.
     static let meeting = Combo(keyCode: UInt32(kVK_ANSI_M), modifiers: UInt32(cmdKey | optionKey | controlKey), display: "⌃⌥⌘M")
+    /// ⌃⌥⌘P: "Popraw" the selected text (self-learning).
+    static let correction = Combo(keyCode: UInt32(kVK_ANSI_P), modifiers: UInt32(cmdKey | optionKey | controlKey), display: "⌃⌥⌘P")
 
     struct Combo: Sendable, Equatable {
         let keyCode: UInt32

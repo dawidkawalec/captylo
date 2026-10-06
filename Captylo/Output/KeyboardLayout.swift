@@ -2,52 +2,66 @@ import Carbon
 import CoreGraphics
 import Foundation
 
-/// Resolves the virtual key code that produces "v" in the current keyboard layout (gotcha 49).
-/// Apps match Cmd shortcuts by the character the layout produces, so the ANSI `0x09` misfires
-/// on Dvorak or Colemak. The lookup runs `UCKeyTranslate` with the Command modifier held (so
-/// the "QWERTY ⌘" layouts resolve correctly), caches the result per input source id and drops
-/// the cache when the selected keyboard input source changes. Main thread only (TIS rule).
+/// Resolves the virtual key code that produces "v" (paste) or "c" (copy for "Popraw") in the
+/// current keyboard layout (gotcha 49). Apps match Cmd shortcuts by the character the layout
+/// produces, so the ANSI `0x09` misfires on Dvorak or Colemak. The lookup runs `UCKeyTranslate`
+/// with the Command modifier held (so the "QWERTY ⌘" layouts resolve correctly), caches the
+/// result per input source id and drops the cache when the selected keyboard input source
+/// changes. Main thread only (TIS rule).
 @MainActor
 enum KeyboardLayout {
-    /// ANSI V, used when the layout cannot be inspected.
+    /// ANSI V and C, used when the layout cannot be inspected.
     static let fallbackKeyCodeForV: CGKeyCode = 0x09
+    static let fallbackKeyCodeForC: CGKeyCode = 0x08
 
     private static var cachedSourceID: String?
-    private static var cachedKeyCode: CGKeyCode?
+    private static var cachedKeyCodes: [UInt8: CGKeyCode] = [:]
     private static var changeObserver: (any NSObjectProtocol)?
 
     /// Key code producing "v" with Command held in the current layout, `0x09` when unknown.
     static func keyCodeForV() -> CGKeyCode {
+        keyCode(for: UInt8(ascii: "v"), fallback: fallbackKeyCodeForV)
+    }
+
+    /// Key code producing "c" with Command held in the current layout, `0x08` when unknown.
+    static func keyCodeForC() -> CGKeyCode {
+        keyCode(for: UInt8(ascii: "c"), fallback: fallbackKeyCodeForC)
+    }
+
+    private static func keyCode(for character: UInt8, fallback: CGKeyCode) -> CGKeyCode {
         installChangeObserverIfNeeded()
 
         guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue() else {
             // Happens during fast user switching; do not cache the fallback.
-            Log.output.warning("No keyboard layout input source, using ANSI V")
-            return fallbackKeyCodeForV
+            Log.output.warning("No keyboard layout input source, using the ANSI key")
+            return fallback
         }
 
         let sourceID = inputSourceID(of: source)
-        if let cachedSourceID, let cachedKeyCode, cachedSourceID == sourceID {
-            return cachedKeyCode
+        if cachedSourceID != sourceID {
+            cachedSourceID = sourceID
+            cachedKeyCodes = [:]
+        }
+        if let cached = cachedKeyCodes[character] {
+            return cached
         }
 
-        let keyCode = resolveKeyCodeForV(in: source) ?? fallbackKeyCodeForV
-        cachedSourceID = sourceID
-        cachedKeyCode = keyCode
-        Log.output.info("Keyboard layout \(sourceID ?? "?", privacy: .public): V is key code 0x\(String(keyCode, radix: 16), privacy: .public)")
+        let keyCode = resolveKeyCode(for: character, in: source) ?? fallback
+        cachedKeyCodes[character] = keyCode
+        Log.output.info("Keyboard layout \(sourceID ?? "?", privacy: .public): \(String(UnicodeScalar(character)), privacy: .public) is key code 0x\(String(keyCode, radix: 16), privacy: .public)")
         return keyCode
     }
 
-    /// Drops the cached key code; the next `keyCodeForV()` inspects the layout again.
+    /// Drops the cached key codes; the next lookup inspects the layout again.
     static func invalidateCache() {
         cachedSourceID = nil
-        cachedKeyCode = nil
+        cachedKeyCodes = [:]
     }
 
     // MARK: - Lookup
 
-    /// Scans key codes 0...127 and returns the first one that maps to "v" with Command held.
-    static func resolveKeyCodeForV(in source: TISInputSource) -> CGKeyCode? {
+    /// Scans key codes 0...127 and returns the first one that maps to `character` with Command held.
+    static func resolveKeyCode(for character: UInt8, in source: TISInputSource) -> CGKeyCode? {
         guard let layoutPointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else {
             return nil
         }
@@ -76,7 +90,7 @@ enum KeyboardLayout {
                     &characters
                 )
                 guard status == noErr, length == 1 else { continue }
-                if characters[0] == UniChar(UInt8(ascii: "v")) {
+                if characters[0] == UniChar(character) {
                     return keyCode
                 }
             }

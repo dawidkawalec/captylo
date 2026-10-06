@@ -32,6 +32,7 @@ struct DictionaryView: View {
             }
             vocabularyPanel
             LearnedPanel(learning: appState.learning, isEnabled: appState.settings.learningEnabled)
+            ObservedPanel(learning: appState.learning, isEnabled: appState.settings.learningEnabled)
             StylePanel(learning: appState.learning, aiEnabled: appState.settings.aiEnabled)
             ReplacementsPanel(dictionary: dictionary)
             fillersPanel

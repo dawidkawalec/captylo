@@ -28,6 +28,7 @@ final class AppSettings {
         case learningEnabled = "learning.enabled"
         case learningNotifications = "learning.notifications"
         case learningExcludedApps = "learning.excludedApps"
+        case learningFixShortcut = "learning.fixShortcut"
         case menuBarOnly
         case windowBackground = "ui.windowBackground"
         case backgroundDim = "ui.backgroundDim"
@@ -39,6 +40,7 @@ final class AppSettings {
         case dashboardMode = "dashboard.mode"
         case dashboardMetric = "dashboard.metric"
         case supportCardHiddenUntil = "supportCard.hiddenUntil"
+        case meetingsProBannerHiddenUntil = "meetings.proBannerHiddenUntil"
         case openRouterModelsCache = "openRouter.modelsCache"
         case openRouterModelsCachedAt = "openRouter.modelsCachedAt"
         case devPro = "dev.pro"
@@ -357,6 +359,12 @@ final class AppSettings {
         set { withMutation(keyPath: \.learningNotifications) { defaults.set(newValue, forKey: Key.learningNotifications.rawValue) } }
     }
 
+    /// ⌃⌥⌘P "Popraw zaznaczony tekst" from any app (the Services menu entry works either way).
+    var learningFixShortcut: Bool {
+        get { track(\.learningFixShortcut); return bool(.learningFixShortcut, default: true) }
+        set { withMutation(keyPath: \.learningFixShortcut) { defaults.set(newValue, forKey: Key.learningFixShortcut.rawValue) } }
+    }
+
     /// Bundle ids whose fields are never read back, on top of `EditWatcher.excludedBundleIDs`.
     var learningExcludedApps: [String] {
         get { track(\.learningExcludedApps); return decode([String].self, .learningExcludedApps) ?? [] }
@@ -544,6 +552,12 @@ final class AppSettings {
     var supportCardHiddenUntil: Date? {
         get { track(\.supportCardHiddenUntil); return defaults.object(forKey: Key.supportCardHiddenUntil.rawValue) as? Date }
         set { withMutation(keyPath: \.supportCardHiddenUntil) { defaults.set(newValue, forKey: Key.supportCardHiddenUntil.rawValue) } }
+    }
+
+    /// The Free banner over a meeting's transcript ("To spotkanie w Pro") closed until then.
+    var meetingsProBannerHiddenUntil: Date? {
+        get { track(\.meetingsProBannerHiddenUntil); return defaults.object(forKey: Key.meetingsProBannerHiddenUntil.rawValue) as? Date }
+        set { withMutation(keyPath: \.meetingsProBannerHiddenUntil) { defaults.set(newValue, forKey: Key.meetingsProBannerHiddenUntil.rawValue) } }
     }
 
     // MARK: OpenRouter model cache
