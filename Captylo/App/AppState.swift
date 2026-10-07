@@ -590,6 +590,8 @@ final class AppState {
         } catch {
             Log.data.error("Could not create the data directories: \(error.localizedDescription, privacy: .public)")
         }
+        // Before the first store write of this run: every change carries this Mac's id (sync).
+        DeviceIdentity.load(from: AppPaths.dataDirectory)
 
         // A crash or quit mid-meeting left its row "recording": it becomes "Przerwane" with the
         // segments it saved. A meeting started right after launch waits for this.

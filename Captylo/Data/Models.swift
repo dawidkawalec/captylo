@@ -32,6 +32,9 @@ final class Dictation {
     var enhancementNote: String? = nil
     /// Of the delivered text (`enhancedText ?? text`).
     var wordCount: Int = 0
+    /// Last change and the device that made it (sync, M7); stamped by every write (`touch`).
+    var updatedAt: Date = Date()
+    var deviceID: String = ""
 
     init(
         id: UUID = UUID(),
@@ -69,6 +72,7 @@ final class Dictation {
         self.enhancementMode = enhancementMode
         self.enhancementNote = enhancementNote
         self.wordCount = wordCount
+        self.deviceID = DeviceIdentity.current
     }
 
     var finalText: String { enhancedText ?? text }
@@ -141,6 +145,7 @@ extension Dictation {
         enhancementMode = record.enhancementMode
         enhancementNote = record.enhancementNote
         wordCount = record.wordCount
+        touch()
     }
 
     /// Overwrites only the AI fields ("Przetwórz przez AI"): text, word count and stats stay.
@@ -150,6 +155,13 @@ extension Dictation {
         enhancementMs = record.enhancementMs
         enhancementMode = record.enhancementMode
         enhancementNote = record.enhancementNote
+        touch()
+    }
+
+    /// Stamps a change with the time and this installation's id.
+    func touch() {
+        updatedAt = Date()
+        deviceID = DeviceIdentity.current
     }
 
     var record: DictationRecord {

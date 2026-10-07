@@ -39,6 +39,9 @@ final class Meeting {
     var searchText: String = ""
     /// Folded title and notes (`MeetingSearch.titleNotes`), kept in step by `apply`.
     var titleNotesSearchText: String = ""
+    /// Last change and the device that made it (sync, M7); stamped by `touch`.
+    var updatedAt: Date = Date()
+    var deviceID: String = ""
 
     init(_ record: MeetingRecord) {
         id = record.id
@@ -68,6 +71,13 @@ final class Meeting {
         participantsJSON = record.participants.isEmpty ? Data() : Self.encode(record.participants)
         questionsJSON = record.questions.isEmpty ? Data() : Self.encode(record.questions)
         titleNotesSearchText = MeetingSearch.titleNotes(title: record.title, notes: record.notes)
+        touch()
+    }
+
+    /// Stamps a change with the time and this installation's id.
+    func touch() {
+        updatedAt = Date()
+        deviceID = DeviceIdentity.current
     }
 
     var record: MeetingRecord {

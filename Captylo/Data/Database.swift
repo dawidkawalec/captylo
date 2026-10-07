@@ -181,6 +181,7 @@ actor Database: ModelActor {
         let fileNames = rows.compactMap(\.audioFileName)
         for row in rows {
             row.audioFileName = nil
+            row.touch()
         }
         try modelContext.save()
         return fileNames

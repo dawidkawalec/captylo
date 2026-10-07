@@ -55,6 +55,7 @@ extension Database {
         modelContext.insert(MeetingSegment(segment))
         if !segment.isEcho, let meeting = try fetchMeeting(id: segment.meetingID) {
             meeting.searchText += MeetingSearch.transcript([segment.text])
+            meeting.touch()
         }
         try modelContext.save()
         if !segment.isEcho {
@@ -360,5 +361,6 @@ extension Database {
             .filter { !$0.isEcho }
             .map(\.text)
         meeting.searchText = MeetingSearch.transcript(texts)
+        meeting.touch()
     }
 }
