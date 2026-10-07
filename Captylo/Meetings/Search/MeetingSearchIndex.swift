@@ -12,19 +12,24 @@ import os
 /// writes synchronously right after a save, they are queued in exactly that order, and the store
 /// path never waits for (or is reentered by) the index. The connection lives only on `queue`.
 ///
-/// Rows: one per segment that is not echo, plus a title and a notes row per meeting. The `keys`
-/// table maps a segment id (or "title:<meeting>", "notes:<meeting>") to its FTS row, so an upsert
-/// or a meeting delete never scans the FTS table.
+/// Rows: one per segment that is not echo, plus a title and a notes row per meeting, plus a title
+/// and a body row per note (kinds `noteTitle` / `noteBody`; the `meeting` column then holds the
+/// note id). The `keys` table maps a segment id (or "title:<meeting>", "notes:<meeting>",
+/// "notetitle:<note>", "notebody:<note>") to its FTS row, so an upsert or a delete never scans
+/// the FTS table. Meeting queries only ever read the meeting kinds.
 final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
     /// `PRAGMA user_version` of the file; another value drops the tables and rebuilds them.
-    static let version = 1
+    /// 2: notes (1.0.15).
+    static let version = 2
     /// File name inside the data folder (`AppPaths.searchIndex`).
     static let fileName = "Search.sqlite"
 
-    /// Rows a full build would hold: one title row per meeting and one row per segment that is not echo.
+    /// Rows a full build would hold: one title row per meeting, one row per segment that is not
+    /// echo, one title row per note.
     struct Counts: Sendable, Equatable {
         var meetings: Int
         var segments: Int
+        var notes: Int
     }
 
     /// What a full rebuild did (log and `--rebuild-search-index`).
@@ -132,6 +137,9 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         for id in try await database.meetingIDs() {
             try await database.reindexMeeting(id: id, into: self)
         }
+        for id in try await database.noteIDs() {
+            try await database.reindexNote(id: id, into: self)
+        }
         let built: (meetings: Int, rows: Int) = try await withConnection { connection in
             let counts = try self.counts(in: connection)
             let rows = try connection.integer("SELECT count(*) FROM keys")
@@ -204,6 +212,24 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         }
     }
 
+    /// Notes that contain all (`all`) or any of `terms`, best first (title weighted up). Nil when
+    /// not ready or the query fails.
+    func noteHits(terms: [String], all: Bool, limit: Int) async -> [NoteHit]? {
+        guard !terms.isEmpty, limit > 0, isReady else { return nil }
+        let match = SearchQuery.match(terms, all: all)
+        return await onQueue {
+            guard let connection = self.openIfNeeded(), self.canAnswer(connection) else { return nil }
+            do {
+                return try self.noteHits(match: match, limit: limit, in: connection)
+            } catch let failure as SQLiteConnection.Failure {
+                Log.data.error("Search index query failed: SQLite \(failure.code, privacy: .public)")
+                return nil
+            } catch {
+                return nil
+            }
+        }
+    }
+
     // MARK: MeetingIndexing
 
     func indexMeeting(_ meeting: MeetingRecord, segments: [MeetingSegmentRecord]) {
@@ -237,6 +263,22 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
     }
 
     func removeMeeting(_ id: UUID) {
+        write { connection in
+            try self.deleteRows(meeting: id, in: connection)
+        }
+    }
+
+    func indexNote(_ note: NoteRecord) {
+        write { connection in
+            try self.deleteRows(meeting: note.id, in: connection)
+            try self.insert(key: Self.noteTitleKey(note.id), meeting: note.id, segment: "", kind: Self.noteTitleKind,
+                            start: 0, track: "", body: MeetingSearch.fold(note.title), in: connection)
+            try self.insert(key: Self.noteBodyKey(note.id), meeting: note.id, segment: "", kind: Self.noteBodyKind,
+                            start: 0, track: "", body: MeetingSearch.fold(note.body), in: connection)
+        }
+    }
+
+    func removeNote(_ id: UUID) {
         write { connection in
             try self.deleteRows(meeting: id, in: connection)
         }
@@ -399,29 +441,38 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
 
     private static func titleKey(_ id: UUID) -> String { "title:" + id.uuidString }
     private static func notesKey(_ id: UUID) -> String { "notes:" + id.uuidString }
+    private static func noteTitleKey(_ id: UUID) -> String { "notetitle:" + id.uuidString }
+    private static func noteBodyKey(_ id: UUID) -> String { "notebody:" + id.uuidString }
+    /// Kinds of note rows. `SearchHit.Kind` stays meeting-only: meeting reads never see these.
+    private static let noteTitleKind = "noteTitle"
+    private static let noteBodyKind = "noteBody"
+    /// The filter every meeting query adds, so note rows never reach meeting results or limits.
+    private static let meetingKinds = "kind IN ('title', 'notes', 'segment')"
 
     private func counts(in connection: SQLiteConnection) throws -> Counts {
         Counts(
             meetings: try connection.integer("SELECT count(*) FROM keys WHERE kind = 'title'"),
-            segments: try connection.integer("SELECT count(*) FROM keys WHERE kind = 'segment'")
+            segments: try connection.integer("SELECT count(*) FROM keys WHERE kind = 'segment'"),
+            notes: try connection.integer("SELECT count(*) FROM keys WHERE kind = '\(Self.noteTitleKind)'")
         )
     }
 
     private func insertTitleNotes(_ meeting: MeetingRecord, in connection: SQLiteConnection) throws {
-        try insert(key: Self.titleKey(meeting.id), meeting: meeting.id, segment: "", kind: .title,
+        try insert(key: Self.titleKey(meeting.id), meeting: meeting.id, segment: "", kind: SearchHit.Kind.title.rawValue,
                    start: 0, track: "", body: MeetingSearch.fold(meeting.title), in: connection)
-        try insert(key: Self.notesKey(meeting.id), meeting: meeting.id, segment: "", kind: .notes,
+        try insert(key: Self.notesKey(meeting.id), meeting: meeting.id, segment: "", kind: SearchHit.Kind.notes.rawValue,
                    start: 0, track: "", body: MeetingSearch.fold(meeting.notes), in: connection)
     }
 
     private func insert(_ segment: MeetingSegmentRecord, in connection: SQLiteConnection) throws {
         try insert(key: segment.id.uuidString, meeting: segment.meetingID, segment: segment.id.uuidString,
-                   kind: .segment, start: segment.start, track: segment.track.rawValue,
+                   kind: SearchHit.Kind.segment.rawValue, start: segment.start, track: segment.track.rawValue,
                    body: MeetingSearch.fold(segment.text), in: connection)
     }
 
+    /// One FTS row and its key. `meeting` is the document id (a note's id for note rows).
     private func insert(
-        key: String, meeting: UUID, segment: String, kind: SearchHit.Kind,
+        key: String, meeting: UUID, segment: String, kind: String,
         start: Double, track: String, body: String, in connection: SQLiteConnection
     ) throws {
         let entry = try connection.statement(
@@ -430,7 +481,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         try entry.bind(1, body)
         try entry.bind(2, meeting.uuidString)
         try entry.bind(3, segment)
-        try entry.bind(4, kind.rawValue)
+        try entry.bind(4, kind)
         try entry.bind(5, start)
         try entry.bind(6, track)
         try entry.step()
@@ -440,7 +491,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         )
         try mapping.bind(1, key)
         try mapping.bind(2, meeting.uuidString)
-        try mapping.bind(3, kind.rawValue)
+        try mapping.bind(3, kind)
         try mapping.bind(4, rowID)
         try mapping.step()
     }
@@ -474,13 +525,17 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         try statement.step()
     }
 
-    /// The weighted bm25 of an entry: title and notes count more than a transcript line.
-    private static let score = "bm25(entries) * CASE kind WHEN 'title' THEN 2.0 WHEN 'notes' THEN 1.5 ELSE 1.0 END"
+    /// The weighted bm25 of an entry: titles and notes count more than a transcript line or a
+    /// note's body.
+    private static let score = """
+        bm25(entries) * CASE kind WHEN 'title' THEN 2.0 WHEN 'noteTitle' THEN 2.0 \
+        WHEN 'notes' THEN 1.5 WHEN 'noteBody' THEN 1.5 ELSE 1.0 END
+        """
 
     private func hits(match: String, limit: Int, in connection: SQLiteConnection) throws -> [SearchHit] {
         let statement = try connection.statement("""
             SELECT meeting, segment, kind, start, track, \(Self.score) AS score
-            FROM entries WHERE entries MATCH ? ORDER BY score LIMIT ?
+            FROM entries WHERE entries MATCH ? AND \(Self.meetingKinds) ORDER BY score LIMIT ?
             """)
         defer { statement.reset() }
         try statement.bind(1, match)
@@ -498,7 +553,7 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
         let statement = try connection.statement("""
             WITH scored AS MATERIALIZED (
                 SELECT meeting, segment, kind, start, track, \(Self.score) AS score
-                FROM entries WHERE entries MATCH ?1
+                FROM entries WHERE entries MATCH ?1 AND \(Self.meetingKinds)
                 AND (?4 IS NULL OR meeting IN (SELECT value FROM json_each(?4)))
             ),
             best AS (
@@ -521,6 +576,27 @@ final class MeetingSearchIndex: MeetingIndexing, @unchecked Sendable {
             try statement.bind(4, only)
         }
         return try read(statement)
+    }
+
+    /// Notes ranked by their best row (title or body), at most `limit`. `MATERIALIZED`: a plain
+    /// subquery is flattened into the aggregate, where FTS5 refuses `bm25`.
+    private func noteHits(match: String, limit: Int, in connection: SQLiteConnection) throws -> [NoteHit] {
+        let statement = try connection.statement("""
+            WITH scored AS MATERIALIZED (
+                SELECT meeting, \(Self.score) AS score FROM entries
+                WHERE entries MATCH ?1 AND kind IN ('\(Self.noteTitleKind)', '\(Self.noteBodyKind)')
+            )
+            SELECT meeting, min(score) AS best FROM scored GROUP BY meeting ORDER BY best, meeting LIMIT ?2
+            """)
+        defer { statement.reset() }
+        try statement.bind(1, match)
+        try statement.bind(2, Int64(limit))
+        var hits: [NoteHit] = []
+        while try statement.step() {
+            guard let id = UUID(uuidString: statement.text(0)) else { continue }
+            hits.append(NoteHit(noteID: id, rank: statement.double(1)))
+        }
+        return hits
     }
 
     /// Rows of `meeting, segment, kind, start, track, score` as hits; a row that does not parse is skipped.

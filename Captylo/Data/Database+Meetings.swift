@@ -303,14 +303,16 @@ extension Database {
         return try modelContext.fetch(descriptor).map(\.id)
     }
 
-    /// What a full search index build holds for this store: one title row per meeting and one
-    /// row per segment that is not echo. The launch check compares it with the index file.
+    /// What a full search index build holds for this store: one title row per meeting, one row
+    /// per segment that is not echo and one title row per note. The launch check compares it with
+    /// the index file.
     func searchIndexCounts() throws -> MeetingSearchIndex.Counts {
         MeetingSearchIndex.Counts(
             meetings: try modelContext.fetchCount(FetchDescriptor<Meeting>()),
             segments: try modelContext.fetchCount(FetchDescriptor<MeetingSegment>(
                 predicate: #Predicate { $0.isEcho == false }
-            ))
+            )),
+            notes: try modelContext.fetchCount(FetchDescriptor<Note>())
         )
     }
 

@@ -302,7 +302,7 @@ struct MeetingSearchIndexTests {
         for query in queries {
             #expect(try await Self.keys(index, query) == incremental[query])
         }
-        #expect(try await db.searchIndexCounts() == MeetingSearchIndex.Counts(meetings: 4, segments: 28))
+        #expect(try await db.searchIndexCounts() == MeetingSearchIndex.Counts(meetings: 4, segments: 28, notes: 0))
     }
 
     @Test func aFileIndexIsCheckedAndRebuiltWhenNeeded() async throws {

@@ -12,4 +12,8 @@ protocol MeetingIndexing: Sendable {
     func indexTitleNotes(_ meeting: MeetingRecord)
     /// Drops every row of the meeting.
     func removeMeeting(_ id: UUID)
+    /// Replaces the title and body rows of the note.
+    func indexNote(_ note: NoteRecord)
+    /// Drops every row of the note.
+    func removeNote(_ id: UUID)
 }

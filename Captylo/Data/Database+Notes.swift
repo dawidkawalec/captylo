@@ -1,13 +1,17 @@
 import Foundation
 import SwiftData
 
-/// Note reads and writes. Like meetings: models never leave the actor (callers get `NoteRecord`).
+/// Note reads and writes. Like meetings: models never leave the actor (callers get `NoteRecord`),
+/// and every write that changes searchable text tells `searchIndex` after its save succeeded, in
+/// the same actor step.
 extension Database {
     // MARK: Note writes
 
     func createNote(_ record: NoteRecord) throws {
-        modelContext.insert(Note(record))
+        let row = Note(record)
+        modelContext.insert(row)
         try modelContext.save()
+        searchIndex?.indexNote(row.record)
     }
 
     /// Overwrites every field of the row.
@@ -15,8 +19,12 @@ extension Database {
         guard let row = try fetchNote(id: record.id) else {
             throw DatabaseError.notFound(record.id)
         }
+        let textChanged = row.title != record.title || row.body != record.body
         row.apply(record)
         try modelContext.save()
+        if textChanged {
+            searchIndex?.indexNote(row.record)
+        }
     }
 
     /// Reads, changes and saves one note in a single step on the actor, so the editor's autosave
@@ -25,10 +33,15 @@ extension Database {
     func modifyNote(id: UUID, _ change: @Sendable (inout NoteRecord) -> Void) throws -> NoteRecord? {
         guard let row = try fetchNote(id: id) else { return nil }
         var record = row.record
+        let before = (record.title, record.body)
         change(&record)
         row.apply(record)
         try modelContext.save()
-        return row.record
+        let saved = row.record
+        if before != (saved.title, saved.body) {
+            searchIndex?.indexNote(saved)
+        }
+        return saved
     }
 
     /// Removes the note and writes its tombstone in the same save. Returns the audio file name for
@@ -39,7 +52,18 @@ extension Database {
         modelContext.delete(row)
         modelContext.insert(Tombstone(.note, id: id))
         try modelContext.save()
+        searchIndex?.removeNote(id)
         return fileName
+    }
+
+    /// Reads one note and queues it on `index` in this same actor step (the rebuild runs next to
+    /// live writes, like `reindexMeeting`). A note deleted meanwhile is removed from the index.
+    func reindexNote(id: UUID, into index: any MeetingIndexing) throws {
+        guard let note = try fetchNote(id: id)?.record else {
+            index.removeNote(id)
+            return
+        }
+        index.indexNote(note)
     }
 
     // MARK: Note reads
