@@ -191,6 +191,9 @@ struct AccountClientTests {
         #expect(requests[1].value(forHTTPHeaderField: "Authorization") == nil)
         #expect(requests[2].value(forHTTPHeaderField: "Authorization") == "Bearer tok")
         #expect(AccountFixtures.body(of: requests[3])["plan"] as? String == "monthly")
+        // Stripe's return pages follow the UI language (/pl/ under Polish, server since 1.0.13).
+        #expect(AccountFixtures.body(of: requests[3])["lang"] as? String == AppLanguage.runningCode)
+        #expect(AccountFixtures.body(of: requests[4])["lang"] as? String == AppLanguage.runningCode)
         #expect(requests[5].value(forHTTPHeaderField: "Authorization") == "Bearer tok")
     }
 

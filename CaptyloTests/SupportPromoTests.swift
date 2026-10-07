@@ -66,6 +66,8 @@ struct SupportPromoTests {
     @Test func linksPointAtOurSite() {
         // Pro opens the account panel in Ustawienia, not the site.
         #expect(SupportPromo.pro.url == nil)
-        #expect(SupportPromo.coffee.url?.absoluteString == "https://captylo.com/kawa/")
+        // The coffee page in the UI language: /pl/kawa/ under Polish, /kawa/ under English.
+        let expected = AppLanguage.runningCode == "pl" ? "https://captylo.com/pl/kawa/" : "https://captylo.com/kawa/"
+        #expect(SupportPromo.coffee.url?.absoluteString == expected)
     }
 }

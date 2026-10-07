@@ -56,14 +56,17 @@ struct AccountClient: Sendable {
         _ = try await send("auth/logout", method: "POST", token: token, json: nil)
     }
 
-    /// `POST billing/checkout`: the hosted Checkout page for the signed-in account.
+    /// `POST billing/checkout`: the hosted Checkout page for the signed-in account. `lang` (the UI
+    /// language) brings the buyer back to the site's pages in that language (`/pl/` for Polish).
     func checkoutURL(token: String, plan: BillingPlan) async throws -> URL {
-        try Self.parseURL(await send("billing/checkout", method: "POST", token: token, json: CheckoutBody(plan: plan)))
+        let body = CheckoutBody(plan: plan, lang: AppLanguage.runningCode)
+        return try Self.parseURL(await send("billing/checkout", method: "POST", token: token, json: body))
     }
 
-    /// `POST billing/portal`: the subscription management page.
+    /// `POST billing/portal`: the subscription management page, returning to the site's account
+    /// page in the UI language.
     func portalURL(token: String) async throws -> URL {
-        try Self.parseURL(await send("billing/portal", method: "POST", token: token, json: nil))
+        try Self.parseURL(await send("billing/portal", method: "POST", token: token, json: PortalBody(lang: AppLanguage.runningCode)))
     }
 
     private func send(_ path: String, method: String, token: String?, json: (any Encodable)?) async throws -> Data {
@@ -101,6 +104,11 @@ struct AccountClient: Sendable {
 
     private struct CheckoutBody: Encodable {
         let plan: BillingPlan
+        let lang: String
+    }
+
+    private struct PortalBody: Encodable {
+        let lang: String
     }
 
     // MARK: Pure builders and parsers

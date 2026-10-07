@@ -108,19 +108,17 @@ struct MainSidebar: View {
                 Text("Wersja \(Self.version)")
                     .font(GlassFont.caption)
                     .foregroundStyle(GlassColor.textTertiary)
-                if let site = URL(string: "https://captylo.com") {
-                    Link(destination: site) {
-                        HStack(spacing: 4) {
-                            Text(verbatim: "captylo.com")
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 9, weight: .semibold))
-                        }
-                        .font(GlassFont.caption)
-                        .foregroundStyle(GlassColor.textSecondary)
+                Link(destination: SiteLinks.url("/")) {
+                    HStack(spacing: 4) {
+                        Text(verbatim: "captylo.com")
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 9, weight: .semibold))
                     }
-                    .buttonStyle(.plain)
-                    .pointerStyleLink()
+                    .font(GlassFont.caption)
+                    .foregroundStyle(GlassColor.textSecondary)
                 }
+                .buttonStyle(.plain)
+                .pointerStyleLink()
             }
         }
     }

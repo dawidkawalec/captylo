@@ -24,8 +24,8 @@ enum SupportPromo: Equatable, Sendable {
     static let hideInterval: TimeInterval = 14 * 24 * 3600
 
     /// A page on our site that forwards to the Stripe Payment Link, so the payment link can
-    /// change without a new app release.
-    static let coffeeURL = URL(string: "https://captylo.com/kawa/")!
+    /// change without a new app release. In the UI language (`/pl/kawa/` under Polish).
+    static var coffeeURL: URL { SiteLinks.url("/kawa/") }
 
     /// The card of the given day: Pro and the coffee take turns, a sponsor joins the rotation.
     static func current(on day: Int, sponsor: SponsorAd?) -> SupportPromo {
