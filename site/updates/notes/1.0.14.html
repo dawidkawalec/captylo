@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Captylo 1.0.14</title>
+<link rel="stylesheet" href="../../assets/css/site.css?v=20260930a">
+<style>
+.notes{width:min(680px,100% - 2*var(--gut));margin:0 auto;padding:32px 0 48px}
+.notes h1{font-weight:800;font-size:clamp(28px,4.4vw,40px);line-height:1.08;letter-spacing:-.03em}
+.notes h2{margin-top:32px;font-weight:700;font-size:21px;line-height:1.25;letter-spacing:-.02em}
+.notes h3{margin-top:22px;font-weight:700;font-size:17px}
+.notes p{margin-top:12px;line-height:1.6}
+.notes ul{margin-top:10px;padding-left:22px;list-style:disc;display:grid;gap:6px}
+.notes li{line-height:1.55}
+.notes a{text-decoration:underline;text-underline-offset:3px}
+.notes code{font-size:.92em;padding:1px 5px;border-radius:6px;background:rgba(16,39,44,.06)}
+</style>
+</head>
+<body>
+<main class="notes">
+<h1>Captylo 1.0.14</h1>
+<h2>Changes</h2>
+<ul>
+<li><strong>Fixes made right before Enter are learned.</strong> In chat boxes and in Claude Code you often fix a word and press Enter at once, and the box clears before Captylo could read the fix. While you edit a dictated text, Captylo now reads the field ten times a second, so the last version before Enter counts.</li>
+<li><strong>Short dictations are learned too.</strong> When you dictate one to three words and retype them as a whole ("supa bejs" → "Supabase"), Captylo treats it as one fix of a misheard word. Until now such a change looked like a rewrite and was skipped.</li>
+<li><strong>Fix a word with your voice.</strong> Select one to three words of a text you dictated in the last two minutes and dictate them again. The new take replaces the selection, and Captylo remembers the pair, just like a fix typed by hand. You will see "Remembered: … → …" with Undo, and every decision is listed in Dictionary &gt; Recently noticed.</li>
+</ul>
+</main>
+</body>
+</html>
