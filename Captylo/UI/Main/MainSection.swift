@@ -4,6 +4,7 @@ import Foundation
 enum MainSection: String, CaseIterable, Identifiable, Sendable {
     case pulpit
     case spotkania
+    case notatki
     case historia
     case plik
     case slownik
@@ -16,6 +17,7 @@ enum MainSection: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .pulpit: return String(localized: "Pulpit")
         case .spotkania: return String(localized: "Spotkania")
+        case .notatki: return String(localized: "Notatki")
         case .historia: return String(localized: "Historia")
         case .plik: return String(localized: "Transkrypcja pliku")
         case .slownik: return String(localized: "Słownik")
@@ -28,6 +30,7 @@ enum MainSection: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .pulpit: return "chart.bar.xaxis"
         case .spotkania: return "person.2.wave.2"
+        case .notatki: return "note.text"
         case .historia: return "clock.arrow.circlepath"
         case .plik: return "doc.badge.plus"
         case .slownik: return "character.book.closed"

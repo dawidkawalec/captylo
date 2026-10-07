@@ -497,6 +497,7 @@ final class AppState {
         tap.setHotkey(settings.hotkey)
 
         // Dictation
+        let notesTicker = notesTicker
         dictationController = DictationController(env: DictationEnvironment(
             settings: settings,
             devices: audioDevices,
@@ -534,7 +535,9 @@ final class AppState {
                 presenter.openMain(section: .modele)
             },
             openAccessibilitySettings: { accessibility.openSystemSettings() },
-            openMicrophoneSettings: { MicrophonePermission.openSystemSettings() }
+            openMicrophoneSettings: { MicrophonePermission.openSystemSettings() },
+            openNote: { presenter.openNote(id: $0) },
+            noteSaved: { _ in notesTicker.bump() }
         ))
         hotkeyController = HotkeyController(tap: tap, coordinator: dictationController, toasts: toasts)
         relay.controller = hotkeyController
@@ -560,7 +563,6 @@ final class AppState {
             vocabulary: { dictionaryStore.data.vocabulary },
             didChange: { stats.bump() }
         )
-        let notesTicker = notesTicker
         noteActions = NoteActions(
             database: database,
             router: transcriptionRouter,

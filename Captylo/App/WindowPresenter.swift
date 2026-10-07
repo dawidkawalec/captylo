@@ -14,6 +14,8 @@ final class WindowPresenter {
     var selectedSection: MainSection = .pulpit
     /// Ustawienia scrolls to this panel and clears it (`openAccount()`, `MainRouter.openAccount()`).
     var settingsAnchor: SettingsAnchor?
+    /// The note Notatki selects when it shows; the screen clears it (`openNote(id:)`).
+    var pendingNoteID: UUID?
     /// Bumped on every open request; observed by `OpenWindowBridge`.
     private(set) var openRequest = 0
 
@@ -81,6 +83,12 @@ final class WindowPresenter {
     func openAccount() {
         settingsAnchor = .account
         openMain(section: .ustawienia)
+    }
+
+    /// Notatki on one note (the "Zapisano notatkę" toast, a search hit).
+    func openNote(id: UUID) {
+        pendingNoteID = id
+        openMain(section: .notatki)
     }
 
     /// The SwiftUI `Window(id: "main")` instance when it exists (deduped by identifier).

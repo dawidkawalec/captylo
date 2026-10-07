@@ -55,4 +55,15 @@ final class MainRouter {
         get { presenter.settingsAnchor }
         set { presenter.settingsAnchor = newValue }
     }
+
+    /// Notatki on one note.
+    func openNote(id: UUID) {
+        presenter.openNote(id: id)
+    }
+
+    /// The note Notatki should select once; the screen clears it after selecting.
+    var pendingNoteID: UUID? {
+        get { presenter.pendingNoteID }
+        set { presenter.pendingNoteID = newValue }
+    }
 }

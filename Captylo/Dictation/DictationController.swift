@@ -23,11 +23,12 @@ final class DictationController: RecorderCoordinator {
 
     var isWidgetVisible: Bool { env.widget.isVisible }
 
-    /// One take: identity, samples, file and timing.
+    /// One take: identity, samples, file, timing and where its text goes.
     private struct Session {
         let id: UUID
         let buffer: SampleBuffer
         let fileURL: URL
+        let destination: TakeDestination
         var startedAt: TimeInterval
         var pausedTotal: TimeInterval = 0
         var pausedAt: TimeInterval?
@@ -57,16 +58,29 @@ final class DictationController: RecorderCoordinator {
         }
     }
 
+    /// Where the take that records or is being processed sends its text; nil when idle.
+    var currentDestination: TakeDestination? { session?.destination }
+
     // MARK: - RecorderCoordinator
 
+    /// The dictation hotkey, the widget and the menu bar: paste at the cursor.
     func start() async {
+        await start(destination: .paste)
+    }
+
+    /// ⌃⌥⌘N (`.newNote`) and the microphone in Notatki (`.appendToNote`) start here too: the same
+    /// capture, widget and transcription, only the end of the take differs (`performStop`).
+    func start(destination: TakeDestination) async {
         guard phase == .idle, !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
         // Edits of the previous paste are final once the next take starts; the target app gets
-        // the take's length to build its accessibility tree for the next watch.
+        // the take's length to build its accessibility tree for the next watch (only a take that
+        // pastes needs it).
         env.pasteWatcher.flush()
-        env.pasteWatcher.prepare()
+        if destination == .paste {
+            env.pasteWatcher.prepare()
+        }
 
         if env.settings.sttEngine == .local, !env.isLocalModelInstalled() {
             env.toasts.showError(DictationError.modelNotReady)
@@ -106,7 +120,7 @@ final class DictationController: RecorderCoordinator {
         let id = UUID()
         let buffer = SampleBuffer()
         let fileURL = AppPaths.recordingURL(for: id)
-        var take = Session(id: id, buffer: buffer, fileURL: fileURL, startedAt: Self.now())
+        var take = Session(id: id, buffer: buffer, fileURL: fileURL, destination: destination, startedAt: Self.now())
         session = take
         setPhase(.recording)
         partialText = ""
@@ -284,8 +298,8 @@ final class DictationController: RecorderCoordinator {
             }
 
             // A take that is only a spelling corrects the previous dictation: learn the pair,
-            // paste nothing, keep no row.
-            if env.learning.isEnabled,
+            // paste nothing, keep no row. Never for a note: its text is the user's content.
+            if take.destination == .paste, env.learning.isEnabled,
                let letters = SpellingDetector.standaloneSpelling(result.text),
                let previous = lastDeliveredText,
                let heard = SpellingDetector.closestWord(in: previous, to: letters, isRealWord: WordChecker.isRealWord) {
@@ -305,6 +319,15 @@ final class DictationController: RecorderCoordinator {
                 return
             }
             record.text = text
+
+            // A note keeps what was said (AI is a separate step in Notatki), nothing is pasted,
+            // and no history row or word count is added.
+            if take.destination != .paste {
+                env.sounds.play(.stop)
+                finishTake(take)
+                await saveToNote(take, text: text, duration: duration, model: result.modelName)
+                return
+            }
 
             var finalText = text
             // AI off: no mode and no note. AI on: the row always names the mode, and a note
@@ -371,7 +394,81 @@ final class DictationController: RecorderCoordinator {
             finishTake(take)
             record.status = .failed
             record.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            if take.destination != .paste {
+                await saveFailedNote(take, error: record.errorMessage ?? "", duration: record.audioDuration)
+                return
+            }
             persist(record, fileURL: take.fileURL)
+        }
+    }
+
+    // MARK: - Notes
+
+    /// The end of a take for a note. A new voice note keeps its WAV under `Notes/` and offers
+    /// "Otwórz"; an append adds the text to the open note and keeps no audio.
+    private func saveToNote(_ take: Session, text: String, duration: Double, model: String?) async {
+        let database = env.database
+        switch take.destination {
+        case .paste:
+            return
+        case .newNote:
+            let target = AppPaths.noteAudioURL(for: take.id)
+            do {
+                try NoteTake.adoptAudio(from: take.fileURL, to: target)
+                let note = NoteTake.newNote(
+                    id: take.id, text: text, duration: duration,
+                    language: env.settings.transcriptionLanguage, model: model,
+                    audioFileName: target.lastPathComponent
+                )
+                try await database.createNote(note)
+                env.noteSaved(note.id)
+                let open = env.openNote
+                let id = note.id
+                env.toasts.showAction(
+                    message: String(localized: "Zapisano notatkę"),
+                    buttonTitle: String(localized: "Otwórz"),
+                    action: { open(id) }
+                )
+                Log.app.info("Voice note \(id.uuidString, privacy: .public) saved")
+            } catch {
+                Log.data.error("Saving a voice note failed: \(error.localizedDescription, privacy: .public)")
+                env.toasts.showError(error)
+            }
+        case .appendToNote(let noteID):
+            Self.removeFile(take.fileURL)
+            do {
+                let saved = try await database.modifyNote(id: noteID) { $0.body = NoteTake.appending(text, to: $0.body) }
+                if saved == nil {
+                    env.toasts.showError(String(localized: "Tej notatki już nie ma."))
+                } else {
+                    env.noteSaved(noteID)
+                }
+            } catch {
+                Log.data.error("Appending to a note failed: \(error.localizedDescription, privacy: .public)")
+                env.toasts.showError(error)
+            }
+        }
+    }
+
+    /// A voice note whose transcription failed keeps its recording ("Spróbuj ponownie" in
+    /// Notatki); a failed append keeps nothing.
+    private func saveFailedNote(_ take: Session, error message: String, duration: Double) async {
+        guard take.destination == .newNote else {
+            Self.removeFile(take.fileURL)
+            return
+        }
+        let target = AppPaths.noteAudioURL(for: take.id)
+        do {
+            try NoteTake.adoptAudio(from: take.fileURL, to: target)
+            let note = NoteTake.failedNote(
+                id: take.id, duration: duration, language: env.settings.transcriptionLanguage,
+                audioFileName: target.lastPathComponent, error: message
+            )
+            try await env.database.createNote(note)
+            env.noteSaved(note.id)
+        } catch {
+            Log.data.error("Keeping a failed voice note failed: \(error.localizedDescription, privacy: .public)")
+            Self.removeFile(take.fileURL)
         }
     }
 

@@ -41,4 +41,8 @@ struct DictationEnvironment {
     let openAccessibilitySettings: @MainActor () -> Void
     /// Opens System Settings > Privacy & Security > Microphone (mic denied).
     let openMicrophoneSettings: @MainActor () -> Void
+    /// Opens Notatki on a note (the "Zapisano notatkę" toast).
+    let openNote: @MainActor (UUID) -> Void
+    /// Called after a take saved a note or appended to one (the Notatki list reloads).
+    let noteSaved: @MainActor (UUID) -> Void
 }
