@@ -21,18 +21,34 @@ struct TranscriptionRouter: TranscriptionRouting {
         "dziękuję", "dziękuję bardzo", "dzięki", "thank you", "thanks for watching",
     ]
 
+    /// How long a take waits for a model that is still being prepared (the first load compiles it
+    /// for the Neural Engine, minutes) before it fails with `modelPreparing` instead of hanging.
+    static let defaultModelWait: Duration = .seconds(90)
+
     private let local: any LocalTranscribing
     private let localInstalled: @Sendable () -> Bool
+    private let localReady: @Sendable () -> Bool
     private let elevenLabs: ElevenLabsSTT
+    private let modelWait: Duration
 
     /// - Parameters:
     ///   - local: the Whisper engine (or a fake in tests).
     ///   - localInstalled: whether the model files are on disk; gates the local path and the fallback.
+    ///   - localReady: whether the model is loaded; while it is not, the local engine tries the
+    ///     cloud first and a local pass waits at most `modelWait`.
     ///   - elevenLabs: the cloud client; its key provider decides `missingKey`.
-    init(local: any LocalTranscribing, localInstalled: @escaping @Sendable () -> Bool, elevenLabs: ElevenLabsSTT) {
+    init(
+        local: any LocalTranscribing,
+        localInstalled: @escaping @Sendable () -> Bool,
+        localReady: @escaping @Sendable () -> Bool = { true },
+        elevenLabs: ElevenLabsSTT,
+        modelWait: Duration = TranscriptionRouter.defaultModelWait
+    ) {
         self.local = local
         self.localInstalled = localInstalled
+        self.localReady = localReady
         self.elevenLabs = elevenLabs
+        self.modelWait = modelWait
     }
 
     func transcribe(
@@ -50,7 +66,21 @@ struct TranscriptionRouter: TranscriptionRouting {
         let modelName: String
         var usedFallback = false
         var fallbackError: STTError?
+        var cloudWhileLocalPrepares = false
         switch engine {
+        case .local where !localReady() && localInstalled():
+            // The model is still being prepared: the cloud (own key or Pro) does this take when it
+            // can, otherwise the take waits for the model a bounded time.
+            do {
+                text = try await transcribeInCloud(audio, language: language, vocabulary: vocabulary)
+                modelName = STTEngine.elevenLabs.modelName
+                cloudWhileLocalPrepares = true
+                Log.transcription.notice("Local model still preparing, the cloud did this take")
+            } catch is STTError {
+                if Task.isCancelled { throw CancellationError() }
+                text = try await transcribeLocally(audio, language: language)
+                modelName = STTEngine.local.modelName
+            }
         case .local:
             text = try await transcribeLocally(audio, language: language)
             modelName = STTEngine.local.modelName
@@ -73,14 +103,42 @@ struct TranscriptionRouter: TranscriptionRouting {
         let ms = Int(start.duration(to: clock.now) / .milliseconds(1))
         let filtered = Self.filterHallucination(text, samples: audio.samples)
         Log.transcription.info("Transcribed \(audio.duration, format: .fixed(precision: 1)) s with \(modelName, privacy: .public) in \(ms) ms, fallback: \(usedFallback)")
-        return TranscriptionResult(text: filtered, modelName: modelName, ms: ms, usedFallback: usedFallback, fallbackError: fallbackError)
+        return TranscriptionResult(
+            text: filtered,
+            modelName: modelName,
+            ms: ms,
+            usedFallback: usedFallback,
+            fallbackError: fallbackError,
+            cloudWhileLocalPrepares: cloudWhileLocalPrepares
+        )
     }
 
     // MARK: - Paths
 
+    /// A local pass. With the model ready it runs as long as it needs; with the model still being
+    /// prepared it waits at most `modelWait` and then fails with `modelPreparing` (the load itself
+    /// keeps running in the engine, so the next take finds the model ready).
     private func transcribeLocally(_ audio: CapturedAudio, language: String?) async throws -> String {
         guard localInstalled() else { throw DictationError.modelNotReady }
-        return try await local.transcribe(audio.samples, language: language)
+        if localReady() {
+            return try await local.transcribe(audio.samples, language: language)
+        }
+        let local = local
+        let samples = audio.samples
+        let wait = modelWait
+        return try await withThrowingTaskGroup(of: String?.self) { group in
+            group.addTask { try await local.transcribe(samples, language: language) }
+            group.addTask {
+                try await Task.sleep(for: wait)
+                return nil
+            }
+            defer { group.cancelAll() }
+            guard let first = try await group.next(), let text = first else {
+                Log.transcription.error("Local model still preparing after \(String(describing: wait), privacy: .public), the take gives up")
+                throw DictationError.modelPreparing
+            }
+            return text
+        }
     }
 
     /// `@concurrent`: the callers are main-actor code, and reading a long WAV plus building the

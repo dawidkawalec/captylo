@@ -342,7 +342,10 @@ private struct LocalModelSection: View {
         case .downloading(let progress):
             return Text("Pobieram model... \(Int((progress * 100).rounded()))%")
         case .optimizing:
-            return Text("Optymalizuję model dla Twojego Maca (jednorazowo, do kilku minut)")
+            let text = Text("Optymalizuję model dla Twojego Maca (jednorazowo, do kilku minut)")
+            guard let since = store.optimizingSince else { return text }
+            // Counts up every second, so a long compile visibly moves on.
+            return text + Text(verbatim: " · ") + Text(since, style: .timer).monospacedDigit()
         case .ready:
             return Text(verbatim: "Whisper large-v3 turbo")
         case .failed:
@@ -363,11 +366,8 @@ private struct LocalModelSection: View {
         case .downloading(let progress):
             GlassBadge(title: Text(verbatim: "\(Int((progress * 100).rounded()))%"), systemImage: "arrow.down", tone: .accent)
         case .optimizing:
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                ToolProgressTrack(value: nil)
-                    .frame(width: 90)
-            }
+            // One indicator: the compile has no progress to report, the elapsed time is in the subtitle.
+            ProgressView().controlSize(.small)
         case .ready:
             HStack(spacing: 10) {
                 GlassBadge("Gotowy", systemImage: "checkmark", tone: .success)

@@ -44,6 +44,8 @@ final class DictationController: RecorderCoordinator {
     @ObservationIgnored private var stopTask: (id: UUID, task: Task<Void, Never>)?
     /// Text of the last delivered take: a take that is only a spelling ("Pisane J-E-V") corrects it.
     @ObservationIgnored private var lastDeliveredText: String?
+    /// When the low-disk warning last showed (`DiskSpace.shouldWarn`).
+    @ObservationIgnored private var lastDiskWarning: Date?
 
     init(env: DictationEnvironment) {
         self.env = env
@@ -70,6 +72,15 @@ final class DictationController: RecorderCoordinator {
             env.toasts.showError(DictationError.modelNotReady)
             env.openModels()
             return
+        }
+        // Said now, not after the take: the router uses the cloud or waits a bounded time.
+        if env.settings.sttEngine == .local, !env.isLocalModelReady() {
+            env.toasts.showInfo(String(localized: "Model lokalny jeszcze się przygotowuje. Jeśli to możliwe, tym razem użyję chmury."))
+        }
+        let now = Date()
+        if DiskSpace.shouldWarn(available: DiskSpace.availableBytes(), lastWarning: lastDiskWarning, now: now) {
+            lastDiskWarning = now
+            env.toasts.showError(String(localized: "Na dysku zostało mniej niż 1 GB. Zwolnij miejsce, inaczej nagrania i model mogą przestać działać."))
         }
 
         guard await MicrophonePermission.request() else {

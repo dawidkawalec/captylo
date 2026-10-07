@@ -49,6 +49,8 @@ enum DictationError: LocalizedError, Sendable, Equatable {
     case noMicrophone(lidClosed: Bool)
     case accessibilityMissing
     case modelNotReady
+    /// The model files are there but the first load (the Neural Engine compile) is still running.
+    case modelPreparing
     case tooShort
     case emptyResult
     case capture(OSStatus)
@@ -67,6 +69,8 @@ enum DictationError: LocalizedError, Sendable, Equatable {
             return String(localized: "Brak uprawnienia Dostępność. Tekst skopiowano do schowka.")
         case .modelNotReady:
             return String(localized: "Model lokalny nie jest gotowy. Pobierz go w zakładce Modele.")
+        case .modelPreparing:
+            return String(localized: "Model lokalny jeszcze się przygotowuje (jednorazowo, do kilku minut). Spróbuj ponownie za chwilę.")
         case .tooShort:
             return String(localized: "Nagranie było za krótkie.")
         case .emptyResult:

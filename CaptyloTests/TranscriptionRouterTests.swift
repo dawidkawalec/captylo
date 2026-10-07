@@ -61,6 +61,84 @@ struct TranscriptionRouterTests {
         #expect(local.transcribeCalls == 1)
     }
 
+    // MARK: The local model is still being prepared (first load, Neural Engine compile)
+
+    @Test func localEngineUsesTheCloudWhileTheModelIsPreparing() async throws {
+        let local = TranscriptionFakeLocalTranscriber(text: "lokalnie")
+        let router = TranscriptionRouter(
+            local: local,
+            localInstalled: { true },
+            localReady: { false },
+            elevenLabs: relay(status: 200, body: #"{"text":"z Pro"}"#)
+        )
+        let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud, duration: 3)
+
+        let result = try await router.transcribe(audio, engine: .local, language: "pl", vocabulary: [])
+
+        #expect(result.text == "z Pro")
+        #expect(result.modelName == "scribe_v2")
+        #expect(result.cloudWhileLocalPrepares)
+        #expect(result.fallbackNotice == "Model lokalny jeszcze się przygotowuje, tym razem użyto chmury.")
+        #expect(local.transcribeCalls == 0)
+    }
+
+    @Test func localEngineWithoutCloudStopsWaitingForAPreparingModel() async throws {
+        let local = TranscriptionFakeLocalTranscriber(text: "lokalnie", delay: .seconds(5))
+        let router = TranscriptionRouter(
+            local: local,
+            localInstalled: { true },
+            localReady: { false },
+            elevenLabs: cloud(key: nil),
+            modelWait: .milliseconds(50)
+        )
+        let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud)
+        let clock = ContinuousClock()
+        let start = clock.now
+
+        await #expect(throws: DictationError.modelPreparing) {
+            _ = try await router.transcribe(audio, engine: .local, language: "pl", vocabulary: [])
+        }
+        #expect(start.duration(to: clock.now) < .seconds(2), "the take must not hang until the model is ready")
+    }
+
+    @Test func aModelThatGetsReadyWithinTheWaitStillTranscribes() async throws {
+        let local = TranscriptionFakeLocalTranscriber(text: "lokalnie", delay: .milliseconds(20))
+        let router = TranscriptionRouter(
+            local: local,
+            localInstalled: { true },
+            localReady: { false },
+            elevenLabs: cloud(key: nil),
+            modelWait: .seconds(5)
+        )
+        let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud)
+
+        let result = try await router.transcribe(audio, engine: .local, language: "pl", vocabulary: [])
+
+        #expect(result.text == "lokalnie")
+        #expect(!result.cloudWhileLocalPrepares)
+        #expect(result.fallbackNotice == nil)
+    }
+
+    @Test func cloudFailureDoesNotHangOnAPreparingModel() async throws {
+        let local = TranscriptionFakeLocalTranscriber(text: "lokalnie", delay: .seconds(5))
+        let router = TranscriptionRouter(
+            local: local,
+            localInstalled: { true },
+            localReady: { false },
+            elevenLabs: relay(status: 500, body: #"{"error":"upstream"}"#),
+            modelWait: .milliseconds(50)
+        )
+        let audio = try TranscriptionFixtures.capturedAudio(samples: Self.loud)
+
+        await #expect(throws: DictationError.modelPreparing) {
+            _ = try await router.transcribe(audio, engine: .elevenLabs, language: "pl", vocabulary: [])
+        }
+    }
+
+    @Test func modelPreparingSaysWhatToDo() {
+        #expect(DictationError.modelPreparing.errorDescription == "Model lokalny jeszcze się przygotowuje (jednorazowo, do kilku minut). Spróbuj ponownie za chwilę.")
+    }
+
     @Test func fallbackNoticeSaysWhyTheCloudWasNotUsed() {
         func notice(_ error: STTError?) -> String? {
             TranscriptionResult(text: "x", modelName: "m", ms: 1, usedFallback: error != nil, fallbackError: error).fallbackNotice

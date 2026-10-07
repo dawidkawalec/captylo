@@ -6843,6 +6843,31 @@
         "en": { "stringUnit": { "state": "translated", "value": "Manage subscription" } }
       }
     },
+    "Konto i faktury w przeglądarce": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Account and invoices in the browser" } }
+      }
+    },
+    "Model lokalny jeszcze się przygotowuje (jednorazowo, do kilku minut). Spróbuj ponownie za chwilę.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The local model is still being prepared (once, up to a few minutes). Try again in a moment." } }
+      }
+    },
+    "Model lokalny jeszcze się przygotowuje, tym razem użyto chmury.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The local model is still being prepared, so the cloud handled this one." } }
+      }
+    },
+    "Model lokalny jeszcze się przygotowuje. Jeśli to możliwe, tym razem użyję chmury.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The local model is still being prepared. If possible, the cloud will handle this one." } }
+      }
+    },
+    "Na dysku zostało mniej niż 1 GB. Zwolnij miejsce, inaczej nagrania i model mogą przestać działać.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Less than 1 GB is left on the disk. Free up space, or recordings and the model may stop working." } }
+      }
+    },
     "Wyloguj": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Sign out" } }

@@ -6,9 +6,13 @@ import SwiftUI
 /// could not confirm for over 7 days says so. A failed payment Stripe still retries (`past_due`,
 /// `unpaid`) says so and offers only the Portal to update the card, never a second purchase.
 /// The 7-day trial of a new account shows its end, the usage against the trial's caps and the
-/// purchase buttons; after it ends the Free offer says so. "Wyloguj" in all of them.
+/// purchase buttons; after it ends the Free offer says so. "Wyloguj" in all of them, and a link to
+/// the web account (plan, usage and invoices in the browser, signed in there with the same code).
 @MainActor
 struct AccountPlanCard: View {
+    /// The web account at app.captylo.com: invoices and the plan in the browser.
+    static let webAccountURL = URL(string: "https://app.captylo.com/konto")!
+
     let account: AccountStore
     let info: AccountInfo
 
@@ -30,6 +34,7 @@ struct AccountPlanCard: View {
             } else {
                 freeOffer
             }
+            webAccountLink
             if let error = account.lastError {
                 ToolStatusLine(text: error, tone: .error)
             }
@@ -183,6 +188,16 @@ struct AccountPlanCard: View {
     }
 
     // MARK: Shared
+
+    /// "Konto i faktury w przeglądarce": the web account, every plan.
+    private var webAccountLink: some View {
+        Link(destination: Self.webAccountURL) {
+            Label("Konto i faktury w przeglądarce", systemImage: "arrow.up.right.square")
+                .font(GlassFont.caption)
+        }
+        .foregroundStyle(GlassColor.textSecondary)
+        .help(Text(verbatim: "app.captylo.com"))
+    }
 
     private var signOutButton: some View {
         Button("Wyloguj") {

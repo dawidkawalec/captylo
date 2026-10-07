@@ -31,7 +31,17 @@ final class LocalModelStore {
     /// Download size shown before the download, in MB.
     static let downloadMB = 1_600
 
-    private(set) var status: Status = .missing
+    private(set) var status: Status = .missing {
+        didSet {
+            if status == .optimizing {
+                if optimizingSince == nil { optimizingSince = Date() }
+            } else {
+                optimizingSince = nil
+            }
+        }
+    }
+    /// When the current `.optimizing` began, for the elapsed time next to it; nil otherwise.
+    private(set) var optimizingSince: Date?
     /// The Parakeet folder of earlier versions is still on disk.
     private(set) var hasLegacyParakeet = false
     /// Runs once a `download()` ends with the model loaded: the meeting voice detector is

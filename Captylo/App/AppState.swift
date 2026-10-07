@@ -211,6 +211,7 @@ final class AppState {
         transcriptionRouter = TranscriptionRouter(
             local: engine,
             localInstalled: { WhisperEngine.isDownloaded },
+            localReady: { engine.state == .ready },
             elevenLabs: elevenLabs
         )
 

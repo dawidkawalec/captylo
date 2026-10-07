@@ -58,11 +58,14 @@ final class TranscriptionFakeLocalTranscriber: LocalTranscribing, Sendable {
 
     private let text: String
     private let failure: DictationError?
+    /// How long `transcribe` takes, like a model that is still being loaded.
+    private let delay: Duration
     private let counters = OSAllocatedUnfairLock(initialState: Counters())
 
-    init(text: String, failure: DictationError? = nil) {
+    init(text: String, failure: DictationError? = nil, delay: Duration = .zero) {
         self.text = text
         self.failure = failure
+        self.delay = delay
     }
 
     var transcribeCalls: Int { counters.withLock { $0.transcribe } }
@@ -70,6 +73,7 @@ final class TranscriptionFakeLocalTranscriber: LocalTranscribing, Sendable {
 
     func transcribe(_ samples: [Float], language: String?) async throws -> String {
         counters.withLock { $0.transcribe += 1 }
+        if delay > .zero { try await Task.sleep(for: delay) }
         if let failure { throw failure }
         return text
     }

@@ -40,18 +40,31 @@ struct TranscriptionResult: Sendable, Equatable {
     let usedFallback: Bool
     /// Why the cloud was not used when `usedFallback` (no route, the Pro limit, a timeout...).
     let fallbackError: STTError?
+    /// The local engine was chosen but its model was still being prepared, so the cloud did this take.
+    let cloudWhileLocalPrepares: Bool
 
-    init(text: String, modelName: String, ms: Int, usedFallback: Bool = false, fallbackError: STTError? = nil) {
+    init(
+        text: String,
+        modelName: String,
+        ms: Int,
+        usedFallback: Bool = false,
+        fallbackError: STTError? = nil,
+        cloudWhileLocalPrepares: Bool = false
+    ) {
         self.text = text
         self.modelName = modelName
         self.ms = ms
         self.usedFallback = usedFallback
         self.fallbackError = fallbackError
+        self.cloudWhileLocalPrepares = cloudWhileLocalPrepares
     }
 
     /// The toast after a fallback, saying why; nil when the cloud (or the local engine by
     /// choice) produced the text.
     var fallbackNotice: String? {
+        if cloudWhileLocalPrepares {
+            return String(localized: "Model lokalny jeszcze się przygotowuje, tym razem użyto chmury.")
+        }
         guard usedFallback else { return nil }
         switch fallbackError {
         case .quotaExceeded:

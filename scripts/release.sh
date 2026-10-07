@@ -168,6 +168,8 @@ BUILD_BASE=100
 BUILD="$((BUILD_BASE + $(git rev-list --count HEAD)))"
 step "Building Captylo $VERSION (build $BUILD), Release"
 mkdir -p "$OUT"
+# Spotlight would list every release's Captylo.app next to the installed one.
+touch "$ROOT/dist/.metadata_never_index"
 make --no-print-directory gen >/dev/null
 BUILD_LOG="$OUT/build.log"
 if ! xcodebuild -project Captylo.xcodeproj -scheme Captylo -derivedDataPath "$DERIVED" \
