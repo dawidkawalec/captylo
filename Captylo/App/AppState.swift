@@ -127,6 +127,8 @@ final class AppState {
     /// "Transkrypcja pliku" queue. Owned here so it survives the main window closing and can
     /// take Finder "Otwórz za pomocą" files before any view exists; the drop zone feeds it too.
     @ObservationIgnored let fileQueue: FileTranscriptionQueue
+    /// "Importuj nagranie" in Notatki: recordings and messenger voice messages become voice notes.
+    @ObservationIgnored let noteImportQueue: FileTranscriptionQueue
 
 
     /// Seam-typed views of the services for code that only needs the protocol.
@@ -582,6 +584,14 @@ final class AppState {
             route: dictationRoute,
             stats: stats,
             persistsHistory: !isFallback
+        ))
+        noteImportQueue = FileTranscriptionQueue(services: .makeForNotes(
+            settings: settings,
+            router: transcriptionRouter,
+            vocabulary: { dictionaryStore.data.vocabulary },
+            processor: { dictionaryStore.processor },
+            database: database,
+            didSave: { notesTicker.bump() }
         ))
 
         let controller = dictationController
