@@ -101,7 +101,10 @@ case "$backdrop" in
 esac
 
 log="$(mktemp -t captylo-snap)"
-CAPTYLO_PREVIEW_BACKDROP="$backdrop" "$BIN" --design-preview "$target" >"$log" 2>/dev/null &
+# SNAP_LANG=pl|en runs the preview in that UI language (-AppleLanguages, this process only).
+lang_args=()
+[[ -n "${SNAP_LANG:-}" ]] && lang_args=(-AppleLanguages "($SNAP_LANG)")
+CAPTYLO_PREVIEW_BACKDROP="$backdrop" "$BIN" --design-preview "$target" "${lang_args[@]+"${lang_args[@]}"}" >"$log" 2>/dev/null &
 pid=$!
 
 cleanup() {

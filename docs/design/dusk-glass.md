@@ -125,7 +125,7 @@ Rules of thumb:
 
 - `.duskWindow(scrim: GlassTokens.Scrim.onboarding, extendsUnderTitleBar: true)`.
 - Top: step progress as a thin glass track with a brand-gradient fill, "Krok 1 z 5" and the step title in secondary white.
-- Middle: the step inside one `GlassPanel` (welcome may float without a panel: the white brand symbol `OnboardingBrandMark` with a soft glow, the `BrandWordmark` in white, tagline in secondary white).
+- Middle: the step inside one `GlassPanel` (welcome may float without a panel: the white brand symbol `OnboardingBrandMark` with a soft glow, the `BrandWordmark` in white, tagline in secondary white; at its foot `OnboardingLanguageSwitch`, a `GlassSegmentedPicker` "Polski | English" in the languages' own names that saves the choice and relaunches on the same screen).
 - Permission and model steps: one `GlassRow` per item with a `GlassIconBadge`, the state as a `GlassBadge` and the action as a small glass button.
 - Footer: "Wstecz" `.glass`, "Pomiń wprowadzenie" as plain secondary text, "Dalej" / "Zakończ" `.glass(.accent)`.
 - Keep `isMovableByWindowBackground = false` (custom buttons otherwise start a window drag).
@@ -166,6 +166,8 @@ CAPTYLO_WINDOW_BG=aurora SNAP_SETTLE=12 scripts/snap.sh main-pulpit /tmp/aurora-
 ```
 
 Use `SNAP_BACKDROP=dark` for main-window captures: the window is opaque, but without a backdrop window the region capture can pick up whatever else is on screen while the preview comes up.
+
+`SNAP_LANG=pl|en` runs the preview in that UI language (`-AppleLanguages` for that process only), so every target can be checked in English: `SNAP_LANG=en scripts/snap.sh onboarding-welcome /tmp/welcome-en.png`.
 
 `snap.sh` launches the Debug binary, waits up to 20 s for `WINDOW_ID`, waits `SNAP_SETTLE` (2.5 s) for animations, captures, kills exactly that process and exits non-zero on failure. Windows are frosted glass over whatever is behind them, so they are always captured as a screen region (`screencapture -R` of `WINDOW_FRAME`); a window capture (`-l`) has no backdrop and shows no blur. Widget targets without `SNAP_BACKDROP` use `-l` (transparent around the widget, window shadow kept); with it, a region capture over the backdrop, which is the real evidence for the widget glass and the halo.
 

@@ -51,6 +51,9 @@ struct WelcomeStep: View {
                 .padding(.top, 16)
 
             Spacer(minLength: 0)
+
+            OnboardingLanguageSwitch(appState: model.appState)
+                .padding(.bottom, 18)
         }
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

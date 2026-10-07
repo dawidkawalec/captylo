@@ -123,6 +123,7 @@ struct SettingsView: View {
 
         GlassPanel(spacing: 4) {
             sectionHeader("Aplikacja", systemImage: "macwindow")
+            AppLanguageRow(appState: appState)
             GlassToggleRow("Ukryj ikonę w Docku", systemImage: "dock.rectangle", isOn: $settings.menuBarOnly)
             LaunchAtLoginRow(launchAtLogin: appState.launchAtLogin)
             GlassRowSeparator()
@@ -370,6 +371,52 @@ private struct ExcludedAppsRow: View {
     static func name(of bundleID: String) -> String {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return bundleID }
         return FileManager.default.displayName(atPath: url.path(percentEncoded: false)).replacingOccurrences(of: ".app", with: "")
+    }
+}
+
+// MARK: - App language
+
+/// "Język aplikacji" (`AppLanguage`): saved at once, shown after a relaunch. The relaunch waits
+/// while a dictation or a meeting records, so switching never cuts one off.
+@MainActor
+private struct AppLanguageRow: View {
+    let appState: AppState
+    @State private var choice = AppLanguage.preference()
+
+    private var isRecording: Bool { appState.isRecordingAnything }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            GlassRow(title: Text("Język aplikacji"), systemImage: "character.bubble") {
+                GlassMenuValue(choice.title()) {
+                    Picker("Język aplikacji", selection: $choice) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(verbatim: language.title()).tag(language)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+                .accessibilityLabel(Text("Język aplikacji"))
+                .accessibilityValue(Text(verbatim: choice.title()))
+            }
+            .onChange(of: choice) {
+                AppLanguage.setPreference(choice)
+            }
+            if choice.needsRelaunch() {
+                HStack(spacing: 10) {
+                    ToolStatusLine(text: isRecording
+                        ? String(localized: "Nowy język po ponownym uruchomieniu. Najpierw zakończ nagrywanie.")
+                        : String(localized: "Nowy język pojawi się po ponownym uruchomieniu Captylo."))
+                    Button("Uruchom ponownie") {
+                        appState.relaunchForLanguage()
+                    }
+                    .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+                    .disabled(isRecording)
+                }
+                .padding(.leading, GlassTokens.Size.rowIconColumn + 16)
+            }
+        }
     }
 }
 

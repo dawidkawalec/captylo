@@ -76,17 +76,6 @@ final class Permissions {
 
     /// Relaunches the app from its bundle: an Accessibility grant often applies only to a new process.
     func relaunch() {
-        let bundleURL = Bundle.main.bundleURL
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.createsNewApplicationInstance = true
-        NSWorkspace.shared.openApplication(at: bundleURL, configuration: configuration) { _, error in
-            if let error {
-                Log.app.error("Relaunch failed: \(error.localizedDescription, privacy: .public)")
-                return
-            }
-            Task { @MainActor in
-                NSApplication.shared.terminate(nil)
-            }
-        }
+        AppRelauncher.relaunch()
     }
 }

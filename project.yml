@@ -82,6 +82,8 @@ targets:
         CFBundleDisplayName: Captylo
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Must stay pl: Polish is the source language and pl.lproj has no Localizable.strings, so
+        # with en here a Polish UI reads the English table. A Mac with neither language gets Polish.
         CFBundleDevelopmentRegion: pl
         CFBundleLocalizations: [pl, en]
         LSApplicationCategoryType: public.app-category.productivity

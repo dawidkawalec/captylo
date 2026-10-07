@@ -2033,6 +2033,46 @@
         }
       }
     },
+    "Język aplikacji": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App language"
+          }
+        }
+      }
+    },
+    "Jak w systemie (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same as macOS (%@)"
+          }
+        }
+      }
+    },
+    "Nowy język pojawi się po ponownym uruchomieniu Captylo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new language appears after Captylo restarts."
+          }
+        }
+      }
+    },
+    "Nowy język po ponownym uruchomieniu. Najpierw zakończ nagrywanie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new language needs a restart. Finish recording first."
+          }
+        }
+      }
+    },
     "Klawisz %@": {
       "localizations": {
         "en": {

@@ -138,6 +138,12 @@ final class AppState {
     /// Bumped after every saved dictation; the dashboard reloads with `.task(id:)`.
     var statsVersion: Int { stats.version }
 
+    /// A dictation or a meeting records, is starting or is still being processed: no relaunch
+    /// ("Język aplikacji") until it is done.
+    var isRecordingAnything: Bool {
+        dictationController.phase != .idle || meetingRecorder.phase != .idle || meetingRecorder.isStarting
+    }
+
     @ObservationIgnored private let hotkeyRelay: HotkeyRelay
     /// The dictation AI route runs off the main actor, so it reads this snapshot of `settings.aiModel`.
     @ObservationIgnored private let aiModelSnapshot: OSAllocatedUnfairLock<String>
@@ -781,6 +787,14 @@ final class AppState {
             return
         }
         windowPresenter.openAccount()
+    }
+
+    /// "Uruchom ponownie" after a new "Język aplikacji". Never while something records, and never
+    /// from the design preview: a plain launch of that binary starts a second hotkey tap.
+    func relaunchForLanguage() {
+        guard !isDesignPreview, !isRecordingAnything else { return }
+        Log.app.info("Relaunching for a new app language")
+        AppRelauncher.relaunch()
     }
 
     private func drainPendingOpenURLs() {
