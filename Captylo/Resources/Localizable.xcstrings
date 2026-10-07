@@ -31,6 +31,11 @@
         "en": { "stringUnit": { "state": "translated", "value": "Open note" } }
       }
     },
+    "Notatka zmieniła się w trakcie, więc AI jej nie nadpisało. Spróbuj jeszcze raz.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The note changed in the meantime, so the AI did not overwrite it. Try again." } }
+      }
+    },
     "Bez tekstu": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "No text" } }

@@ -30,6 +30,18 @@ struct NoteDraftTests {
         #expect(saved.records.count == 1)
     }
 
+    /// A reload keeps the draft (and the keystrokes typed meanwhile) unless the stored note says
+    /// something else.
+    @Test func aDraftKnowsWhetherItStillShowsTheStoredNote() {
+        let note = NoteRecord(title: "T", body: "b")
+        let draft = NoteDraft(note: note, save: { _ in })
+        #expect(draft.isShowing(note))
+        var changed = note
+        changed.body = "wynik AI"
+        #expect(!draft.isShowing(changed))
+        #expect(!draft.isShowing(NoteRecord(title: "T", body: "b")))
+    }
+
     @Test func aDraftKnowsItsNote() {
         let note = NoteRecord(title: "T", body: "b")
         let draft = NoteDraft(note: note, save: { _ in })

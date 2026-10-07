@@ -30,6 +30,12 @@ final class NoteDraft {
         title != saved.title || body != saved.body
     }
 
+    /// The draft shows exactly this stored note (same note, same title and text): a reload can
+    /// keep it, together with anything typed while the reload ran.
+    func isShowing(_ note: NoteRecord) -> Bool {
+        noteID == note.id && title == note.title && body == note.body
+    }
+
     func edit(title: String) {
         self.title = title
         schedule()

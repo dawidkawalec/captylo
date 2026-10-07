@@ -58,9 +58,16 @@ struct NoteDetailView: View {
         }
     }
 
+    /// Something else writes this note right now (AI, a retried transcription, a take into it):
+    /// the title and the text are read-only until it lands, so nothing typed meanwhile is lost.
+    private func isBusy(_ note: NoteRecord) -> Bool {
+        isRunningAI || isRetrying || (dictatingInto == note.id && dictation.phase != .idle)
+    }
+
     private func content(_ note: NoteRecord, draft: NoteDraft) -> some View {
         GlassPanel(alignment: .leading, spacing: 12) {
             titleRow(note, draft: draft)
+                .disabled(isBusy(note))
             if let fileName = note.audioFileName {
                 let url = AppPaths.noteAudioURL(fileName: fileName)
                 if FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
@@ -71,6 +78,8 @@ struct NoteDetailView: View {
                 transcriptErrorRow(error)
             }
             editor(draft)
+                .disabled(isBusy(note))
+                .opacity(isBusy(note) ? 0.6 : 1)
             actionRow(note)
             if let actionError {
                 ToolStatusLine(text: actionError, tone: .error)
@@ -174,7 +183,11 @@ struct NoteDetailView: View {
                 Task { await dictation.stop() }
             } else {
                 dictatingInto = note.id
-                Task { await dictation.start(destination: .appendToNote(note.id)) }
+                let pending = draft
+                Task {
+                    await pending?.flush()
+                    await dictation.start(destination: .appendToNote(note.id))
+                }
             }
         } label: {
             HStack(spacing: 6) {
@@ -190,6 +203,9 @@ struct NoteDetailView: View {
 
     // MARK: Actions
 
+    /// Saves the draft, reads the note again and keeps the draft when it still shows the stored
+    /// text or holds keystrokes typed during the read; only a change made elsewhere (AI, a
+    /// dictated paragraph, a retried transcription) replaces it.
     private func load() async {
         await draft?.flush()
         do {
@@ -199,6 +215,9 @@ struct NoteDetailView: View {
                 return
             }
             note = fresh
+            if let draft, draft.noteID == fresh.id, draft.isShowing(fresh) || draft.hasUnsavedChanges {
+                return
+            }
             let database = database
             let onSaved = onSaved
             draft = NoteDraft(note: fresh) { record in
@@ -241,6 +260,7 @@ struct NoteDetailView: View {
         let id = noteID
         isRetrying = true
         Task {
+            await draft?.flush()
             _ = await actions.retryTranscription(noteID: id)
             isRetrying = false
         }

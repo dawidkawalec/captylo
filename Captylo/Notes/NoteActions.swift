@@ -47,12 +47,15 @@ final class NoteActions {
     }
 
     /// Runs the body through `mode` and saves the result; the text from before the first AI pass
-    /// stays in `originalBody`. Nil on success, else the Polish message (the body is untouched).
+    /// stays in `originalBody`. The result replaces the body only if the body is still the text
+    /// the AI was given: a note edited during the wait keeps the edit. Nil on success, else the
+    /// Polish message (the body is untouched).
     func applyAI(noteID: UUID, mode: AIMode) async -> String? {
         guard let note = try? await database.note(id: noteID) else {
             return DatabaseError.notFound(noteID).errorDescription
         }
-        let text = note.body.trimmingCharacters(in: .whitespacesAndNewlines)
+        let source = note.body
+        let text = source.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
             return String(localized: "Ta notatka nie ma tekstu do przetworzenia.")
         }
@@ -65,12 +68,17 @@ final class NoteActions {
         }
         let name = mode.name
         do {
-            try await database.modifyNote(id: noteID) { record in
+            let saved = try await database.modifyNote(id: noteID) { record in
+                guard record.body == source else { return }
                 if record.originalBody == nil {
                     record.originalBody = record.body
                 }
                 record.body = enhanced
                 record.aiMode = name
+            }
+            guard let saved else { return DatabaseError.notFound(noteID).errorDescription }
+            guard saved.body == enhanced else {
+                return String(localized: "Notatka zmieniła się w trakcie, więc AI jej nie nadpisało. Spróbuj jeszcze raz.")
             }
         } catch {
             Log.data.error("Saving the AI text of a note failed: \(error.localizedDescription, privacy: .public)")
@@ -110,8 +118,9 @@ final class NoteActions {
         didChange()
     }
 
-    /// Transcribes the note's recording again (a voice note whose first try failed) and replaces
-    /// the body. Nil on success, else the Polish message, which also lands in `transcriptError`.
+    /// Transcribes the note's recording again (a voice note whose first try failed). The text
+    /// becomes the body, or a paragraph under what the user typed meanwhile. Nil on success, else
+    /// the Polish message, which also lands in `transcriptError`.
     func retryTranscription(noteID: UUID) async -> String? {
         guard let note = try? await database.note(id: noteID), let fileName = note.audioFileName else {
             return DatabaseError.notFound(noteID).errorDescription
@@ -125,7 +134,7 @@ final class NoteActions {
             guard !text.isEmpty else { throw DictationError.emptyResult }
             let model = result.modelName
             try await database.modifyNote(id: noteID) { record in
-                record.body = text
+                record.body = NoteTake.appending(text, to: record.body)
                 record.transcriptModel = model
                 record.transcriptError = nil
             }

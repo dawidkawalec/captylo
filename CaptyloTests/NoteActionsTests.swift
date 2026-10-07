@@ -36,8 +36,57 @@ private final class NotesFakeEnhancer: TextEnhancing, Sendable {
     func prewarm() async {}
 }
 
+/// Enhancer fake that runs `during` while the "model" thinks (the user edits the note meanwhile).
+private final class NotesSlowEnhancer: TextEnhancing, Sendable {
+    private let during: @Sendable () async -> Void
+
+    init(during: @escaping @Sendable () async -> Void) {
+        self.during = during
+    }
+
+    func enhance(_ raw: String, job: EnhancementJob) async -> EnhancementOutcome {
+        await during()
+        return .enhanced(text: "- wynik AI", ms: 1, model: "m")
+    }
+
+    func prewarm() async {}
+}
+
 @MainActor
 struct NoteActionsTests {
+    /// The user typed while the AI ran: their text stays, the AI result is not forced over it.
+    @Test func anAIPassNeverOverwritesTextChangedDuringTheWait() async throws {
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let note = NoteRecord(body: "pierwsza wersja")
+        try await db.createNote(note)
+        let id = note.id
+        let actions = NoteActions(
+            database: db,
+            router: NotesFakeRouter(),
+            enhancer: NotesSlowEnhancer(during: { _ = try? await db.modifyNote(id: id) { $0.body = "pierwsza wersja i dopisek" } }),
+            vocabulary: { [] },
+            processor: { Self.processor },
+            engine: { .local },
+            language: { "pl" },
+            didChange: {}
+        )
+        #expect(await actions.applyAI(noteID: id, mode: BuiltInAIModes.english) != nil)
+        let read = try #require(try await db.note(id: id))
+        #expect(read.body == "pierwsza wersja i dopisek")
+        #expect(read.originalBody == nil)
+        #expect(read.aiMode == nil)
+    }
+
+    /// A retried transcription adds its text under what the user already typed into the note.
+    @Test func retryKeepsTextTypedIntoTheFailedNote() async throws {
+        let (actions, db) = try Self.make()
+        let note = NoteRecord(body: "Moja uwaga.", audioFileName: "v.wav", audioDuration: 1, transcriptError: "Brak internetu")
+        try await db.createNote(note)
+        #expect(await actions.retryTranscription(noteID: note.id) == nil)
+        let read = try #require(try await db.note(id: note.id))
+        #expect(read.body == "Moja uwaga.\n\n" + Self.processor.process("przepisany tekst", language: "pl"))
+    }
+
     private static let processor = TextProcessor(dictionary: .default, paragraphs: true)
 
     private static func make(
