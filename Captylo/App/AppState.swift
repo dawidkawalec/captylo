@@ -163,6 +163,8 @@ final class AppState {
     @ObservationIgnored private var meetingShortcut: GlobalShortcut?
     /// ⌃⌥⌘P "Popraw", registered while its switch is on (`applyCorrectionShortcut`).
     @ObservationIgnored private var correctionShortcut: GlobalShortcut?
+    /// ⌃⌥⌘N, a voice note, registered while its switch is on (`applyNoteShortcut`).
+    @ObservationIgnored private var noteShortcut: GlobalShortcut?
     /// Services menu "Popraw w Captylo"; set in `startServices`.
     @ObservationIgnored private var correctionService: CorrectionServiceProvider?
     @ObservationIgnored private var servicesStarted = false
@@ -708,6 +710,7 @@ final class AppState {
         oldAppDetector.start()
         applyMeetingShortcut()
         applyCorrectionShortcut()
+        applyNoteShortcut()
         // Services menu "Popraw w Captylo" (`NSServices` in Info.plist).
         let service = CorrectionServiceProvider(correction: manualCorrection)
         correctionService = service
@@ -747,6 +750,7 @@ final class AppState {
         hotkeyTap.uninstall()
         meetingShortcut?.unregister()
         correctionShortcut?.unregister()
+        noteShortcut?.unregister()
         accessibility.stop()
         if let wakeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
@@ -799,6 +803,35 @@ final class AppState {
             correctionShortcut?.register()
         } else {
             correctionShortcut?.unregister()
+        }
+    }
+
+    /// ⌃⌥⌘N and "Nowa notatka głosowa" in the menu bar: starts a voice note while idle, stops the
+    /// take that records (of any kind, as what it is), ignored while a take is transcribed.
+    func toggleVoiceNote() {
+        let controller = dictationController
+        switch TakeDestination.forShortcutPress(phase: controller.phase, current: controller.currentDestination) {
+        case .start(let destination):
+            Task { await controller.start(destination: destination) }
+        case .stop:
+            Task { await controller.stop() }
+        case .ignore:
+            break
+        }
+    }
+
+    /// Registers or drops ⌃⌥⌘N to match the setting, like `applyMeetingShortcut`.
+    private func applyNoteShortcut() {
+        guard servicesStarted else { return }
+        if settings.notesShortcut {
+            if noteShortcut == nil {
+                noteShortcut = GlobalShortcut(GlobalShortcut.note) { [weak self] in
+                    self?.toggleVoiceNote()
+                }
+            }
+            noteShortcut?.register()
+        } else {
+            noteShortcut?.unregister()
         }
     }
 
@@ -863,6 +896,7 @@ final class AppState {
             _ = settings.menuBarOnly
             _ = settings.meetingsShortcut
             _ = settings.learningFixShortcut
+            _ = settings.notesShortcut
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -890,6 +924,7 @@ final class AppState {
         windowPresenter.applyDockPolicy()
         applyMeetingShortcut()
         applyCorrectionShortcut()
+        applyNoteShortcut()
     }
 
     private func showStoreFallbackAlert() {

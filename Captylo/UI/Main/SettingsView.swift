@@ -119,6 +119,12 @@ struct SettingsView: View {
                 systemImage: "pencil.and.scribble",
                 isOn: $settings.learningFixShortcut
             )
+            GlassToggleRow(
+                "Notatka głosowa: \(GlobalShortcut.note.display)",
+                subtitle: "Naciśnij skrót w dowolnej aplikacji, powiedz, co chcesz zapamiętać, i naciśnij go jeszcze raz. Nagranie i jego tekst trafią do Notatek, nic nie zostanie wklejone.",
+                systemImage: "note.text.badge.plus",
+                isOn: $settings.notesShortcut
+            )
         }
 
         GlassPanel(spacing: 4) {

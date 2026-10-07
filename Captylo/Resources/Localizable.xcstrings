@@ -1,6 +1,21 @@
 {
   "sourceLanguage": "pl",
   "strings": {
+    "Naciśnij skrót w dowolnej aplikacji, powiedz, co chcesz zapamiętać, i naciśnij go jeszcze raz. Nagranie i jego tekst trafią do Notatek, nic nie zostanie wklejone.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Press the shortcut in any app, say what you want to remember and press it again. The recording and its text go to Notes, nothing is pasted." } }
+      }
+    },
+    "Notatka głosowa: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Voice note: %@" } }
+      }
+    },
+    "Nowa notatka głosowa": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New voice note" } }
+      }
+    },
     "Bez tekstu": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "No text" } }

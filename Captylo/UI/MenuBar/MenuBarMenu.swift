@@ -42,6 +42,11 @@ struct MenuBarMenu: View {
             .disabled(meetings.phase != .idle || meetings.isStarting)
         }
 
+        Button("Nowa notatka głosowa") {
+            appState.toggleVoiceNote()
+        }
+        .keyboardShortcut(settings.notesShortcut ? KeyboardShortcut("n", modifiers: [.command, .option, .control]) : nil)
+
         Button("Kopiuj ostatnią transkrypcję") {
             Task {
                 guard let text = await appState.database.lastCompletedText() else {

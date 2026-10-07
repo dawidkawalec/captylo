@@ -124,7 +124,8 @@ struct AppSettingsTests {
         #expect(raw.contains("account.refreshedAt"))
         #expect(raw.contains("ai.captylo"))
         #expect(raw.contains("stt.captylo"))
-        #expect(AppSettings.keys.count == 51)
+        #expect(raw.contains("notes.shortcut"))
+        #expect(AppSettings.keys.count == 52)
     }
 
     @Test func accountCacheDefaultsEmptyAndPersists() throws {
@@ -210,6 +211,16 @@ struct AppSettingsTests {
         #expect(!settings.sttCaptylo)
         settings.reset()
         #expect(settings.sttCaptylo)
+    }
+
+    @Test func voiceNoteShortcutIsOnByDefaultAndResets() throws {
+        let settings = try makeSettings()
+        #expect(settings.notesShortcut)
+        settings.notesShortcut = false
+        #expect(!settings.notesShortcut)
+        settings.reset()
+        #expect(settings.notesShortcut)
+        #expect(GlobalShortcut.note.display == "⌃⌥⌘N")
     }
 
     @Test func meetingTranscriptSettingsDefaultOff() throws {

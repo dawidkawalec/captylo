@@ -48,6 +48,7 @@ final class AppSettings {
         case meetingsConsentReminder = "meetings.consentReminder"
         case meetingAudioRetention = "meetings.audioRetention"
         case meetingsShortcut = "meetings.shortcut"
+        case notesShortcut = "notes.shortcut"
         case meetingsCloudTranscript = "meetings.cloudTranscript"
         case meetingsAICorrection = "meetings.aiCorrection"
         case meetingsCalendar = "meetings.calendar"
@@ -404,6 +405,12 @@ final class AppSettings {
     var meetingsShortcut: Bool {
         get { track(\.meetingsShortcut); return bool(.meetingsShortcut, default: true) }
         set { withMutation(keyPath: \.meetingsShortcut) { defaults.set(newValue, forKey: Key.meetingsShortcut.rawValue) } }
+    }
+
+    /// "Skrót ⌃⌥⌘N": the system-wide shortcut that records a voice note (Notatki).
+    var notesShortcut: Bool {
+        get { track(\.notesShortcut); return bool(.notesShortcut, default: true) }
+        set { withMutation(keyPath: \.notesShortcut) { defaults.set(newValue, forKey: Key.notesShortcut.rawValue) } }
     }
 
     /// "Dokładniejszy transkrypt z chmury" (Pro): after a meeting both tracks go to the cloud
