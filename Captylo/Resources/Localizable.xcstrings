@@ -1,6 +1,166 @@
 {
   "sourceLanguage": "pl",
   "strings": {
+    "Bez tekstu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No text" } }
+      }
+    },
+    "Dyktuj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dictate" } }
+      }
+    },
+    "Importuj": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Import" } }
+      }
+    },
+    "Importuj nagranie": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Import recording" } }
+      }
+    },
+    "Nagranie albo głosówka z komunikatora stanie się notatką z transkryptem": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A recording or a voice message becomes a note with its transcript" } }
+      }
+    },
+    "Napisz notatkę albo naciśnij ⌃⌥⌘N w dowolnej aplikacji i powiedz, co chcesz zapamiętać.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Write a note, or press ⌃⌥⌘N in any app and say what you want to remember." } }
+      }
+    },
+    "Nie udało się przepisać nagrania. %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The recording could not be transcribed. %@" } }
+      }
+    },
+    "Nie udało się zaimportować: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not import: %@" } }
+      }
+    },
+    "Notatka bez tytułu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Untitled note" } }
+      }
+    },
+    "Notatka głosowa": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Voice note" } }
+      }
+    },
+    "Notatka i jej nagranie znikną z tego Maca.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The note and its recording will be removed from this Mac." } }
+      }
+    },
+    "Notatka zniknie z tego Maca.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The note will be removed from this Mac." } }
+      }
+    },
+    "Nowa notatka": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New note" } }
+      }
+    },
+    "Pisz albo dyktuj. Wszystko zostaje na tym Macu.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Type or dictate. Everything stays on this Mac." } }
+      }
+    },
+    "Podyktuj dalszy ciąg tej notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dictate more of this note" } }
+      }
+    },
+    "Przepisuję nagrania: %lld": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Transcribing recordings: %lld" } }
+      }
+    },
+    "Przepisz notatkę wybranym trybem AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rewrite the note with the chosen AI mode" } }
+      }
+    },
+    "Przywróć oryginał": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Restore original" } }
+      }
+    },
+    "Szukaj w notatkach": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search notes" } }
+      }
+    },
+    "Ta notatka nie ma tekstu do przetworzenia.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This note has no text to process." } }
+      }
+    },
+    "Tej notatki już nie ma.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This note no longer exists." } }
+      }
+    },
+    "Ten plik nie jest nagraniem: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This file is not a recording: %@" } }
+      }
+    },
+    "Treść notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Note text" } }
+      }
+    },
+    "Tu pojawią się Twoje notatki.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your notes will appear here." } }
+      }
+    },
+    "Tytuł": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Title" } }
+      }
+    },
+    "Uporządkuj przez AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tidy up with AI" } }
+      }
+    },
+    "Usunąć notatkę?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete this note?" } }
+      }
+    },
+    "Usuń notatkę": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete note" } }
+      }
+    },
+    "Wróć do tekstu sprzed AI": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go back to the text from before the AI" } }
+      }
+    },
+    "Wybierz nagrania, z których powstaną notatki": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose recordings to turn into notes" } }
+      }
+    },
+    "Wybierz notatkę z listy.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose a note from the list." } }
+      }
+    },
+    "Zapisano notatkę": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Note saved" } }
+      }
+    },
     "Captylo sam uzupełnia ten opis co kilka Twoich poprawek stylu: powitania, interpunkcję, ton. Działa z trybami AI. Możesz go dowolnie zmienić.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Captylo updates this description by itself every few style corrections you make: greetings, punctuation, tone. Works with AI modes. Change it any way you like." } }

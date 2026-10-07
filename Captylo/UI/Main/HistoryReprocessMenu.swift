@@ -2,11 +2,14 @@ import SwiftUI
 
 /// "Przetwórz przez AI": a small neutral glass capsule (like the other row actions) that opens the
 /// list of AI modes; picking one runs the row's original text through it. Shows a spinner and
-/// "Przetwarzam..." while a run is in flight and is disabled then.
+/// "Przetwarzam..." while a run is in flight and is disabled then. Notatki uses it with its own
+/// title ("Uporządkuj przez AI") and help.
 @MainActor
 struct HistoryReprocessMenu: View {
     let modes: [AIMode]
     let isProcessing: Bool
+    var title: LocalizedStringKey = "Przetwórz przez AI"
+    var helpText: LocalizedStringKey = "Przetwórz oryginał wybranym trybem AI"
     let onPick: (AIMode) -> Void
 
     @Environment(\.isEnabled) private var isEnabled
@@ -31,7 +34,7 @@ struct HistoryReprocessMenu: View {
         .disabled(isProcessing || modes.isEmpty)
         .onHover { isHovered = $0 }
         .animation(GlassMotion.press, value: isHovered)
-        .help(Text("Przetwórz oryginał wybranym trybem AI"))
+        .help(Text(helpText))
     }
 
     private var label: some View {
@@ -43,7 +46,7 @@ struct HistoryReprocessMenu: View {
                 Text("Przetwarzam...")
             } else {
                 Image(systemName: "sparkles")
-                Text("Przetwórz przez AI")
+                Text(title)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Color.white.opacity(0.7))

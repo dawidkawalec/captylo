@@ -129,6 +129,11 @@ enum DesignPreviewData {
         return query
     }
 
+    /// `CAPTYLO_PREVIEW_NOTES=empty`: `main-notatki` opens without notes (its empty state).
+    static func showsEmptyNotes(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        environment["CAPTYLO_PREVIEW_NOTES"] == "empty"
+    }
+
     /// `CAPTYLO_PREVIEW_HIT=1` (with `CAPTYLO_PREVIEW_QUERY`): the first hit line of the first
     /// result is clicked once the search ran, so the details jump to it.
     static func opensFirstHit(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
@@ -205,6 +210,48 @@ enum DesignPreviewData {
                 Log.data.error("Design preview: sample meeting save failed: \(error.localizedDescription, privacy: .public)")
             }
         }
+        guard !showsEmptyNotes() else { return }
+        for note in sampleNotes(now: now) {
+            do {
+                try await database.createNote(note)
+            } catch {
+                Log.data.error("Design preview: sample note save failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    /// Notatki: a voice note, a note tidied by AI (with its original), a typed note without a
+    /// title and a voice note whose transcription failed. The recordings do not exist on disk,
+    /// so the player stays hidden; the waveform glyph and the error line still show.
+    static func sampleNotes(now: Date) -> [NoteRecord] {
+        [
+            NoteRecord(
+                createdAt: now.addingTimeInterval(-25 * 60),
+                body: "Pomysł na kampanię jesienną: krótkie filmy z klientami, którzy dyktują maile w drodze do pracy. Sprawdzić budżet z Anią do piątku.",
+                audioFileName: "design-preview-voice.wav",
+                audioDuration: 48,
+                language: "pl"
+            ),
+            NoteRecord(
+                createdAt: now.addingTimeInterval(-3 * 3600),
+                title: "Plan na czwartek",
+                body: "- Oddzwonić do Marka w sprawie oferty\n- Wysłać umowę do podpisu\n- Zarezerwować salę na warsztaty",
+                originalBody: "jutro oddzwonić do marka w sprawie oferty potem wysłać umowę i jeszcze zarezerwować salę na warsztaty",
+                aiMode: "Lista zadań"
+            ),
+            NoteRecord(
+                createdAt: now.addingTimeInterval(-26 * 3600),
+                body: "Książki od Kasi: Nawyk siły woli, Głęboka praca.\nSprawdzić, czy są w bibliotece."
+            ),
+            NoteRecord(
+                createdAt: now.addingTimeInterval(-3 * 86_400),
+                body: "",
+                audioFileName: "design-preview-failed.wav",
+                audioDuration: 12,
+                language: "pl",
+                transcriptError: "Brak połączenia z internetem."
+            ),
+        ]
     }
 
     // MARK: Defaults

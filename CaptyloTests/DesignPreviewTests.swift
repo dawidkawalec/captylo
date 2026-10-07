@@ -39,6 +39,17 @@ struct DesignPreviewTests {
         #expect(sections == MainSection.allCases)
     }
 
+    @Test func sampleNotesShowEveryKindOfNote() {
+        let notes = DesignPreviewData.sampleNotes(now: Date())
+        #expect(notes.count == 4)
+        #expect(notes.contains { $0.hasAudio && $0.transcriptError == nil })
+        #expect(notes.contains { $0.originalBody != nil })
+        #expect(notes.contains { $0.transcriptError != nil })
+        #expect(notes.contains { !$0.hasAudio && $0.title.isEmpty })
+        #expect(DesignPreviewData.showsEmptyNotes(environment: ["CAPTYLO_PREVIEW_NOTES": "empty"]))
+        #expect(!DesignPreviewData.showsEmptyNotes(environment: [:]))
+    }
+
     @Test func sampleHistorySpansTwoWeeks() throws {
         let now = try #require(ISO8601DateFormatter().date(from: "2026-09-26T12:00:00Z"))
         let calendar = Calendar(identifier: .gregorian)

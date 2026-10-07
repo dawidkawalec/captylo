@@ -64,7 +64,7 @@ struct MainShellView: View {
         switch section {
         case .pulpit: DashboardView()
         case .spotkania: MeetingsView()
-        case .notatki: Color.clear
+        case .notatki: NotesView()
         case .historia: HistoryView()
         case .plik: TranscribeFileView()
         case .slownik: DictionaryView()
