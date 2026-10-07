@@ -8,7 +8,7 @@ struct DesignPreviewTests {
         let expected = [
             "widget-compact", "widget-compact-mode", "widget-expanded", "widget-transcribing", "widget-enhancing",
             "onboarding-welcome", "onboarding-permissions", "onboarding-model", "onboarding-shortcut", "onboarding-tryit",
-            "main-pulpit", "main-spotkania", "main-historia", "main-plik", "main-slownik", "main-modele", "main-ustawienia",
+            "main-pulpit", "main-spotkania", "main-notatki", "main-historia", "main-plik", "main-slownik", "main-modele", "main-ustawienia",
             "glass-gallery", "popraw",
         ]
         #expect(DesignPreviewTarget.allCases.map(\.rawValue) == expected)
