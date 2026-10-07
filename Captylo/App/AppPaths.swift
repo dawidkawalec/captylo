@@ -51,9 +51,20 @@ enum AppPaths {
         meetingFolder(id).appending(path: track.fileName)
     }
 
-    /// Creates the data, recordings and meetings directories (call before opening the store).
+    /// `Notes/<id>.wav`: voice notes, never under `Recordings/` (the dictation orphan sweep).
+    static var notes: URL { dataDirectory.appending(path: "Notes", directoryHint: .isDirectory) }
+
+    static func noteAudioURL(for id: UUID) -> URL {
+        notes.appending(path: "\(id.uuidString).wav")
+    }
+
+    static func noteAudioURL(fileName: String) -> URL {
+        notes.appending(path: fileName)
+    }
+
+    /// Creates the data, recordings, meetings and notes directories (call before opening the store).
     static func ensureDirectories() throws {
-        for directory in [dataDirectory, recordings, meetings] {
+        for directory in [dataDirectory, recordings, meetings, notes] {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         }
     }

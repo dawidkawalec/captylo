@@ -57,4 +57,19 @@ struct DataDeviceIdentityTests {
         #expect(meetingRow.deviceID == "device-a")
         #expect(meetingRow.updatedAt >= before)
     }
+
+    @Test func notesAndTombstonesCarryTheDevice() async throws {
+        DeviceIdentity.set("device-a")
+        defer { DeviceIdentity.set("") }
+        let db = Database(modelContainer: try Store.makeInMemoryContainer())
+        let note = NoteRecord(body: "x")
+        try await db.createNote(note)
+        let container = db.modelContainer
+        let context = ModelContext(container)
+        let noteID = note.id
+        let row = try #require(try context.fetch(FetchDescriptor<Note>(predicate: #Predicate { $0.id == noteID })).first)
+        #expect(row.deviceID == "device-a")
+        _ = try await db.deleteNote(id: note.id)
+        #expect(try await db.tombstones().first?.deviceID == "device-a")
+    }
 }

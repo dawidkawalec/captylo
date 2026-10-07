@@ -138,9 +138,11 @@ extension Database {
         return restored
     }
 
-    /// Removes the meeting row and all its segments. The caller deletes the track files.
+    /// Removes the meeting row (leaving a `Tombstone` for sync) and all its segments. The caller
+    /// deletes the track files.
     func deleteMeeting(id: UUID) throws {
         if let row = try fetchMeeting(id: id) {
+            modelContext.insert(Tombstone(.meeting, id: id))
             modelContext.delete(row)
         }
         for segment in try fetchSegments(meetingID: id) {

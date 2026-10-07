@@ -8,7 +8,9 @@ import SwiftData
 enum Store {
     static let configurationName = "Captylo"
 
-    static var schema: Schema { Schema([Dictation.self, UsageStat.self, Meeting.self, MeetingSegment.self]) }
+    static var schema: Schema {
+        Schema([Dictation.self, UsageStat.self, Meeting.self, MeetingSegment.self, Note.self, Tombstone.self])
+    }
 
     static func makeContainer(url: URL = AppPaths.store) -> (container: ModelContainer, isFallback: Bool) {
         do {
@@ -158,12 +160,14 @@ actor Database: ModelActor {
         }
     }
 
-    /// Removes the rows and returns their audio file names for the caller to delete. `UsageStat` stays.
+    /// Removes the rows (each leaves a `Tombstone` for sync) and returns their audio file names
+    /// for the caller to delete. `UsageStat` stays.
     func delete(ids: [UUID]) throws -> [String] {
         guard !ids.isEmpty else { return [] }
         let rows = try fetchDictations(ids: ids)
         let fileNames = rows.compactMap(\.audioFileName)
         for row in rows {
+            modelContext.insert(Tombstone(.dictation, id: row.id))
             modelContext.delete(row)
         }
         try modelContext.save()

@@ -423,6 +423,46 @@ struct DatabaseMigrationTests {
         #expect(try await reader.meeting(id: oldID)?.title == "Z M2")
     }
 
+    /// 1.0.14 -> 1.0.15: a store without notes, tombstones and sync stamps opens, keeps its
+    /// meeting and takes new notes.
+    @Test func storeWithoutNotesOpensWithTheNoteTables() async throws {
+        let folder = try Self.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let url = folder.appending(path: Store.configurationName + ".store")
+        let oldID = UUID()
+        do {
+            let container = try CaptyloStoreSchemaMeetingsM2.container(at: url)
+            let context = ModelContext(container)
+            context.insert(CaptyloStoreSchemaMeetingsM2.Meeting(id: oldID, createdAt: Self.base, title: "Z M2", duration: 60))
+            try context.save()
+        }
+
+        let database = Database(modelContainer: try Store.openContainer(at: url))
+        #expect(try await database.meeting(id: oldID)?.title == "Z M2")
+        let note = NoteRecord(title: "Pierwsza", body: "treść")
+        try await database.createNote(note)
+        try await database.deleteMeeting(id: oldID)
+        let reopened = Database(modelContainer: try Store.openContainer(at: url))
+        #expect(try await reopened.note(id: note.id)?.title == "Pierwsza")
+        #expect(try await reopened.tombstones().map(\.entityID) == [oldID])
+    }
+
+    /// Rolling back to 1.0.14 must not lose anything: its schema opens a store that already has
+    /// the note and tombstone tables and the sync columns.
+    @Test func storeWithNotesStillOpensWithThePreNotesSchema() async throws {
+        let folder = try Self.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let url = folder.appending(path: Store.configurationName + ".store")
+        do {
+            let database = Database(modelContainer: try Store.openContainer(at: url))
+            try await database.createMeeting(MeetingRecord(title: "Spotkanie"))
+            try await database.createNote(NoteRecord(title: "N", body: "b"))
+        }
+        let old = try CaptyloStoreSchemaMeetingsM2.container(at: url)
+        let context = ModelContext(old)
+        #expect(try context.fetchCount(FetchDescriptor<CaptyloStoreSchemaMeetingsM2.Meeting>()) == 1)
+    }
+
     /// A missing store is never created by the read-only open (nor its folder).
     @Test func readOnlyOpenOfAMissingStoreThrowsAndCreatesNothing() throws {
         let folder = FileManager.default.temporaryDirectory
