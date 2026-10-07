@@ -98,6 +98,11 @@ enum CorrectionLearner {
         let judged = dropTrailingInsert(hunks)
         let judgedNewCount = newCount - (hunks.count - judged.count == 1 ? trailingInsertCount(hunks) : 0)
         guard TokenDiff.similarity(judged, oldCount: oldCount, newCount: judgedNewCount) >= minSimilarity else {
+            // A short paste fixed as a whole ("supa bejs" -> "Supabase") keeps no word, yet it is
+            // the most common correction: judge it as one change instead of calling it a rewrite.
+            if oldCount <= maxTermWords, newCount <= maxTermWords {
+                return shortPaste(old: TokenDiff.words(deliveredTrimmed), new: TokenDiff.words(correctedTrimmed), isRealWord: isRealWord)
+            }
             return CorrectionAnalysis(isNoise: true)
         }
 
@@ -122,6 +127,20 @@ enum CorrectionLearner {
             }
         }
         analysis.changedWords = min(analysis.changedWords, oldCount)
+        return analysis
+    }
+
+    /// A paste of at most `maxTermWords` words replaced as a whole. What came before it is unknown,
+    /// so its first word counts as a sentence start (a capital alone teaches nothing).
+    private static func shortPaste(old: [String], new: [String], isRealWord: (String) -> Bool) -> CorrectionAnalysis {
+        var analysis = CorrectionAnalysis(deliveredWords: old.count, changedWords: old.count)
+        switch termVerdict(old: old, new: new, atSentenceStart: true, isRealWord: isRealWord) {
+        case .term(let term):
+            analysis.terms = [term]
+        case .skip(let reason):
+            // Too short to say anything about style: only listed in "Ostatnio zauważone".
+            analysis.skipped = [SkippedChange(old: old.joined(separator: " "), new: new.joined(separator: " "), reason: reason)]
+        }
         return analysis
     }
 

@@ -17,6 +17,27 @@ struct LearningEditWatcherTests {
         #expect(!EditWatcher.isGone(delivered + " I jeszcze dopisałem długie zdanie na końcu wiadomości.", delivered: delivered))
     }
 
+    @Test func shortPasteRetypedIsNotGone() {
+        // One misheard word replaced as a whole is a fix, not the text leaving the field.
+        #expect(!EditWatcher.isGone("Supabase", delivered: "supa bejs"))
+        #expect(EditWatcher.isGone("", delivered: "supa bejs"))
+    }
+
+    @Test func voiceFixNeedsASelectionInsideTheEarlierPaste() throws {
+        let delivered = "wrzucam to na supa bejs w piątek."
+        let value = "Hej, " + delivered + " Pa"
+        let text = value as NSString
+        let anchor = EditSpan.anchor(in: value, paste: text.range(of: delivered))
+        let selected = text.range(of: "supa bejs")
+        #expect(EditWatcher.selectionInsidePaste(value: value, selection: selected, anchor: anchor) == "supa bejs")
+        // Outside the paste, nothing selected, too many words, or a range past the end.
+        #expect(EditWatcher.selectionInsidePaste(value: value, selection: text.range(of: "Hej"), anchor: anchor) == nil)
+        #expect(EditWatcher.selectionInsidePaste(value: value, selection: NSRange(location: 10, length: 0), anchor: anchor) == nil)
+        #expect(EditWatcher.selectionInsidePaste(value: value, selection: text.range(of: "to na supa bejs"), anchor: anchor) == nil)
+        #expect(EditWatcher.selectionInsidePaste(value: value, selection: nil, anchor: anchor) == nil)
+        #expect(EditWatcher.selectionInsidePaste(value: value, selection: NSRange(location: text.length - 1, length: 5), anchor: anchor) == nil)
+    }
+
     @Test func offMainGivesUpAtTheDeadline() async {
         let clock = ContinuousClock()
         let started = clock.now

@@ -72,6 +72,30 @@ struct LearningCorrectionLearnerTests {
         #expect(result.changedWords == 2)
     }
 
+    @Test func shortPasteFixedAsAWholeIsATerm() {
+        // No word survives, but this is the most common fix: one misheard word retyped.
+        let result = analyze("supa bejs", "Supabase")
+        #expect(!result.isNoise)
+        #expect(result.terms == [TermCorrection(misheard: "supa bejs", correct: "Supabase")])
+        #expect(result.deliveredWords == 2)
+        #expect(analyze("hanczo", "honcho").terms == [TermCorrection(misheard: "hanczo", correct: "honcho")])
+    }
+
+    @Test func shortPasteOfOtherWordsIsListedNotLearned() {
+        let result = analyze("jutro", "spotkanie")
+        #expect(!result.isNoise)
+        #expect(result.terms.isEmpty)
+        #expect(!result.isStyle)
+        #expect(result.skipped.map(\.reason) == [.ordinaryWords])
+        // A capital on its own at the start of a paste teaches nothing.
+        #expect(analyze("jutro", "Jutro").terms.isEmpty)
+    }
+
+    @Test func shortPasteReplacedByALongTextIsStillARewrite() {
+        #expect(analyze("supa bejs", "Całkiem inny tekst o czymś zupełnie innym").isNoise)
+        #expect(analyze("supa bejs", "").isNoise)
+    }
+
     @Test func skippedChangesSayWhy() {
         #expect(analyze("jutro spotkanie.", "Jutro spotkanie.").skipped.map(\.reason) == [.sentenceCase])
         #expect(analyze("Spotkanie w piątek o 10.", "Spotkanie w piątku o 10.").skipped

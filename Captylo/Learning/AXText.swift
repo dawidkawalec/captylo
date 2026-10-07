@@ -126,6 +126,12 @@ enum AXText {
         return AXUIElementSetAttributeValue(app, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue) == .success
     }
 
+    /// `AXSelectedTextRange` alone (one round trip): the watcher polls it next to the value.
+    static func selection(of element: AXUIElement) -> NSRange? {
+        applyTimeout()
+        return selectedRange(of: element)
+    }
+
     /// `AXSelectedText` of the element ("Popraw"); nil for secure fields and apps that do not
     /// report it.
     static func selectedText(of element: AXUIElement) -> String? {
