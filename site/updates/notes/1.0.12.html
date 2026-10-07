@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Captylo 1.0.12</title>
+<link rel="stylesheet" href="../../assets/css/site.css?v=20260930a">
+<style>
+.notes{width:min(680px,100% - 2*var(--gut));margin:0 auto;padding:32px 0 48px}
+.notes h1{font-weight:800;font-size:clamp(28px,4.4vw,40px);line-height:1.08;letter-spacing:-.03em}
+.notes h2{margin-top:32px;font-weight:700;font-size:21px;line-height:1.25;letter-spacing:-.02em}
+.notes h3{margin-top:22px;font-weight:700;font-size:17px}
+.notes p{margin-top:12px;line-height:1.6}
+.notes ul{margin-top:10px;padding-left:22px;list-style:disc;display:grid;gap:6px}
+.notes li{line-height:1.55}
+.notes a{text-decoration:underline;text-underline-offset:3px}
+.notes code{font-size:.92em;padding:1px 5px;border-radius:6px;background:rgba(16,39,44,.06)}
+</style>
+</head>
+<body>
+<main class="notes">
+<h1>Captylo 1.0.12</h1>
+<h2>Zmiany</h2>
+<ul>
+<li><strong>Dyktowanie nie zawiesza się na „Transkrybuję”.</strong> Gdy lokalny model jeszcze się przygotowuje (pierwsze uruchomienie albo po wyczyszczeniu pamięci podręcznej przez macOS), Captylo od razu o tym mówi, a nagranie przepisuje w chmurze, jeśli masz Pro albo własny klucz. Bez chmury czeka na model najwyżej półtorej minuty i prosi o ponowienie zamiast wisieć.</li>
+<li><strong>Ostrzeżenie o pełnym dysku.</strong> Gdy na dysku zostaje mniej niż 1 GB, Captylo ostrzega przed nagraniem. Pełny dysk potrafił po cichu zatrzymać nagrania i przygotowanie modelu.</li>
+<li><strong>Spokojniejsza optymalizacja modelu.</strong> W zakładce Modele zostaje jeden wskaźnik, a obok widać, ile czasu już trwa przygotowanie modelu.</li>
+<li><strong>Konto i faktury w przeglądarce.</strong> W Ustawieniach &gt; Konto Captylo jest link do panelu konta na app.captylo.com: plan, zużycie i faktury.</li>
+</ul>
+</main>
+</body>
+</html>
