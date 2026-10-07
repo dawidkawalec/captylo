@@ -137,32 +137,32 @@ class NotesTests(unittest.TestCase):
     MD = (
         "# Captylo 1.0.0\n"
         "\n"
-        "Pierwsza wersja publiczna.\n"
-        "Druga linia akapitu.\n"
+        "The first public version.\n"
+        "Second line of the paragraph.\n"
         "\n"
-        "## Nowości\n"
+        "## New\n"
         "\n"
-        "- **Aktualizacje** w aplikacji\n"
-        "- skrót `⌃⌥⌘M` i <tag>\n"
-        "- [Strona](https://captylo.com/)\n"
+        "- **Updates** in the app\n"
+        "- shortcut `⌃⌥⌘M` and <tag>\n"
+        "- [Website](https://captylo.com/)\n"
     )
 
     def test_renders_headings_lists_and_paragraphs(self):
         html = appcast.render_notes(self.MD, "1.0.0")
-        self.assertIn('<html lang="pl">', html)
+        self.assertIn('<html lang="en">', html)
         self.assertIn("<title>Captylo 1.0.0</title>", html)
         self.assertIn("<h1>Captylo 1.0.0</h1>", html)
-        self.assertIn("<p>Pierwsza wersja publiczna. Druga linia akapitu.</p>", html)
-        self.assertIn("<h2>Nowości</h2>", html)
-        self.assertIn("<li><strong>Aktualizacje</strong> w aplikacji</li>", html)
-        self.assertIn("<li>skrót <code>⌃⌥⌘M</code> i &lt;tag&gt;</li>", html)
-        self.assertIn('<li><a href="https://captylo.com/">Strona</a></li>', html)
+        self.assertIn("<p>The first public version. Second line of the paragraph.</p>", html)
+        self.assertIn("<h2>New</h2>", html)
+        self.assertIn("<li><strong>Updates</strong> in the app</li>", html)
+        self.assertIn("<li>shortcut <code>⌃⌥⌘M</code> and &lt;tag&gt;</li>", html)
+        self.assertIn('<li><a href="https://captylo.com/">Website</a></li>', html)
         self.assertEqual(html.count("<ul>"), 1)
 
     def test_adds_a_title_heading_when_the_notes_have_none(self):
-        html = appcast.render_notes("Poprawki błędów.\n", "1.0.1")
+        html = appcast.render_notes("Bug fixes.\n", "1.0.1")
         self.assertIn("<h1>Captylo 1.0.1</h1>", html)
-        self.assertIn("<p>Poprawki błędów.</p>", html)
+        self.assertIn("<p>Bug fixes.</p>", html)
 
     def test_uses_the_site_stylesheet(self):
         html = appcast.render_notes("x\n", "1.0.0")

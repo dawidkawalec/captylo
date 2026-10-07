@@ -47,8 +47,8 @@ def new_feed():
     channel = ET.SubElement(root, "channel")
     ET.SubElement(channel, "title").text = "Captylo"
     ET.SubElement(channel, "link").text = "https://captylo.com/"
-    ET.SubElement(channel, "description").text = "Aktualizacje Captylo"
-    ET.SubElement(channel, "language").text = "pl"
+    ET.SubElement(channel, "description").text = "Captylo updates"
+    ET.SubElement(channel, "language").text = "en"
     return root
 
 
@@ -205,7 +205,7 @@ def _blocks(markdown):
 
 
 NOTES_TEMPLATE = """<!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

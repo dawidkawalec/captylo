@@ -157,7 +157,7 @@ if [ -s "$NOTES_MD" ]; then
   note "Release notes: ${NOTES_MD#"$ROOT"/}"
 else
   HAVE_NOTES=0
-  refuse "Write the release notes first: ${NOTES_MD#"$ROOT"/} (Markdown, Polish)"
+  refuse "Write the release notes first: ${NOTES_MD#"$ROOT"/} (Markdown, English)"
 fi
 
 # 2. Build

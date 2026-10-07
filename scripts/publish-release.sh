@@ -219,4 +219,4 @@ fi
 
 step "Done"
 note "Captylo $VERSION (build $BUILD) is on $BASE_URL/download/Captylo.dmg and in the appcast."
-note "Installed copies see it at their next update check (Sprawdź aktualizacje... shows it at once)."
+note "Installed copies see it at their next update check (Check for Updates... shows it at once)."
