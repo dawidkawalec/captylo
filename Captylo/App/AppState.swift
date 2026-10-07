@@ -119,6 +119,10 @@ final class AppState {
     @ObservationIgnored let hotkeyTap: HotkeyTap
     @ObservationIgnored let hotkeyController: HotkeyController
     @ObservationIgnored let historyActions: HistoryActions
+    /// Notatki: AI modes, restore, delete, retry a transcription.
+    @ObservationIgnored let noteActions: NoteActions
+    /// Bumped after every note change made outside the editor (a voice note, an append, AI).
+    @ObservationIgnored let notesTicker = StatsTicker()
 
     /// "Transkrypcja pliku" queue. Owned here so it survives the main window closing and can
     /// take Finder "Otwórz za pomocą" files before any view exists; the drop zone feeds it too.
@@ -137,6 +141,8 @@ final class AppState {
 
     /// Bumped after every saved dictation; the dashboard reloads with `.task(id:)`.
     var statsVersion: Int { stats.version }
+    /// Notatki reloads its list when this changes.
+    var notesVersion: Int { notesTicker.version }
 
     /// A dictation or a meeting records, is starting or is still being processed: no relaunch
     /// ("Język aplikacji") until it is done.
@@ -553,6 +559,17 @@ final class AppState {
             enhancer: utilityEnhancer,
             vocabulary: { dictionaryStore.data.vocabulary },
             didChange: { stats.bump() }
+        )
+        let notesTicker = notesTicker
+        noteActions = NoteActions(
+            database: database,
+            router: transcriptionRouter,
+            enhancer: utilityEnhancer,
+            vocabulary: { dictionaryStore.data.vocabulary },
+            processor: { dictionaryStore.processor },
+            engine: { settings.sttEngine },
+            language: { settings.transcriptionLanguage },
+            didChange: { notesTicker.bump() }
         )
         fileQueue = FileTranscriptionQueue(services: .make(
             settings: settings,
