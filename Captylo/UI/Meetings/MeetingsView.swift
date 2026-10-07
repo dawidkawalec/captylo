@@ -25,7 +25,8 @@ import SwiftUI
 /// forms match, rows come best match first, and each row shows where it matched (up to two hit
 /// lines); a click on a hit line opens "Transkrypt" at that moment (or "Notatki"). Shorter
 /// queries, or an index still being built, use the store's plain `contains` search. While
-/// searching, the number of meetings found sits under the field.
+/// searching, the number of meetings found sits under the field, and the notes the same search
+/// finds sit under the header ("Także w notatkach", `NoteMatchesStrip`), opening in Notatki.
 ///
 /// "Zapytaj wszystkie" next to the field opens `LibraryAskPanel` (Pro; Free sees a "Pro" badge
 /// and the Pro card): a citation in an answer closes it, selects that meeting and jumps in
@@ -81,6 +82,9 @@ struct MeetingsView: View {
     @State private var previewOpenedLibraryAsk = false
     /// Bumped when a citation selects a meeting missing from the list (`ReloadKey.citationOpens`).
     @State private var citationOpens = 0
+    /// Notes the same search finds (index only, at most `noteMatchLimit`), under the header.
+    @State private var noteMatches: [NoteRecord] = []
+    private static let noteMatchLimit = 5
 
     var body: some View {
         let recorder = appState.meetingRecorder
@@ -194,6 +198,13 @@ struct MeetingsView: View {
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .mainColumnFrame()
                         .padding(.top, 8)
+                }
+                if isSearching, !noteMatches.isEmpty {
+                    NoteMatchesStrip(notes: noteMatches) { id in
+                        appState.windowPresenter.openNote(id: id)
+                    }
+                    .mainColumnFrame()
+                    .padding(.top, 10)
                 }
                 if meetings.isEmpty {
                     noResults
@@ -527,7 +538,9 @@ struct MeetingsView: View {
                 // Deleted meanwhile: the store returns nothing and the newest row is selected.
                 extra = try await database.meetings(ids: [missingID]).first
             }
+            let matchedNotes = await Self.noteMatches(query: query, index: index, database: database)
             guard !Task.isCancelled else { return }
+            noteMatches = matchedNotes
             let rows = MeetingListSelection.rows(fetched: fetched, adding: extra)
             meetings = rows
             hitLines = lines
@@ -548,6 +561,14 @@ struct MeetingsView: View {
             Log.data.error("Meetings fetch failed: \(error.localizedDescription, privacy: .public)")
         }
         loaded = true
+    }
+
+    /// The notes a search of 3+ characters finds in the index; none for shorter queries, an index
+    /// still being built or a failed read.
+    private static func noteMatches(query: String, index: MeetingSearchIndex, database: Database) async -> [NoteRecord] {
+        guard let terms = SearchQuery.terms(query),
+              let hits = await index.noteHits(terms: terms, all: true, limit: noteMatchLimit) else { return [] }
+        return (try? await database.notes(ids: hits.map(\.noteID))) ?? []
     }
 
     /// Removes the row, its segments and the track folder, then selects the meeting that took

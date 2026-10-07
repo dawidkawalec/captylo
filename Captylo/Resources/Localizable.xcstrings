@@ -16,6 +16,21 @@
         "en": { "stringUnit": { "state": "translated", "value": "New voice note" } }
       }
     },
+    "Także w notatkach:": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Also in notes:" } }
+      }
+    },
+    "Także w notatkach": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Also in notes" } }
+      }
+    },
+    "Otwórz notatkę": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open note" } }
+      }
+    },
     "Bez tekstu": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "No text" } }
