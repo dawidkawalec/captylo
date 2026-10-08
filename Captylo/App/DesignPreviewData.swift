@@ -227,6 +227,7 @@ enum DesignPreviewData {
         [
             NoteRecord(
                 createdAt: now.addingTimeInterval(-25 * 60),
+                title: "Kampania jesienna z klientami",
                 body: "Pomysł na kampanię jesienną: krótkie filmy z klientami, którzy dyktują maile w drodze do pracy. Sprawdzić budżet z Anią do piątku.",
                 audioFileName: "design-preview-voice.wav",
                 audioDuration: 48,
