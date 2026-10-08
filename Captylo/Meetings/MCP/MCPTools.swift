@@ -12,7 +12,11 @@ import Foundation
 ///   "Pytania" answers and, unless `transcript` is false, the transcript).
 /// - `search_meetings`: the Spotkania search (`MeetingSearchResults`): per meeting up to two
 ///   lines "[12:34] Anna: ...snippet...", or the store's `contains` search with the first
-///   matching line when the index cannot answer.
+///   matching line when the index cannot answer; then up to `searchNoteLimit` matching notes as
+///   "- Notatka: Tytuł (data) · note id: ..." (the name stays for connected assistants).
+/// - `list_notes`: newest first, one line per note with date, title (or first line), the length
+///   of its recording and id; optional text filter (the index first), start date and limit.
+/// - `get_note`: one note as Markdown: title, date, recording length and the text.
 struct MCPTools: Sendable {
     /// What a tool call answers: Markdown text, and whether it is an error the model should read
     /// (a bad argument, an unknown meeting) rather than a protocol failure.
@@ -26,11 +30,13 @@ struct MCPTools: Sendable {
         case unknownTool(String)
     }
 
-    static let names = ["list_meetings", "get_meeting", "search_meetings"]
+    static let names = ["list_meetings", "get_meeting", "search_meetings", "list_notes", "get_note"]
     static let defaultListLimit = 20
     static let maxListLimit = 50
     static let defaultSearchLimit = 10
     static let maxSearchLimit = 30
+    /// Notes `search_meetings` adds under the meetings.
+    static let searchNoteLimit = 5
     /// Meetings the index search of `list_meetings` reads before the date filter and the limit.
     private static let listSearchCandidates = 200
 
@@ -94,7 +100,8 @@ struct MCPTools: Sendable {
                     Full-text search over every meeting's title, notes and transcript (Polish word forms \
                     and missing diacritics match). Best meetings first, each with up to two matching \
                     transcript lines: [mm:ss] speaker and the text around the match, plus the meeting id \
-                    for get_meeting.
+                    for get_meeting. Then the user's notes that match ("Notatka:" lines with a note id \
+                    for get_note).
                     """,
                 properties: [
                     "query": .object([
@@ -111,6 +118,44 @@ struct MCPTools: Sendable {
                 ],
                 required: ["query"]
             ),
+            Self.tool(
+                "list_notes",
+                title: "List notes",
+                description: """
+                    List the user's notes in Captylo (typed, dictated or voice notes), newest first: date \
+                    and time, title (or the first line), the length of a recording and the note id. \
+                    Optionally only notes whose title or text contain the query, or created on or after a date.
+                    """,
+                properties: [
+                    "query": .object([
+                        "type": .string("string"),
+                        "description": .string("Words to look for in the title and text (any Polish word form)."),
+                    ]),
+                    "since": .object([
+                        "type": .string("string"),
+                        "description": .string("ISO 8601 date (2026-10-01) or date and time; only notes created then or later."),
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(Self.maxListLimit),
+                        "default": .int(Self.defaultListLimit),
+                    ]),
+                ],
+                required: []
+            ),
+            Self.tool(
+                "get_note",
+                title: "Get a note",
+                description: "One note as Markdown: title, date, the length of its recording and the full text.",
+                properties: [
+                    "id": .object([
+                        "type": .string("string"),
+                        "description": .string("The note id from list_notes or search_meetings."),
+                    ]),
+                ],
+                required: ["id"]
+            ),
         ]
     }
 
@@ -125,6 +170,10 @@ struct MCPTools: Sendable {
             return try await getMeeting(arguments)
         case "search_meetings":
             return try await searchMeetings(arguments)
+        case "list_notes":
+            return try await listNotes(arguments)
+        case "get_note":
+            return try await getNote(arguments)
         default:
             throw Failure.unknownTool(name)
         }
@@ -199,7 +248,7 @@ struct MCPTools: Sendable {
         } else {
             rows = try await storeSearch(query, limit: limit, database: opened.database)
         }
-        let lines = rows.flatMap { row -> [String] in
+        var lines = rows.flatMap { row -> [String] in
             let head = "- \(Self.oneLine(row.meeting.title)) (\(dateText(row.meeting.createdAt)))"
             let tail = "· id: \(row.meeting.id.uuidString)"
             guard !row.lines.isEmpty else { return ["\(head) \(tail)"] }
@@ -212,8 +261,77 @@ struct MCPTools: Sendable {
                 }
             }
         }
-        guard !lines.isEmpty else { return Result(text: String(localized: "Nic nie znalazłem w spotkaniach.")) }
+        let notes = try await matchingNotes(query, limit: Self.searchNoteLimit, library: opened)
+        lines += notes.map { note in
+            let label = String(localized: "Notatka")
+            return "- \(label): \(Self.oneLine(note.displayTitle)) (\(dateText(note.createdAt))) · note id: \(note.id.uuidString)"
+        }
+        guard !lines.isEmpty else { return Result(text: String(localized: "Nic nie znalazłem w spotkaniach ani notatkach.")) }
         return Result(text: lines.joined(separator: "\n"))
+    }
+
+    private func listNotes(_ arguments: JSONValue) async throws -> Result {
+        let limit = Self.clamped(arguments["limit"]?.intValue, default: Self.defaultListLimit, max: Self.maxListLimit)
+        var since: Date?
+        if let raw = arguments["since"]?.stringValue, !raw.trimmingCharacters(in: .whitespaces).isEmpty {
+            guard let date = parseDate(raw) else {
+                return Result(text: String(localized: "Nieprawidłowa data w „since”. Podaj datę jak 2026-10-01 albo datę z godziną w ISO 8601."), isError: true)
+            }
+            since = date
+        }
+        let query = arguments["query"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let opened = try await library.library()
+        var notes: [NoteRecord]
+        if query.isEmpty {
+            notes = try await opened.database.notes(query: "", limit: since == nil ? limit : Self.listSearchCandidates)
+        } else {
+            notes = try await matchingNotes(query, limit: Self.listSearchCandidates, library: opened)
+                .sorted { $0.createdAt > $1.createdAt }
+        }
+        if let since {
+            notes = notes.filter { $0.createdAt >= since }
+        }
+        let lines = notes.prefix(limit).map { note in
+            var parts = [dateText(note.createdAt), Self.oneLine(note.displayTitle)]
+            if note.hasAudio {
+                parts.append(String(localized: "nagranie \(MeetingTime.clock(note.audioDuration))"))
+            }
+            parts.append("id: \(note.id.uuidString)")
+            return "- " + parts.joined(separator: " · ")
+        }
+        guard !lines.isEmpty else { return Result(text: String(localized: "Brak notatek.")) }
+        return Result(text: lines.joined(separator: "\n"))
+    }
+
+    private func getNote(_ arguments: JSONValue) async throws -> Result {
+        guard let raw = arguments["id"]?.stringValue,
+              let id = UUID(uuidString: raw.trimmingCharacters(in: .whitespaces)) else {
+            return Result(text: String(localized: "Podaj id notatki z list_notes albo search_meetings."), isError: true)
+        }
+        let opened = try await library.library()
+        guard let note = try await opened.database.note(id: id) else {
+            return Result(text: String(localized: "Nie ma notatki o tym id."), isError: true)
+        }
+        var meta = [dateText(note.createdAt)]
+        if note.hasAudio {
+            meta.append(String(localized: "nagranie \(MeetingTime.clock(note.audioDuration))"))
+        }
+        var parts = ["# \(Self.oneLine(note.displayTitle))", meta.joined(separator: " · ")]
+        let body = note.body.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !body.isEmpty {
+            parts.append(body)
+        }
+        return Result(text: parts.joined(separator: "\n\n"))
+    }
+
+    /// The notes that match `query`: the index first (Polish forms, best first), else the
+    /// store's `contains` search, newest first.
+    private func matchingNotes(_ query: String, limit: Int, library: MeetingLibraryReader.Library) async throws -> [NoteRecord] {
+        if let index = library.index, let terms = SearchQuery.terms(query),
+           let hits = await index.noteHits(terms: terms, all: true, limit: limit) {
+            return try await library.database.notes(ids: hits.map(\.noteID))
+        }
+        return try await library.database.notes(query: query, limit: limit)
     }
 
     /// The store's `contains` search (short queries, no index): newest first, each meeting with

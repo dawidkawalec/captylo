@@ -13,6 +13,9 @@ struct MCPServerTests {
         let budget: MeetingRecord
         let client: MeetingRecord
         let offer: MeetingSegmentRecord
+        /// A voice note (12 s) without a typed title, and an older typed note.
+        let gate: NoteRecord
+        let shopping: NoteRecord
     }
 
     /// Lines the server wrote.
@@ -64,7 +67,16 @@ struct MCPServerTests {
         for segment in segments {
             try await database.appendSegment(segment)
         }
-        return Fixture(database: database, index: index, budget: budget, client: client, offer: offer)
+        let gate = NoteRecord(
+            createdAt: try date("2026-10-03T08:00:00Z"), title: "",
+            body: "Kod do bramy u Ani: 4512.\nWejście od podwórza.", audioFileName: "gate.wav", audioDuration: 12
+        )
+        let shopping = NoteRecord(createdAt: try date("2026-09-20T18:00:00Z"), title: "Zakupy", body: "Mleko, chleb, kawa.")
+        try await database.createNote(gate)
+        try await database.createNote(shopping)
+        return Fixture(
+            database: database, index: index, budget: budget, client: client, offer: offer, gate: gate, shopping: shopping
+        )
     }
 
     private static func server(
@@ -178,12 +190,12 @@ struct MCPServerTests {
         #expect(batch["error"]?["code"] == .int(-32600))
     }
 
-    @Test func toolsListShowsTheThreeToolsOnlyWhenTheSettingIsOn() async throws {
+    @Test func toolsListShowsTheFiveToolsOnlyWhenTheSettingIsOn() async throws {
         let fixture = try await Self.seeded()
         let line = #"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#
         let on = try #require(try await Self.send(Self.server(fixture), line))
         let tools = try #require(on["result"]?["tools"]?.arrayValue)
-        #expect(tools.compactMap { $0["name"]?.stringValue } == ["list_meetings", "get_meeting", "search_meetings"])
+        #expect(tools.compactMap { $0["name"]?.stringValue } == ["list_meetings", "get_meeting", "search_meetings", "list_notes", "get_note"])
         for tool in tools {
             #expect(tool["inputSchema"]?["type"] == .string("object"))
             #expect(tool["description"]?.stringValue?.isEmpty == false)
@@ -280,6 +292,60 @@ struct MCPServerTests {
         #expect(badDate.isError)
     }
 
+    // MARK: Notes (1.0.16)
+
+    @Test func listNotesNewestFirstWithDateTitleRecordingAndID() async throws {
+        let fixture = try await Self.seeded()
+        let answer = try await Self.call(Self.server(fixture), "list_notes")
+        #expect(!answer.isError)
+        #expect(answer.text == """
+            - 2026-10-03 08:00 · Kod do bramy u Ani: 4512. · nagranie 0:12 · id: \(fixture.gate.id.uuidString)
+            - 2026-09-20 18:00 · Zakupy · id: \(fixture.shopping.id.uuidString)
+            """)
+    }
+
+    @Test func listNotesFiltersByTextDateAndLimit() async throws {
+        let fixture = try await Self.seeded()
+        let server = Self.server(fixture)
+        let gate = "id: \(fixture.gate.id.uuidString)"
+        let shopping = "id: \(fixture.shopping.id.uuidString)"
+        // "bramy" through the index finds the form in the note ("bramę" would too).
+        let byText = try await Self.call(server, "list_notes", #"{"query":"brama"}"#)
+        #expect(byText.text.contains(gate) && !byText.text.contains(shopping))
+        let since = try await Self.call(server, "list_notes", #"{"since":"2026-10-01"}"#)
+        #expect(since.text.contains(gate) && !since.text.contains(shopping))
+        let one = try await Self.call(server, "list_notes", #"{"limit":1}"#)
+        #expect(one.text.contains(gate) && !one.text.contains(shopping))
+        #expect(try await Self.call(server, "list_notes", #"{"since":"wczoraj"}"#).isError)
+        let none = try await Self.call(server, "list_notes", #"{"query":"helikopter"}"#)
+        #expect(!none.isError && !none.text.contains("id:"))
+    }
+
+    @Test func getNoteReturnsTheTitleDateAndText() async throws {
+        let fixture = try await Self.seeded()
+        let server = Self.server(fixture)
+        let answer = try await Self.call(server, "get_note", #"{"id":"\#(fixture.gate.id.uuidString)"}"#)
+        #expect(!answer.isError)
+        #expect(answer.text.hasPrefix("# Kod do bramy u Ani: 4512.\n"))
+        #expect(answer.text.contains("2026-10-03 08:00"))
+        #expect(answer.text.contains("0:12"))
+        #expect(answer.text.hasSuffix("Kod do bramy u Ani: 4512.\nWejście od podwórza."))
+        #expect(try await Self.call(server, "get_note", #"{"id":"\#(UUID().uuidString)"}"#).isError)
+        #expect(try await Self.call(server, "get_note", #"{"id":"nie-uuid"}"#).isError)
+    }
+
+    @Test func searchMeetingsAlsoListsMatchingNotes() async throws {
+        let fixture = try await Self.seeded()
+        let server = Self.server(fixture)
+        let answer = try await Self.call(server, "search_meetings", #"{"query":"kod do bramy"}"#)
+        #expect(!answer.isError)
+        #expect(answer.text.contains("- Notatka: Kod do bramy u Ani: 4512. (2026-10-03 08:00) · note id: \(fixture.gate.id.uuidString)"))
+        #expect(!answer.text.contains(fixture.budget.id.uuidString))
+        // A meeting query that matches no note answers exactly as before.
+        let meetings = try await Self.call(server, "search_meetings", #"{"query":"oferta"}"#)
+        #expect(!meetings.text.contains("Notatka:"))
+    }
+
     @Test func getMeetingReturnsTheMarkdownExport() async throws {
         let fixture = try await Self.seeded()
         let server = Self.server(fixture)
@@ -350,7 +416,7 @@ struct MCPServerTests {
         #expect(reply["error"]?["code"] == .int(-32603))
         #expect(reply["error"]?["message"]?.stringValue == MeetingLibraryReader.Failure.storeUnavailable.errorDescription)
         let tools = try #require(try await Self.send(server, #"{"jsonrpc":"2.0","id":7,"method":"tools/list"}"#))
-        #expect(tools["result"]?["tools"]?.arrayValue?.count == 3)
+        #expect(tools["result"]?["tools"]?.arrayValue?.count == MCPTools.names.count)
         // Nothing was created on the way.
         #expect(!FileManager.default.fileExists(atPath: folder.path(percentEncoded: false)))
     }

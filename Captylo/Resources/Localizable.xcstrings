@@ -36,6 +36,36 @@
         "en": { "stringUnit": { "state": "translated", "value": "The note changed in the meantime, so the AI did not overwrite it. Try again." } }
       }
     },
+    "Brak notatek.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No notes." } }
+      }
+    },
+    "Nic nie znalazłem w spotkaniach ani notatkach.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing found in meetings or notes." } }
+      }
+    },
+    "Nie ma notatki o tym id.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "There is no note with this id." } }
+      }
+    },
+    "Notatka": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Note" } }
+      }
+    },
+    "Podaj id notatki z list_notes albo search_meetings.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Give a note id from list_notes or search_meetings." } }
+      }
+    },
+    "nagranie %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "recording %@" } }
+      }
+    },
     "Bez tekstu": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "No text" } }
