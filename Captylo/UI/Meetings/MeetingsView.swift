@@ -126,6 +126,10 @@ struct MeetingsView: View {
                     runs: appState.meetingAskRuns,
                     isPro: appState.proAccess.allows(.meetingAsk),
                     onOpen: { meetingID, seconds in openCitation(meetingID, seconds: seconds) },
+                    onOpenNote: { noteID in
+                        showsLibraryAsk = false
+                        appState.windowPresenter.openNote(id: noteID)
+                    },
                     onAddKey: {
                         showsLibraryAsk = false
                         openModels()

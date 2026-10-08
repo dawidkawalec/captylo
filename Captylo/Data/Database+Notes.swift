@@ -87,6 +87,19 @@ extension Database {
         return try modelContext.fetch(descriptor).map(\.record)
     }
 
+    /// Notes created in `period` (start included, end not), newest first.
+    func notes(createdIn period: DateInterval, limit: Int) throws -> [NoteRecord] {
+        guard limit > 0 else { return [] }
+        let start = period.start
+        let end = period.end
+        var descriptor = FetchDescriptor<Note>(
+            predicate: #Predicate { $0.createdAt >= start && $0.createdAt < end },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse), SortDescriptor(\.id)]
+        )
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor).map(\.record)
+    }
+
     /// The notes with these ids, in the order of `ids` (search hits keep their rank).
     func notes(ids: [UUID]) throws -> [NoteRecord] {
         guard !ids.isEmpty else { return [] }

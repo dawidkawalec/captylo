@@ -12,6 +12,8 @@ struct LibraryAskPanel: View {
     let isPro: Bool
     /// Opens a meeting, at that second of its transcript when given; the caller closes the panel.
     let onOpen: (_ meetingID: UUID, _ seconds: Double?) -> Void
+    /// Opens a note in Notatki; the caller closes the panel.
+    var onOpenNote: (UUID) -> Void = { _ in }
     /// Opens Modele, where the AI key goes.
     let onAddKey: () -> Void
     /// Free: "Zobacz Pro" closes the panel and opens "Konto Captylo" in Ustawienia.
@@ -102,10 +104,10 @@ struct LibraryAskPanel: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     if runs.libraryAnswers.isEmpty, runs.libraryPending == nil {
-                        ToolCaption("Zapytaj o cokolwiek z rozmów na tym Macu. Captylo znajdzie pasujące spotkania i pokaże, skąd pochodzi odpowiedź.")
+                        ToolCaption("Zapytaj o cokolwiek ze spotkań i notatek na tym Macu. Captylo znajdzie pasujące rozmowy i notatki i pokaże, skąd pochodzi odpowiedź.")
                     }
                     ForEach(runs.libraryAnswers) { answer in
-                        LibraryAnswerView(answer: answer, onOpen: onOpen, onAddKey: onAddKey)
+                        LibraryAnswerView(answer: answer, onOpen: onOpen, onOpenNote: onOpenNote, onAddKey: onAddKey)
                     }
                     if let pending = runs.libraryPending {
                         VStack(alignment: .leading, spacing: 10) {

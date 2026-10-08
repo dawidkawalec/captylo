@@ -10,6 +10,8 @@ struct LibraryAnswerView: View {
     let answer: LibraryAnswer
     /// Opens a meeting, at that second of its transcript when given.
     let onOpen: (_ meetingID: UUID, _ seconds: Double?) -> Void
+    /// Opens a note in Notatki (`[N1]` and the note rows of "Źródła").
+    var onOpenNote: (UUID) -> Void = { _ in }
     let onAddKey: () -> Void
 
     private static let markerWidth: CGFloat = 14
@@ -22,7 +24,7 @@ struct LibraryAnswerView: View {
             }
             if answer.hasAnswer, let markdown = answer.answer {
                 lines(markdown)
-                if !answer.citedSources.isEmpty {
+                if !answer.citedSources.isEmpty || !answer.citedNotes.isEmpty {
                     sources
                 }
             } else {
@@ -43,7 +45,7 @@ struct LibraryAnswerView: View {
     // MARK: Answer
 
     private func lines(_ markdown: String) -> some View {
-        let lines = LibraryCitation.lines(markdown, meetings: answer.sources.map(\.meetingID))
+        let lines = LibraryCitation.lines(markdown, meetings: answer.sources.map(\.meetingID), notes: answer.noteSources.map(\.noteID))
         return VStack(alignment: .leading, spacing: 6) {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -71,8 +73,13 @@ struct LibraryAnswerView: View {
         if !citations.isEmpty {
             HStack(spacing: 8) {
                 ForEach(Array(citations.enumerated()), id: \.offset) { _, citation in
-                    LibraryCitationButton(label: citation.label, title: title(of: citation.meetingID)) {
-                        onOpen(citation.meetingID, citation.seconds)
+                    LibraryCitationButton(label: citation.label, title: title(of: citation)) {
+                        switch citation.kind {
+                        case .meeting:
+                            onOpen(citation.targetID, citation.seconds)
+                        case .note:
+                            onOpenNote(citation.targetID)
+                        }
                     }
                 }
             }
@@ -80,8 +87,13 @@ struct LibraryAnswerView: View {
         }
     }
 
-    private func title(of meetingID: UUID) -> String {
-        answer.sources.first { $0.meetingID == meetingID }?.title ?? ""
+    private func title(of citation: LibraryCitation) -> String {
+        switch citation.kind {
+        case .meeting:
+            return answer.sources.first { $0.meetingID == citation.targetID }?.title ?? ""
+        case .note:
+            return answer.noteSources.first { $0.noteID == citation.targetID }?.title ?? ""
+        }
     }
 
     // MARK: Sources
@@ -95,34 +107,44 @@ struct LibraryAnswerView: View {
                 .accessibilityAddTraits(.isHeader)
             ForEach(answer.citedSources, id: \.number) { cited in
                 let source = cited.source
-                Button {
+                sourceRow(label: "S\(cited.number)", title: source.title, date: source.createdAt, help: Text("Otwórz spotkanie")) {
                     onOpen(source.meetingID, nil)
-                } label: {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(verbatim: "S\(cited.number)")
-                            .font(GlassFont.ui(12, .medium).monospacedDigit())
-                            .foregroundStyle(GlassColor.textTertiary)
-                            .frame(minWidth: 22, alignment: .leading)
-                        Text(verbatim: source.title)
-                            .font(GlassFont.caption)
-                            .foregroundStyle(GlassColor.textPrimary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                        Text(verbatim: MeetingDateText.short(source.createdAt))
-                            .font(GlassFont.caption)
-                            .foregroundStyle(GlassColor.textTertiary)
-                            .lineLimit(1)
-                            .layoutPriority(1)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.vertical, 3)
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .help(Text("Otwórz spotkanie"))
+            }
+            ForEach(answer.citedNotes, id: \.number) { cited in
+                let source = cited.source
+                sourceRow(label: "N\(cited.number)", title: source.title, date: source.createdAt, help: Text("Otwórz notatkę")) {
+                    onOpenNote(source.noteID)
+                }
             }
         }
         .padding(.top, 4)
+    }
+
+    private func sourceRow(label: String, title: String, date: Date, help: Text, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: label)
+                    .font(GlassFont.ui(12, .medium).monospacedDigit())
+                    .foregroundStyle(GlassColor.textTertiary)
+                    .frame(minWidth: 22, alignment: .leading)
+                Text(verbatim: title)
+                    .font(GlassFont.caption)
+                    .foregroundStyle(GlassColor.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Text(verbatim: MeetingDateText.short(date))
+                    .font(GlassFont.caption)
+                    .foregroundStyle(GlassColor.textTertiary)
+                    .lineLimit(1)
+                    .layoutPriority(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 3)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     /// Inline Markdown (bold, italics, code); plain text when it does not parse.

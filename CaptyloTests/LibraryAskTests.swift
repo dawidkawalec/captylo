@@ -591,6 +591,89 @@ struct LibraryAskTests {
         #expect(failed.error == MeetingSummaryError.noKey.errorDescription)
     }
 
+    // MARK: Notes (1.0.16)
+
+    @Test func userMessageListsTheNotesAfterTheMeetings() throws {
+        let created = try Self.date("2026-10-02T12:00:00Z")
+        let meeting = MeetingRecord(createdAt: created, title: "Budżet Q4", status: .completed)
+        let short = NoteRecord(createdAt: created, title: "", body: "Kod do bramy 4512\nPiętro trzecie")
+        let long = NoteRecord(createdAt: created.addingTimeInterval(-86_400), title: "Długa", body: String(repeating: "b", count: 2_000))
+        let context = LibraryAskContext(
+            sources: [LibraryAskSource(meeting: meeting, excerpts: [], includesUserNotes: false)],
+            notesOnly: false,
+            notes: [short, long]
+        )
+        let user = LibraryAskPrompt.user(context: context, question: "Jaki kod?", now: created)
+        #expect(user.contains("<notes>\nN1: Kod do bramy 4512, 2 października 2026"))
+        #expect(user.contains("\nKod do bramy 4512\nPiętro trzecie\n\nN2: Długa, 1 października 2026"))
+        #expect(user.contains(String(repeating: "b", count: LibraryAskPrompt.noteBodyLimit) + "...\n</notes>"))
+        #expect(user.range(of: "</meetings>")!.lowerBound < user.range(of: "<notes>")!.lowerBound)
+        #expect(user.hasSuffix("<question>\nJaki kod?\n</question>"))
+        // No notes: no empty block (the relay prompt of older apps stays the same).
+        let plain = LibraryAskPrompt.user(context: LibraryAskContext(sources: context.sources, notesOnly: false), question: "?", now: created)
+        #expect(!plain.contains("<notes>"))
+    }
+
+    @Test func noteCitationsMapToTheNumberedNotes() {
+        let meeting = UUID()
+        let first = UUID()
+        let second = UUID()
+        let text = "Kod [N1], budżet [S1 0:10], nieznana [N3], druga [N2]"
+        let citations = LibraryCitation.parse(text, meetings: [meeting], notes: [first, second])
+        #expect(citations.map(\.kind) == [.note, .meeting, .note])
+        #expect(citations.map(\.noteID) == [first, nil, second])
+        #expect(citations.map(\.meetingID) == [nil, meeting, nil])
+        #expect(citations.map(\.label) == ["N1", "S1 0:10", "N2"])
+        let lines = LibraryCitation.lines("- Kod 4512 [N1]", meetings: [], notes: [first])
+        #expect(lines.map(\.text) == ["Kod 4512"])
+        #expect(lines.first?.citations.map(\.noteID) == [first])
+    }
+
+    @Test func sourcesListTheCitedNotesToo() {
+        let notes = (1...2).map { LibraryAnswer.NoteSource(noteID: UUID(), title: "Notatka \($0)", createdAt: Date()) }
+        let answer = LibraryAnswer(question: "?", answer: "Tak [N2].", noteSources: notes)
+        #expect(answer.citedNotes.map(\.number) == [2])
+        #expect(answer.citedNotes.map(\.source.title) == ["Notatka 2"])
+        #expect(answer.citedSources.isEmpty)
+    }
+
+    /// A question only a note can answer: the note goes to the AI (no meeting matched), and the
+    /// answer lists it.
+    @Test func asksFromTheMatchingNotesEvenWithoutMeetings() async throws {
+        let fixture = try Self.fixture()
+        let created = try Self.date("2026-10-02T12:00:00Z")
+        let note = NoteRecord(createdAt: created, title: "", body: "Kod do bramy u Ani to 4512.")
+        try await fixture.database.createNote(note)
+        try await fixture.database.createNote(NoteRecord(createdAt: created, body: "Zupełnie inny temat."))
+        try await Self.addMeeting(fixture, title: "Budżet", at: created, lines: ["Mamy dwadzieścia tysięcy."])
+        let seen = OSAllocatedUnfairLock(initialState: Data())
+        let (asker, baseURL) = Self.asker(fixture, now: created.addingTimeInterval(3_600)) { request in
+            let data = Self.rawBody(of: request)
+            seen.withLock { $0 = data }
+            return .json(Self.chat("Kod to 4512 [N1]."))
+        }
+        defer { StubURLProtocol.unregister(baseURL) }
+
+        let answer = try #require(await asker.ask(question: "Jaki jest kod do bramy?"))
+        #expect(answer.answer == "Kod to 4512 [N1].")
+        #expect(answer.sources.isEmpty)
+        #expect(answer.noteSources.map(\.noteID) == [note.id])
+        #expect(answer.citations.map(\.noteID) == [note.id])
+        let user = try #require(Self.messages(seen.withLock { $0 }).last)
+        #expect(user.contains("N1: Kod do bramy u Ani to 4512., 2 października 2026"))
+        #expect(!user.contains("Zupełnie inny temat."))
+    }
+
+    @Test func aQuestionAboutTimeAlsoSendsTheNotesOfItsPeriod() async throws {
+        let fixture = try Self.fixture()
+        try await fixture.database.createNote(NoteRecord(createdAt: Self.date("2026-09-23T09:00:00Z"), body: "Pomysł z zeszłego tygodnia."))
+        try await fixture.database.createNote(NoteRecord(createdAt: Self.date("2026-09-10T09:00:00Z"), body: "Stary pomysł."))
+        let (asker, baseURL) = Self.asker(fixture, now: try Self.date("2026-10-02T12:00:00Z")) { _ in .json(Self.chat("x")) }
+        defer { StubURLProtocol.unregister(baseURL) }
+        let context = try await asker.context(question: "Co było w zeszłym tygodniu?")
+        #expect(context.notes.map(\.body) == ["Pomysł z zeszłego tygodnia."])
+    }
+
     // MARK: Session
 
     @MainActor

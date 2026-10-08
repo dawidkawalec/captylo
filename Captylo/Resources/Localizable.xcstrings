@@ -6853,9 +6853,9 @@
         "en": { "stringUnit": { "state": "translated", "value": "An answer from your meetings, with its sources and links to the moments of the conversation. Questions disappear when you quit Captylo." } }
       }
     },
-    "Zapytaj o cokolwiek z rozmów na tym Macu. Captylo znajdzie pasujące spotkania i pokaże, skąd pochodzi odpowiedź.": {
+    "Zapytaj o cokolwiek ze spotkań i notatek na tym Macu. Captylo znajdzie pasujące rozmowy i notatki i pokaże, skąd pochodzi odpowiedź.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Ask about anything from the conversations on this Mac. Captylo finds the meetings that match and shows where the answer comes from." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Ask about anything from the meetings and notes on this Mac. Captylo finds the conversations and notes that match and shows where the answer comes from." } }
       }
     },
     "Zapytaj o wszystkie spotkania...": {

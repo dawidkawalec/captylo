@@ -55,7 +55,10 @@ actor LibraryAsker {
             result.sources = context.sources.map {
                 LibraryAnswer.Source(meetingID: $0.meeting.id, title: $0.meeting.title, createdAt: $0.meeting.createdAt)
             }
-            guard !context.sources.isEmpty else {
+            result.noteSources = context.notes.map {
+                LibraryAnswer.NoteSource(noteID: $0.id, title: $0.displayTitle, createdAt: $0.createdAt)
+            }
+            guard !context.isEmpty else {
                 result.answer = Self.noHitsAnswer
                 return result
             }
@@ -83,14 +86,53 @@ actor LibraryAsker {
     /// their hits, each with its hit lines and their neighbors. No hits: no sources. A question
     /// about time or with no topic words left: `dateContext`. While the index is not ready (or
     /// fails): the newest meetings that have AI notes, `notesOnly`.
+    ///
+    /// Notes go along: those the index finds for the terms (OR, best first), or for a question
+    /// about time the newest of its period; at most `maxNotes`.
     func context(question: String) async throws -> LibraryAskContext {
         guard index.isReady else { return try await notesOnlyContext() }
         let terms = LibraryAskRetrieval.terms(question)
         if terms == nil || LibraryAskRetrieval.isAboutTime(question) {
             let period = LibraryAskRetrieval.period(question, now: now(), calendar: calendar)
-            return try await dateContext(terms: terms, period: period)
+            var context = try await dateContext(terms: terms, period: period)
+            context.notes = try await dateNotes(terms: terms, period: period)
+            return context
         }
         guard let terms else { return LibraryAskContext(sources: [], notesOnly: false) }
+        var context = try await topicContext(terms: terms)
+        context.notes = try await topicNotes(terms: terms)
+        return context
+    }
+
+    /// The notes the index finds for `terms` (any of them), best first.
+    private func topicNotes(terms: [String]) async throws -> [NoteRecord] {
+        guard let hits = await index.noteHits(terms: terms, all: false, limit: LibraryAskRetrieval.maxNotes),
+              !hits.isEmpty else { return [] }
+        return try await database.notes(ids: hits.map(\.noteID))
+    }
+
+    /// A question about time: the matching notes of the period first, then its newest ones; with
+    /// no period, the matching notes, else the newest.
+    private func dateNotes(terms: [String]?, period: DateInterval?) async throws -> [NoteRecord] {
+        var picked: [NoteRecord] = []
+        if let terms {
+            picked = try await topicNotes(terms: terms).filter { period?.contains($0.createdAt) ?? true }
+        }
+        if picked.isEmpty || period != nil {
+            let pool = if let period {
+                try await database.notes(createdIn: period, limit: LibraryAskRetrieval.maxNotes)
+            } else {
+                try await database.notes(query: "", limit: LibraryAskRetrieval.maxNotes)
+            }
+            for note in pool where !picked.contains(where: { $0.id == note.id }) {
+                picked.append(note)
+            }
+        }
+        return Array(picked.prefix(LibraryAskRetrieval.maxNotes))
+    }
+
+    /// The meetings that match `terms`, ranked as described on `context`.
+    private func topicContext(terms: [String]) async throws -> LibraryAskContext {
         guard let hits = await index.meetingHits(
             terms: terms, all: false,
             meetings: LibraryAskRetrieval.candidateMeetings,

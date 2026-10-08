@@ -6,6 +6,8 @@ import Foundation
 enum LibraryAskRetrieval {
     /// Meetings sent to the AI (`S1`...`S8`).
     static let maxMeetings = 8
+    /// Notes sent to the AI (`N1`...`N5`).
+    static let maxNotes = 5
     /// Meetings the index ranks before the eight are picked by the sum of their hits.
     static let candidateMeetings = 24
     /// Hit lines per meeting (its best), each with one neighbor before and after.
