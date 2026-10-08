@@ -30,7 +30,8 @@ extension FileTranscriptionQueue.Services {
         vocabulary: @escaping @MainActor () -> [String],
         processor: @escaping @MainActor () -> TextProcessor,
         database: Database,
-        didSave: @escaping @MainActor () -> Void
+        didSave: @escaping @MainActor () -> Void,
+        onCreated: @escaping @Sendable @MainActor (UUID) -> Void = { _ in }
     ) -> FileTranscriptionQueue.Services {
         FileTranscriptionQueue.Services(
             recordingURL: { AppPaths.noteAudioURL(for: $0) },
@@ -40,7 +41,14 @@ extension FileTranscriptionQueue.Services {
             vocabulary: vocabulary,
             processor: processor,
             enhancement: { nil },
-            save: { row in try await database.createNote(NoteRecord.imported(from: row)) },
+            save: { row in
+                let note = NoteRecord.imported(from: row)
+                try await database.createNote(note)
+                // A transcribed recording gets its title (AI or local); a failed one waits for its text.
+                if row.status == .completed {
+                    await onCreated(note.id)
+                }
+            },
             didSave: didSave,
             saveHistory: { true }
         )

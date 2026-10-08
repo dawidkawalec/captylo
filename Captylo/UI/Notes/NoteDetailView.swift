@@ -48,8 +48,14 @@ struct NoteDetailView: View {
             await load()
         }
         .onDisappear {
+            // Leaving the note: save it, then name it if nobody did (`NoteActions.ensureTitle`).
             let pending = draft
-            Task { await pending?.flush() }
+            let actions = actions
+            let id = noteID
+            Task {
+                await pending?.flush()
+                await actions.ensureTitle(noteID: id)
+            }
         }
         .onChange(of: dictation.phase) { _, phase in
             if phase == .idle {

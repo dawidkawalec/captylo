@@ -14,6 +14,8 @@ final class NoteActions {
     private let processor: @MainActor () -> TextProcessor
     private let engine: @MainActor () -> STTEngine
     private let language: @MainActor () -> String?
+    /// AI titles are allowed (`AppSettings.aiEnabled`: the user lets dictations go to the AI).
+    private let titleAI: @MainActor () -> Bool
     private let decode: @Sendable (URL) async throws -> (samples: [Float], duration: TimeInterval)
     private let removeFile: @Sendable (String) -> Void
     private let didChange: @MainActor () -> Void
@@ -26,6 +28,7 @@ final class NoteActions {
         processor: @escaping @MainActor () -> TextProcessor,
         engine: @escaping @MainActor () -> STTEngine,
         language: @escaping @MainActor () -> String?,
+        titleAI: @escaping @MainActor () -> Bool = { false },
         decode: @escaping @Sendable (URL) async throws -> (samples: [Float], duration: TimeInterval) = {
             try await AudioDecoder.decode16kMono($0)
         },
@@ -41,6 +44,7 @@ final class NoteActions {
         self.processor = processor
         self.engine = engine
         self.language = language
+        self.titleAI = titleAI
         self.decode = decode
         self.removeFile = removeFile
         self.didChange = didChange
@@ -86,6 +90,38 @@ final class NoteActions {
         }
         didChange()
         return nil
+    }
+
+    /// Names a note that has text but no title: the AI title when AI is allowed and the note has
+    /// at least `NoteTitles.aiMinWords` words, else (or when the AI fails) the local one. A title
+    /// typed meanwhile is never overwritten; a note with a title is left alone.
+    func ensureTitle(noteID: UUID) async {
+        guard let note = try? await database.note(id: noteID),
+              note.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let body = note.body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !body.isEmpty else { return }
+        var title = NoteTitles.local(from: body)
+        if titleAI(), WordCounter.count(body) >= NoteTitles.aiMinWords {
+            let outcome = await enhancer.enhance(String(body.prefix(NoteTitles.aiInputLimit)), job: NoteTitles.job)
+            if let text = outcome.text, let cleaned = NoteTitles.clean(text) {
+                title = cleaned
+            } else {
+                Log.enhancement.notice("Note title from AI skipped: \(outcome.errorMessage ?? "no text", privacy: .public)")
+            }
+        }
+        guard !title.isEmpty else { return }
+        let named = title
+        do {
+            try await database.modifyNote(id: noteID) { record in
+                if record.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    record.title = named
+                }
+            }
+        } catch {
+            Log.data.error("Saving a note title failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        didChange()
     }
 
     /// "Przywróć oryginał": the text from before the first AI pass.
@@ -139,6 +175,7 @@ final class NoteActions {
                 record.transcriptError = nil
             }
             didChange()
+            await ensureTitle(noteID: noteID)
             return nil
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

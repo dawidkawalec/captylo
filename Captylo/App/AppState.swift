@@ -500,8 +500,22 @@ final class AppState {
         hotkeyTap = tap
         tap.setHotkey(settings.hotkey)
 
-        // Dictation
+        // Notes (before the dictation: a voice note take names its note through them)
         let notesTicker = notesTicker
+        let actions = NoteActions(
+            database: database,
+            router: transcriptionRouter,
+            enhancer: utilityEnhancer,
+            vocabulary: { dictionaryStore.data.vocabulary },
+            processor: { dictionaryStore.processor },
+            engine: { settings.sttEngine },
+            language: { settings.transcriptionLanguage },
+            titleAI: { settings.aiEnabled },
+            didChange: { notesTicker.bump() }
+        )
+        noteActions = actions
+
+        // Dictation
         dictationController = DictationController(env: DictationEnvironment(
             settings: settings,
             devices: audioDevices,
@@ -541,7 +555,10 @@ final class AppState {
             openAccessibilitySettings: { accessibility.openSystemSettings() },
             openMicrophoneSettings: { MicrophonePermission.openSystemSettings() },
             openNote: { presenter.openNote(id: $0) },
-            noteSaved: { _ in notesTicker.bump() }
+            noteSaved: { id in
+                notesTicker.bump()
+                Task { await actions.ensureTitle(noteID: id) }
+            }
         ))
         hotkeyController = HotkeyController(tap: tap, coordinator: dictationController, toasts: toasts)
         relay.controller = hotkeyController
@@ -567,16 +584,6 @@ final class AppState {
             vocabulary: { dictionaryStore.data.vocabulary },
             didChange: { stats.bump() }
         )
-        noteActions = NoteActions(
-            database: database,
-            router: transcriptionRouter,
-            enhancer: utilityEnhancer,
-            vocabulary: { dictionaryStore.data.vocabulary },
-            processor: { dictionaryStore.processor },
-            engine: { settings.sttEngine },
-            language: { settings.transcriptionLanguage },
-            didChange: { notesTicker.bump() }
-        )
         fileQueue = FileTranscriptionQueue(services: .make(
             settings: settings,
             router: transcriptionRouter,
@@ -593,7 +600,8 @@ final class AppState {
             vocabulary: { dictionaryStore.data.vocabulary },
             processor: { dictionaryStore.processor },
             database: database,
-            didSave: { notesTicker.bump() }
+            didSave: { notesTicker.bump() },
+            onCreated: { id in Task { await actions.ensureTitle(noteID: id) } }
         ))
 
         let controller = dictationController
