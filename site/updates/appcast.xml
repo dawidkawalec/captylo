@@ -6,6 +6,15 @@
     <description>Captylo updates</description>
     <language>en</language>
     <item>
+      <title>Captylo 1.0.16</title>
+      <pubDate>Thu, 08 Oct 2026 02:55:19 +0200</pubDate>
+      <sparkle:version>160</sparkle:version>
+      <sparkle:shortVersionString>1.0.16</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://captylo.com/updates/notes/1.0.16.html</sparkle:releaseNotesLink>
+      <enclosure url="https://captylo.com/download/Captylo-1.0.16.dmg" length="21461830" type="application/octet-stream" sparkle:edSignature="sJgUVMpHE7buSDtufjo7XESNWzr3TV+AX3lDnhJh7qxYRWcwqU+1j0gRTS2Q83O/6eX9Nl/5mcOvhH0Ll0cJBg==" />
+    </item>
+    <item>
       <title>Captylo 1.0.15</title>
       <pubDate>Thu, 08 Oct 2026 01:42:36 +0200</pubDate>
       <sparkle:version>152</sparkle:version>
