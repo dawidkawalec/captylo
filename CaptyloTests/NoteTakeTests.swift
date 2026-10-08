@@ -4,13 +4,13 @@ import Testing
 
 struct NoteTakeTests {
     @Test func shortcutStartsANoteOnlyWhenIdleAndStopsAnyRunningTake() {
-        #expect(TakeDestination.forShortcutPress(phase: .idle, current: nil) == .start(.newNote))
-        #expect(TakeDestination.forShortcutPress(phase: .recording, current: .newNote) == .stop)
-        #expect(TakeDestination.forShortcutPress(phase: .paused, current: .newNote) == .stop)
-        // A dictation already recording is stopped as what it is, never turned into a note.
-        #expect(TakeDestination.forShortcutPress(phase: .recording, current: .paste) == .stop)
-        #expect(TakeDestination.forShortcutPress(phase: .transcribing, current: .paste) == .ignore)
-        #expect(TakeDestination.forShortcutPress(phase: .enhancing, current: .paste) == .ignore)
+        #expect(TakeDestination.forShortcutPress(phase: .idle) == .start(.newNote))
+        // A take that records (a note or a dictation) is stopped as what it is, never turned
+        // into a note.
+        #expect(TakeDestination.forShortcutPress(phase: .recording) == .stop)
+        #expect(TakeDestination.forShortcutPress(phase: .paused) == .stop)
+        #expect(TakeDestination.forShortcutPress(phase: .transcribing) == .busy)
+        #expect(TakeDestination.forShortcutPress(phase: .enhancing) == .busy)
     }
 
     @Test func appendingAddsOneBlankLineBetweenParagraphs() {

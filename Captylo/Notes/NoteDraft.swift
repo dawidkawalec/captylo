@@ -13,11 +13,12 @@ final class NoteDraft {
     let noteID: UUID
 
     @ObservationIgnored private var saved: NoteRecord
-    @ObservationIgnored private let save: @MainActor (NoteRecord) async -> Void
+    /// Writes the title and text; false when the save failed (the edit stays unsaved).
+    @ObservationIgnored private let save: @MainActor (NoteRecord) async -> Bool
     @ObservationIgnored private let debounce: Duration
     @ObservationIgnored private var pending: Task<Void, Never>?
 
-    init(note: NoteRecord, save: @escaping @MainActor (NoteRecord) async -> Void, debounce: Duration = .milliseconds(600)) {
+    init(note: NoteRecord, save: @escaping @MainActor (NoteRecord) async -> Bool, debounce: Duration = .milliseconds(600)) {
         saved = note
         noteID = note.id
         title = note.title
@@ -51,11 +52,15 @@ final class NoteDraft {
         pending?.cancel()
         pending = nil
         guard hasUnsavedChanges else { return }
+        let previous = saved
         var record = saved
         record.title = title
         record.body = body
         saved = record
-        await save(record)
+        if !(await save(record)), saved == record {
+            // Not written: the next pause or the next flush tries again.
+            saved = previous
+        }
     }
 
     private func schedule() {

@@ -11,7 +11,7 @@ private final class SavedNotes {
 struct NoteDraftTests {
     @Test func editsSaveOnceAfterThePause() async throws {
         let saved = SavedNotes()
-        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { saved.records.append($0) }, debounce: .milliseconds(50))
+        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { saved.records.append($0); return true }, debounce: .milliseconds(50))
         draft.edit(body: "ab")
         draft.edit(body: "abc")
         try await Task.sleep(for: .milliseconds(300))
@@ -20,7 +20,7 @@ struct NoteDraftTests {
 
     @Test func flushSavesAtOnceAndOnlyWhenChanged() async {
         let saved = SavedNotes()
-        let draft = NoteDraft(note: NoteRecord(title: "T", body: "a"), save: { saved.records.append($0) }, debounce: .seconds(10))
+        let draft = NoteDraft(note: NoteRecord(title: "T", body: "a"), save: { saved.records.append($0); return true }, debounce: .seconds(10))
         await draft.flush()
         #expect(saved.records.isEmpty)
         draft.edit(title: "Nowy")
@@ -34,7 +34,7 @@ struct NoteDraftTests {
     /// something else.
     @Test func aDraftKnowsWhetherItStillShowsTheStoredNote() {
         let note = NoteRecord(title: "T", body: "b")
-        let draft = NoteDraft(note: note, save: { _ in })
+        let draft = NoteDraft(note: note, save: { _ in true })
         #expect(draft.isShowing(note))
         var changed = note
         changed.body = "wynik AI"
@@ -42,9 +42,27 @@ struct NoteDraftTests {
         #expect(!draft.isShowing(NoteRecord(title: "T", body: "b")))
     }
 
+    /// A save that failed keeps the edit dirty, so the next flush tries again.
+    @Test func aFailedSaveIsTriedAgain() async {
+        let saved = SavedNotes()
+        var fails = true
+        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { record in
+            if fails { return false }
+            saved.records.append(record)
+            return true
+        }, debounce: .seconds(10))
+        draft.edit(body: "ab")
+        await draft.flush()
+        #expect(draft.hasUnsavedChanges)
+        fails = false
+        await draft.flush()
+        #expect(!draft.hasUnsavedChanges)
+        #expect(saved.records.map(\.body) == ["ab"])
+    }
+
     @Test func aDraftKnowsItsNote() {
         let note = NoteRecord(title: "T", body: "b")
-        let draft = NoteDraft(note: note, save: { _ in })
+        let draft = NoteDraft(note: note, save: { _ in true })
         #expect(draft.noteID == note.id)
         #expect(draft.title == "T" && draft.body == "b")
         #expect(!draft.hasUnsavedChanges)

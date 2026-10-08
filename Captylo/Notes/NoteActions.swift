@@ -92,6 +92,16 @@ final class NoteActions {
         return nil
     }
 
+    /// The user left a note (another note selected, Notatki closed): an untouched empty note
+    /// ("Nowa notatka" with nothing typed) goes, any other note without a title gets one.
+    func leave(noteID: UUID) async {
+        if (try? await database.deleteNoteIfEmpty(id: noteID)) == true {
+            didChange()
+            return
+        }
+        await ensureTitle(noteID: noteID)
+    }
+
     /// Names a note that has text but no title: the AI title when AI is allowed and the note has
     /// at least `NoteTitles.aiMinWords` words, else (or when the AI fails) the local one. A title
     /// typed meanwhile is never overwritten; a note with a title is left alone.

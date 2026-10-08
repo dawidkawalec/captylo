@@ -42,7 +42,8 @@ struct MenuBarMenu: View {
             .disabled(meetings.phase != .idle || meetings.isStarting)
         }
 
-        Button("Nowa notatka głosowa") {
+        // While a take records, the same shortcut stops it (a dictation stays a dictation).
+        Button(appState.dictationController.phase.isCapturing ? "Zakończ nagrywanie" : "Nowa notatka głosowa") {
             appState.toggleVoiceNote()
         }
         .keyboardShortcut(settings.notesShortcut ? KeyboardShortcut("n", modifiers: [.command, .option, .control]) : nil)

@@ -64,6 +64,51 @@ struct NotesDatabaseTests {
         #expect(try await db.referencedNoteAudioFileNames() == ["a.wav"])
     }
 
+    /// Launch sweep of `Notes/`: a recording no note points at (a failed save, the in-memory
+    /// fallback store) goes after 10 minutes; a note's own recording and fresh files stay.
+    @MainActor
+    @Test func theNotesSweepRemovesOldRecordingsNoNotePointsAt() async throws {
+        let db = try Self.db()
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "CaptyloNoteOrphans-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let now = Date()
+        let old = now.addingTimeInterval(-3600)
+        let note = NoteRecord(body: "x", audioFileName: "\(UUID().uuidString).wav")
+        try await db.createNote(note)
+        let kept = directory.appending(path: note.audioFileName!)
+        let orphan = directory.appending(path: "\(UUID().uuidString).wav")
+        let fresh = directory.appending(path: "\(UUID().uuidString).wav")
+        for url in [kept, orphan, fresh] {
+            try Data([0]).write(to: url)
+        }
+        for url in [kept, orphan] {
+            try FileManager.default.setAttributes([.creationDate: old], ofItemAtPath: url.path)
+        }
+        #expect(await Retention.sweepNoteOrphans(database: db, now: now, notes: directory) == 1)
+        #expect(!FileManager.default.fileExists(atPath: orphan.path))
+        #expect(FileManager.default.fileExists(atPath: kept.path))
+        #expect(FileManager.default.fileExists(atPath: fresh.path))
+    }
+
+    @Test func anUntouchedEmptyNoteIsDiscardedWhenLeft() async throws {
+        let db = try Self.db()
+        let empty = NoteRecord()
+        let titled = NoteRecord(title: "Tytuł")
+        let voice = NoteRecord(audioFileName: "v.wav")
+        for note in [empty, titled, voice] {
+            try await db.createNote(note)
+        }
+        #expect(try await db.deleteNoteIfEmpty(id: empty.id))
+        #expect(try await !db.deleteNoteIfEmpty(id: titled.id))
+        #expect(try await !db.deleteNoteIfEmpty(id: voice.id))
+        #expect(try await db.note(id: empty.id) == nil)
+        #expect(try await db.notes(query: "", limit: 10).count == 2)
+        // An empty note leaves no tombstone: it never existed for sync.
+        #expect(try await db.tombstones().isEmpty)
+    }
+
     /// The device id of a tombstone is checked in `DataDeviceIdentityTests` (serialized: the id is global).
     @Test func deletesLeaveTombstonesForNotesMeetingsAndDictations() async throws {
         let db = try Self.db()

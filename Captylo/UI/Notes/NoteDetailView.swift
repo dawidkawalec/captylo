@@ -48,13 +48,14 @@ struct NoteDetailView: View {
             await load()
         }
         .onDisappear {
-            // Leaving the note: save it, then name it if nobody did (`NoteActions.ensureTitle`).
+            // Leaving the note: save it, then drop it when it stayed empty or name it if nobody
+            // did (`NoteActions.leave`).
             let pending = draft
             let actions = actions
             let id = noteID
             Task {
                 await pending?.flush()
-                await actions.ensureTitle(noteID: id)
+                await actions.leave(noteID: id)
             }
         }
         .onChange(of: dictation.phase) { _, phase in
@@ -233,8 +234,11 @@ struct NoteDetailView: View {
                     if let saved = try await database.modifyNote(id: record.id, { $0.title = title; $0.body = body }) {
                         onSaved(saved)
                     }
+                    // A note deleted meanwhile has nothing left to save.
+                    return true
                 } catch {
                     Log.data.error("Saving a note failed: \(error.localizedDescription, privacy: .public)")
+                    return false
                 }
             }
             actionError = nil

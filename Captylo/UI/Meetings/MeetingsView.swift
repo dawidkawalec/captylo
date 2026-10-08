@@ -502,13 +502,20 @@ struct MeetingsView: View {
                     .foregroundStyle(GlassColor.icon)
                     .padding(.bottom, 4)
                     .accessibilityHidden(true)
-                Text("Brak wyników")
+                // Notes matched above ("Także w notatkach"): say only the meetings did not.
+                Text(noteMatches.isEmpty ? "Brak wyników" : "Brak spotkań")
                     .font(GlassFont.display(17))
                     .foregroundStyle(GlassColor.textPrimary)
-                Text("Nic nie pasuje do „\(query)”.")
-                    .font(GlassFont.body)
-                    .foregroundStyle(GlassColor.textSecondary)
-                    .multilineTextAlignment(.center)
+                Group {
+                    if noteMatches.isEmpty {
+                        Text("Nic nie pasuje do „\(query)”.")
+                    } else {
+                        Text("Żadne spotkanie nie pasuje do „\(query)”, ale pasują notatki powyżej.")
+                    }
+                }
+                .font(GlassFont.body)
+                .foregroundStyle(GlassColor.textSecondary)
+                .multilineTextAlignment(.center)
             }
             .frame(maxWidth: 440)
             Spacer(minLength: 0)

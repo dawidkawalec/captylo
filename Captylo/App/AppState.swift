@@ -707,6 +707,7 @@ final class AppState {
             // The in-memory fallback store has no rows: sweeping against it would delete everything.
             if sweepOrphans {
                 await Retention.sweepOrphans(database: database)
+                await Retention.sweepNoteOrphans(database: database)
             }
         }
         // Meeting audio ("Zachowuj nagrania spotkań"): goes by the rows, so the in-memory
@@ -818,13 +819,13 @@ final class AppState {
     /// take that records (of any kind, as what it is), ignored while a take is transcribed.
     func toggleVoiceNote() {
         let controller = dictationController
-        switch TakeDestination.forShortcutPress(phase: controller.phase, current: controller.currentDestination) {
+        switch TakeDestination.forShortcutPress(phase: controller.phase) {
         case .start(let destination):
             Task { await controller.start(destination: destination) }
         case .stop:
             Task { await controller.stop() }
-        case .ignore:
-            break
+        case .busy:
+            toasts.showInfo(String(localized: "Captylo jeszcze przepisuje poprzednie nagranie. Spróbuj za chwilę."))
         }
     }
 

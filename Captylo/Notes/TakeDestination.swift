@@ -11,14 +11,15 @@ enum TakeDestination: Sendable, Equatable {
     enum ShortcutPress: Equatable {
         case start(TakeDestination)
         case stop
-        case ignore
+        /// A take is being transcribed: nothing starts, the user is told.
+        case busy
     }
 
     /// Idle starts a voice note; a take that records (of any destination) is stopped as what it
-    /// is; while a take is transcribed nothing happens.
-    static func forShortcutPress(phase: DictationPhase, current: TakeDestination?) -> ShortcutPress {
+    /// is; while a take is transcribed nothing starts.
+    static func forShortcutPress(phase: DictationPhase) -> ShortcutPress {
         if phase == .idle { return .start(.newNote) }
         if phase.isCapturing { return .stop }
-        return .ignore
+        return .busy
     }
 }

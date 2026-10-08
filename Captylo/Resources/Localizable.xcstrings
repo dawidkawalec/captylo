@@ -36,6 +36,31 @@
         "en": { "stringUnit": { "state": "translated", "value": "The note changed in the meantime, so the AI did not overwrite it. Try again." } }
       }
     },
+    "Brak spotkań": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No meetings" } }
+      }
+    },
+    "Captylo jeszcze przepisuje poprzednie nagranie. Spróbuj za chwilę.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Captylo is still transcribing the previous recording. Try again in a moment." } }
+      }
+    },
+    "Nie udało się przepisać notatki. Nagranie jest w Notatkach.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The note could not be transcribed. The recording is in Notes." } }
+      }
+    },
+    "Nie udało się przepisać: %@. Jeśli nagranie się otworzyło, jest na liście z przyciskiem „Spróbuj ponownie”.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not transcribe: %@. If the recording opened, it is on the list with Try again." } }
+      }
+    },
+    "Żadne spotkanie nie pasuje do „%@”, ale pasują notatki powyżej.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No meeting matches “%@”, but the notes above do." } }
+      }
+    },
     "Brak notatek.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "No notes." } }

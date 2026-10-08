@@ -390,7 +390,10 @@ final class DictationController: RecorderCoordinator {
             if Task.isCancelled || session?.id != take.id { return }
             Log.app.error("Dictation \(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             env.systemMute.restore()
-            env.toasts.showError(error)
+            // A voice note says where its recording went (`saveFailedNote`).
+            if take.destination != .newNote {
+                env.toasts.showError(error)
+            }
             finishTake(take)
             record.status = .failed
             record.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -431,7 +434,10 @@ final class DictationController: RecorderCoordinator {
                 )
                 Log.app.info("Voice note \(id.uuidString, privacy: .public) saved")
             } catch {
+                // No note points at the recording: it goes wherever the move left it.
                 Log.data.error("Saving a voice note failed: \(error.localizedDescription, privacy: .public)")
+                Self.removeFile(target)
+                Self.removeFile(take.fileURL)
                 env.toasts.showError(error)
             }
         case .appendToNote(let noteID):
@@ -466,8 +472,17 @@ final class DictationController: RecorderCoordinator {
             )
             try await env.database.createNote(note)
             env.noteSaved(note.id)
+            let open = env.openNote
+            let id = note.id
+            env.toasts.showAction(
+                message: String(localized: "Nie udało się przepisać notatki. Nagranie jest w Notatkach."),
+                buttonTitle: String(localized: "Otwórz"),
+                action: { open(id) }
+            )
         } catch {
+            env.toasts.showError(message)
             Log.data.error("Keeping a failed voice note failed: \(error.localizedDescription, privacy: .public)")
+            Self.removeFile(target)
             Self.removeFile(take.fileURL)
         }
     }

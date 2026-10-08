@@ -111,6 +111,20 @@ struct NoteTitleActionsTests {
         #expect(enhancer.calls == 0)
     }
 
+    /// Leaving a note: an untouched empty one goes, an untitled one gets its title.
+    @Test func leavingANoteDropsItWhenEmptyAndNamesItOtherwise() async throws {
+        let enhancer = TitleFakeEnhancer(.enhanced(text: "x", ms: 1, model: "m"))
+        let (actions, db) = try Self.make(enhancer, aiAllowed: false)
+        let empty = NoteRecord()
+        let typed = NoteRecord(body: "Zadzwonić do Marka.")
+        try await db.createNote(empty)
+        try await db.createNote(typed)
+        await actions.leave(noteID: empty.id)
+        await actions.leave(noteID: typed.id)
+        #expect(try await db.note(id: empty.id) == nil)
+        #expect(try await db.note(id: typed.id)?.title == "Zadzwonić do Marka")
+    }
+
     /// A very short note needs no AI: its words are the title.
     @Test func aShortNoteIsTitledLocallyWithoutAI() async throws {
         let enhancer = TitleFakeEnhancer(.enhanced(text: "Inny", ms: 1, model: "m"))

@@ -42,6 +42,13 @@ struct NotesView: View {
             .task(id: ReloadKey(query: query, version: appState.notesVersion, deletions: deletions, created: created)) {
                 await reload()
             }
+            .onDisappear {
+                // The import's outcome was seen: the next visit starts clean.
+                let queue = appState.noteImportQueue
+                if !queue.isProcessing {
+                    queue.clearFinished()
+                }
+            }
             .onChange(of: router.pendingNoteID) { _, _ in
                 takePendingNote()
             }
@@ -82,10 +89,19 @@ struct NotesView: View {
                     .mainColumnFrame()
                     .padding(.top, 14)
                 if let status = importStatus {
-                    ToolStatusLine(text: status.text, tone: status.tone)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .mainColumnFrame()
-                        .padding(.top, 8)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        ToolStatusLine(text: status.text, tone: status.tone)
+                        if !isImporting {
+                            Button("Ukryj") {
+                                appState.noteImportQueue.clearFinished()
+                            }
+                            .buttonStyle(.glass(.neutral, size: .small, shape: .capsule))
+                            .fixedSize()
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .mainColumnFrame()
+                    .padding(.top, 8)
                 }
                 if notes.isEmpty {
                     noResults
@@ -275,7 +291,9 @@ struct NotesView: View {
             return (String(localized: "Przepisuję nagrania: \(left)"), .neutral)
         }
         if let failed = queue.items.first(where: { if case .failed = $0.status { return true } else { return false } }) {
-            return (String(localized: "Nie udało się zaimportować: \(failed.name)"), .error)
+            // A file that decoded is a note with its recording and "Spróbuj ponownie"; one that
+            // did not decode is not there at all: the line says both.
+            return (String(localized: "Nie udało się przepisać: \(failed.name). Jeśli nagranie się otworzyło, jest na liście z przyciskiem „Spróbuj ponownie”."), .error)
         }
         if let rejected = queue.rejectedNames.first {
             return (String(localized: "Ten plik nie jest nagraniem: \(rejected)"), .error)
@@ -306,19 +324,23 @@ struct NotesView: View {
         let index = appState.meetingSearchIndex
         let query = self.query
         do {
-            let rows: [NoteRecord]
+            let fetched: [NoteRecord]
             if let terms = SearchQuery.terms(query),
                let hits = await index.noteHits(terms: terms, all: true, limit: Self.listLimit) {
-                rows = try await database.notes(ids: hits.map(\.noteID))
+                fetched = try await database.notes(ids: hits.map(\.noteID))
             } else {
-                rows = try await database.notes(query: query, limit: Self.listLimit)
+                fetched = try await database.notes(query: query, limit: Self.listLimit)
+            }
+            // A note opened from elsewhere but older than the newest `listLimit` joins the list.
+            var extra: NoteRecord?
+            if let missingID = NoteListSelection.missing(selected: selectedID, query: query, fetched: fetched) {
+                extra = try await database.note(id: missingID)
             }
             guard !Task.isCancelled else { return }
+            let rows = NoteListSelection.rows(fetched: fetched, adding: extra)
             notes = rows
-            if let current = selectedID, !rows.contains(where: { $0.id == current }), query.isEmpty {
-                selectedID = rows.first?.id
-            } else if selectedID == nil {
-                selectedID = rows.first?.id
+            if query.isEmpty || selectedID == nil {
+                selectedID = NoteListSelection.selection(current: selectedID, rows: rows)
             }
         } catch {
             Log.data.error("Notes fetch failed: \(error.localizedDescription, privacy: .public)")

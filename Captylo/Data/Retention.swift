@@ -50,6 +50,28 @@ enum Retention {
         return removed
     }
 
+    /// The same launch sweep for `Notes/*.wav`: a recording no note points at (a save that failed
+    /// after the WAV moved, a session on the in-memory fallback store). Never against the fallback
+    /// store. Returns the number removed.
+    @discardableResult
+    static func sweepNoteOrphans(database: Database, now: Date = Date(), notes: URL = AppPaths.notes) async -> Int {
+        let referenced: Set<String>
+        do {
+            referenced = try await database.referencedNoteAudioFileNames()
+        } catch {
+            Log.data.error("Note orphan sweep skipped: \(error.localizedDescription, privacy: .public)")
+            return 0
+        }
+        let cutoff = now.addingTimeInterval(-orphanMinimumAge)
+        let removed = await Task.detached(priority: .utility) {
+            removeOrphans(keeping: referenced, olderThan: cutoff, in: notes)
+        }.value
+        if removed > 0 {
+            Log.data.info("Removed \(removed) note recordings without a note")
+        }
+        return removed
+    }
+
     nonisolated static func removeOrphans(keeping referenced: Set<String>, olderThan cutoff: Date, in directory: URL) -> Int {
         let fileManager = FileManager.default
         let keys: [URLResourceKey] = [.creationDateKey, .contentModificationDateKey, .isRegularFileKey]

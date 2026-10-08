@@ -56,6 +56,19 @@ extension Database {
         return fileName
     }
 
+    /// "Nowa notatka" left without a word: the note goes, without a tombstone (it never had
+    /// anything to sync). True when it was empty and removed.
+    func deleteNoteIfEmpty(id: UUID) throws -> Bool {
+        guard let row = try fetchNote(id: id),
+              row.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              row.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              row.audioFileName == nil else { return false }
+        modelContext.delete(row)
+        try modelContext.save()
+        searchIndex?.removeNote(id)
+        return true
+    }
+
     /// Reads one note and queues it on `index` in this same actor step (the rebuild runs next to
     /// live writes, like `reindexMeeting`). A note deleted meanwhile is removed from the index.
     func reindexNote(id: UUID, into index: any MeetingIndexing) throws {
