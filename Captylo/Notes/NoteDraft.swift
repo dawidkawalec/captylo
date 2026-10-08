@@ -2,23 +2,33 @@ import Foundation
 import Observation
 
 /// The open note's title and text while they are typed: saved after a pause and when the note is
-/// left, never on every key, and never when nothing changed. The save writes only the title and
-/// the text (`Database.modifyNote`), so an AI pass or a dictated paragraph that landed meanwhile
-/// keeps its other fields.
+/// left, never on every key, and never when nothing changed. A save carries only the fields
+/// edited here (`Change`), so a title written elsewhere meanwhile (the AI title), an AI pass or a
+/// dictated paragraph is never overwritten by the draft's older copy.
 @MainActor
 @Observable
 final class NoteDraft {
+    /// What one save writes: the fields edited since the last save (nil = leave as stored), and
+    /// the draft's whole view of the note.
+    struct Change: Sendable, Equatable {
+        var record: NoteRecord
+        var title: String?
+        var body: String?
+    }
+
     private(set) var title: String
     private(set) var body: String
     let noteID: UUID
+    /// The user edited the title or the text during this visit (leaving names such a note).
+    @ObservationIgnored private(set) var wasEdited = false
 
     @ObservationIgnored private var saved: NoteRecord
-    /// Writes the title and text; false when the save failed (the edit stays unsaved).
-    @ObservationIgnored private let save: @MainActor (NoteRecord) async -> Bool
+    /// Writes the change; false when the save failed (the edit stays unsaved).
+    @ObservationIgnored private let save: @MainActor (Change) async -> Bool
     @ObservationIgnored private let debounce: Duration
     @ObservationIgnored private var pending: Task<Void, Never>?
 
-    init(note: NoteRecord, save: @escaping @MainActor (NoteRecord) async -> Bool, debounce: Duration = .milliseconds(600)) {
+    init(note: NoteRecord, save: @escaping @MainActor (Change) async -> Bool, debounce: Duration = .milliseconds(600)) {
         saved = note
         noteID = note.id
         title = note.title
@@ -39,11 +49,13 @@ final class NoteDraft {
 
     func edit(title: String) {
         self.title = title
+        wasEdited = true
         schedule()
     }
 
     func edit(body: String) {
         self.body = body
+        wasEdited = true
         schedule()
     }
 
@@ -56,8 +68,13 @@ final class NoteDraft {
         var record = saved
         record.title = title
         record.body = body
+        let change = Change(
+            record: record,
+            title: title != previous.title ? title : nil,
+            body: body != previous.body ? body : nil
+        )
         saved = record
-        if !(await save(record)), saved == record {
+        if !(await save(change)), saved == record {
             // Not written: the next pause or the next flush tries again.
             saved = previous
         }

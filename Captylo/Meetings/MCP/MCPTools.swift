@@ -261,7 +261,8 @@ struct MCPTools: Sendable {
                 }
             }
         }
-        let notes = try await matchingNotes(query, limit: Self.searchNoteLimit, library: opened)
+        // A failed notes read never costs the meeting hits already found.
+        let notes = (try? await matchingNotes(query, limit: Self.searchNoteLimit, library: opened)) ?? []
         lines += notes.map { note in
             let label = String(localized: "Notatka")
             return "- \(label): \(Self.oneLine(note.displayTitle)) (\(dateText(note.createdAt))) · note id: \(note.id.uuidString)"

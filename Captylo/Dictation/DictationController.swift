@@ -445,7 +445,17 @@ final class DictationController: RecorderCoordinator {
             do {
                 let saved = try await database.modifyNote(id: noteID) { $0.body = NoteTake.appending(text, to: $0.body) }
                 if saved == nil {
-                    env.toasts.showError(String(localized: "Tej notatki już nie ma."))
+                    // The note went meanwhile: what was said is never lost, it becomes a note.
+                    let note = NoteRecord(body: text, language: env.settings.transcriptionLanguage, transcriptModel: model)
+                    try await database.createNote(note)
+                    env.noteSaved(note.id)
+                    let open = env.openNote
+                    let id = note.id
+                    env.toasts.showAction(
+                        message: String(localized: "Tamtej notatki już nie było, więc tekst trafił do nowej."),
+                        buttonTitle: String(localized: "Otwórz"),
+                        action: { open(id) }
+                    )
                 } else {
                     env.noteSaved(noteID)
                 }

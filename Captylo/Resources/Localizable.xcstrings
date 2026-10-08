@@ -36,6 +36,16 @@
         "en": { "stringUnit": { "state": "translated", "value": "The note changed in the meantime, so the AI did not overwrite it. Try again." } }
       }
     },
+    "Pisz albo dyktuj. Gdy masz włączone AI, nada notatce krótki tytuł.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Type or dictate. With AI on, it gives the note a short title." } }
+      }
+    },
+    "Tamtej notatki już nie było, więc tekst trafił do nowej.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "That note was gone, so the text went into a new one." } }
+      }
+    },
     "Brak spotkań": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "No meetings" } }

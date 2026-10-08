@@ -92,34 +92,40 @@ final class NoteActions {
         return nil
     }
 
-    /// The user left a note (another note selected, Notatki closed): an untouched empty note
-    /// ("Nowa notatka" with nothing typed) goes, any other note without a title gets one.
-    func leave(noteID: UUID) async {
-        if (try? await database.deleteNoteIfEmpty(id: noteID)) == true {
+    /// The user left a note (another note selected, Notatki closed). An untouched empty note
+    /// ("Nowa notatka" with nothing typed) goes, unless `keepEmpty` (a dictation into it is still
+    /// on its way, or the last save failed). A note edited during the visit gets its AI title;
+    /// one only looked at costs nothing.
+    func leave(noteID: UUID, edited: Bool, keepEmpty: Bool) async {
+        if !keepEmpty, (try? await database.deleteNoteIfEmpty(id: noteID)) == true {
             didChange()
             return
         }
-        await ensureTitle(noteID: noteID)
+        if edited {
+            await ensureTitle(noteID: noteID)
+        }
     }
 
-    /// Names a note that has text but no title: the AI title when AI is allowed and the note has
-    /// at least `NoteTitles.aiMinWords` words, else (or when the AI fails) the local one. A title
-    /// typed meanwhile is never overwritten; a note with a title is left alone.
+    /// Notes whose AI title is being written (two triggers at once make one call).
+    private var titling: Set<UUID> = []
+
+    /// Names a note that has text but no stored title with the AI title, when AI is allowed and
+    /// the note has at least `NoteTitles.aiMinWords` words. Otherwise nothing is stored: the list
+    /// shows the short first sentence (`NoteRecord.displayTitle`), which follows the text. A
+    /// title typed meanwhile is never overwritten.
     func ensureTitle(noteID: UUID) async {
+        guard titleAI(), !titling.contains(noteID) else { return }
+        titling.insert(noteID)
+        defer { titling.remove(noteID) }
         guard let note = try? await database.note(id: noteID),
               note.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         let body = note.body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !body.isEmpty else { return }
-        var title = NoteTitles.local(from: body)
-        if titleAI(), WordCounter.count(body) >= NoteTitles.aiMinWords {
-            let outcome = await enhancer.enhance(String(body.prefix(NoteTitles.aiInputLimit)), job: NoteTitles.job)
-            if let text = outcome.text, let cleaned = NoteTitles.clean(text) {
-                title = cleaned
-            } else {
-                Log.enhancement.notice("Note title from AI skipped: \(outcome.errorMessage ?? "no text", privacy: .public)")
-            }
+        guard WordCounter.count(body) >= NoteTitles.aiMinWords else { return }
+        let outcome = await enhancer.enhance(String(body.prefix(NoteTitles.aiInputLimit)), job: NoteTitles.job)
+        guard let text = outcome.text, let title = NoteTitles.clean(text) else {
+            Log.enhancement.notice("Note title from AI skipped: \(outcome.errorMessage ?? "no text", privacy: .public)")
+            return
         }
-        guard !title.isEmpty else { return }
         let named = title
         do {
             try await database.modifyNote(id: noteID) { record in
@@ -185,7 +191,8 @@ final class NoteActions {
                 record.transcriptError = nil
             }
             didChange()
-            await ensureTitle(noteID: noteID)
+            // The title comes on its own: "Spróbuj ponownie" never waits for the AI title.
+            Task { await self.ensureTitle(noteID: noteID) }
             return nil
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

@@ -80,21 +80,30 @@ struct NoteTitleActionsTests {
         #expect(enhancer.calls == 1)
     }
 
-    @Test func withoutAIOrWhenItFailsTheTitleIsLocal() async throws {
+    /// Without AI (or when it fails) nothing is stored: the list derives the short title live, so
+    /// it follows the text and an AI title can still come later.
+    @Test func withoutAIOrWhenItFailsNothingIsStored() async throws {
         let off = TitleFakeEnhancer(.enhanced(text: "x", ms: 1, model: "m"))
         let (actions, db) = try Self.make(off, aiAllowed: false)
         let note = NoteRecord(body: "Kupić mleko i chleb na jutro rano.")
         try await db.createNote(note)
         await actions.ensureTitle(noteID: note.id)
-        #expect(try await db.note(id: note.id)?.title == "Kupić mleko i chleb na jutro…")
+        let read = try #require(try await db.note(id: note.id))
+        #expect(read.title.isEmpty)
+        #expect(read.displayTitle == "Kupić mleko i chleb na jutro…")
         #expect(off.calls == 0)
 
         let failing = TitleFakeEnhancer(.failed(.http(status: 500), ms: 0))
         let (second, secondDB) = try Self.make(failing, aiAllowed: true)
-        let other = NoteRecord(body: "Kupić mleko i chleb.")
+        let other = NoteRecord(body: Self.longBody)
         try await secondDB.createNote(other)
         await second.ensureTitle(noteID: other.id)
-        #expect(try await secondDB.note(id: other.id)?.title == "Kupić mleko i chleb")
+        #expect(try await secondDB.note(id: other.id)?.title == "")
+    }
+
+    @Test func theListTitleIsTheShortFirstSentence() {
+        #expect(NoteRecord(body: "Kod do bramy: 4512! Wejście od podwórza.").displayTitle == "Kod do bramy: 4512")
+        #expect(NoteRecord(title: "Mój", body: "Kod.").displayTitle == "Mój")
     }
 
     @Test func aTypedTitleOrAnEmptyNoteIsLeftAlone() async throws {
@@ -111,28 +120,56 @@ struct NoteTitleActionsTests {
         #expect(enhancer.calls == 0)
     }
 
-    /// Leaving a note: an untouched empty one goes, an untitled one gets its title.
-    @Test func leavingANoteDropsItWhenEmptyAndNamesItOtherwise() async throws {
-        let enhancer = TitleFakeEnhancer(.enhanced(text: "x", ms: 1, model: "m"))
-        let (actions, db) = try Self.make(enhancer, aiAllowed: false)
+    /// Leaving a note: an untouched empty one goes; an edited untitled one gets its AI title;
+    /// one only looked at costs no AI call.
+    @Test func leavingANoteDropsItWhenEmptyAndNamesItOnlyWhenEdited() async throws {
+        let enhancer = TitleFakeEnhancer(.enhanced(text: "Telefon do Marka", ms: 1, model: "m"))
+        let (actions, db) = try Self.make(enhancer, aiAllowed: true)
         let empty = NoteRecord()
-        let typed = NoteRecord(body: "Zadzwonić do Marka.")
-        try await db.createNote(empty)
-        try await db.createNote(typed)
-        await actions.leave(noteID: empty.id)
-        await actions.leave(noteID: typed.id)
+        let browsed = NoteRecord(body: Self.longBody)
+        let edited = NoteRecord(body: "Zadzwonić do Marka w sprawie oferty jutro rano.")
+        for note in [empty, browsed, edited] {
+            try await db.createNote(note)
+        }
+        await actions.leave(noteID: empty.id, edited: false, keepEmpty: false)
+        await actions.leave(noteID: browsed.id, edited: false, keepEmpty: false)
+        #expect(enhancer.calls == 0)
+        await actions.leave(noteID: edited.id, edited: true, keepEmpty: false)
         #expect(try await db.note(id: empty.id) == nil)
-        #expect(try await db.note(id: typed.id)?.title == "Zadzwonić do Marka")
+        #expect(try await db.note(id: browsed.id)?.title == "")
+        #expect(try await db.note(id: edited.id)?.title == "Telefon do Marka")
     }
 
-    /// A very short note needs no AI: its words are the title.
-    @Test func aShortNoteIsTitledLocallyWithoutAI() async throws {
+    /// A dictation into the new empty note is still on its way: the note must stay.
+    @Test func anEmptyNoteAwaitingADictationIsKept() async throws {
+        let enhancer = TitleFakeEnhancer(.enhanced(text: "x", ms: 1, model: "m"))
+        let (actions, db) = try Self.make(enhancer, aiAllowed: true)
+        let empty = NoteRecord()
+        try await db.createNote(empty)
+        await actions.leave(noteID: empty.id, edited: false, keepEmpty: true)
+        #expect(try await db.note(id: empty.id) != nil)
+    }
+
+    /// A very short note needs no AI: the list shows its words.
+    @Test func aShortNoteGetsNoAICall() async throws {
         let enhancer = TitleFakeEnhancer(.enhanced(text: "Inny", ms: 1, model: "m"))
         let (actions, db) = try Self.make(enhancer, aiAllowed: true)
         let note = NoteRecord(body: "Kod 4512")
         try await db.createNote(note)
         await actions.ensureTitle(noteID: note.id)
-        #expect(try await db.note(id: note.id)?.title == "Kod 4512")
+        #expect(try await db.note(id: note.id)?.displayTitle == "Kod 4512")
         #expect(enhancer.calls == 0)
+    }
+
+    /// Two triggers at once (a dictated paragraph and leaving the note) make one AI call.
+    @Test func concurrentTitleRequestsShareOneAICall() async throws {
+        let enhancer = TitleFakeEnhancer(.enhanced(text: "Kampania", ms: 1, model: "m"))
+        let (actions, db) = try Self.make(enhancer, aiAllowed: true)
+        let note = NoteRecord(body: Self.longBody)
+        try await db.createNote(note)
+        async let first: Void = actions.ensureTitle(noteID: note.id)
+        async let second: Void = actions.ensureTitle(noteID: note.id)
+        _ = await (first, second)
+        #expect(enhancer.calls == 1)
     }
 }

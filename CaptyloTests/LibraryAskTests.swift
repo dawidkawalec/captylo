@@ -660,7 +660,8 @@ struct LibraryAskTests {
         #expect(answer.noteSources.map(\.noteID) == [note.id])
         #expect(answer.citations.map(\.noteID) == [note.id])
         let user = try #require(Self.messages(seen.withLock { $0 }).last)
-        #expect(user.contains("N1: Kod do bramy u Ani to 4512., 2 października 2026"))
+        #expect(user.contains("N1: Kod do bramy u Ani to…, 2 października 2026"))
+        #expect(user.contains("\nKod do bramy u Ani to 4512.\n</notes>"))
         #expect(!user.contains("Zupełnie inny temat."))
     }
 
@@ -672,6 +673,22 @@ struct LibraryAskTests {
         defer { StubURLProtocol.unregister(baseURL) }
         let context = try await asker.context(question: "Co było w zeszłym tygodniu?")
         #expect(context.notes.map(\.body) == ["Pomysł z zeszłego tygodnia."])
+    }
+
+    /// Notes with no text (a blank "Nowa notatka", a voice note still without its transcript) are
+    /// never sent as empty `N` entries.
+    @Test func notesWithoutTextAreNeverSent() async throws {
+        let fixture = try Self.fixture()
+        let day = try Self.date("2026-09-23T09:00:00Z")
+        try await fixture.database.createNote(NoteRecord(createdAt: day, body: ""))
+        try await fixture.database.createNote(NoteRecord(createdAt: day.addingTimeInterval(60), body: "  ", audioFileName: "v.wav"))
+        try await fixture.database.createNote(NoteRecord(createdAt: day.addingTimeInterval(-60), body: "Pomysł z zeszłego tygodnia."))
+        let (asker, baseURL) = Self.asker(fixture, now: try Self.date("2026-10-02T12:00:00Z")) { _ in .json(Self.chat("x")) }
+        defer { StubURLProtocol.unregister(baseURL) }
+        let context = try await asker.context(question: "Co było w zeszłym tygodniu?")
+        #expect(context.notes.map(\.body) == ["Pomysł z zeszłego tygodnia."])
+        let general = try await asker.context(question: "O czym rozmawialiśmy?")
+        #expect(general.notes.map(\.body) == ["Pomysł z zeszłego tygodnia."])
     }
 
     // MARK: Session

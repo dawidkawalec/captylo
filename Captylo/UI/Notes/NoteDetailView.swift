@@ -48,14 +48,16 @@ struct NoteDetailView: View {
             await load()
         }
         .onDisappear {
-            // Leaving the note: save it, then drop it when it stayed empty or name it if nobody
-            // did (`NoteActions.leave`).
+            // Leaving the note: save it, then drop it when it stayed empty (never while a
+            // dictation into it is on its way or its text is unsaved) or name it when edited.
             let pending = draft
             let actions = actions
             let id = noteID
+            let dictationPending = dictatingInto == id && dictation.phase != .idle
             Task {
                 await pending?.flush()
-                await actions.leave(noteID: id)
+                let unsaved = pending?.hasUnsavedChanges ?? false
+                await actions.leave(noteID: id, edited: pending?.wasEdited ?? false, keepEmpty: dictationPending || unsaved)
             }
         }
         .onChange(of: dictation.phase) { _, phase in
@@ -141,7 +143,7 @@ struct NoteDetailView: View {
             .padding(.vertical, 10)
             .overlay(alignment: .topLeading) {
                 if draft.body.isEmpty {
-                    Text("Pisz albo dyktuj. Wszystko zostaje na tym Macu.")
+                    Text("Pisz albo dyktuj. Gdy masz włączone AI, nada notatce krótki tytuł.")
                         .font(GlassFont.body)
                         .foregroundStyle(GlassColor.textTertiary)
                         .padding(.leading, 13)
@@ -227,11 +229,15 @@ struct NoteDetailView: View {
             }
             let database = database
             let onSaved = onSaved
-            draft = NoteDraft(note: fresh) { record in
+            draft = NoteDraft(note: fresh) { change in
                 do {
-                    let title = record.title
-                    let body = record.body
-                    if let saved = try await database.modifyNote(id: record.id, { $0.title = title; $0.body = body }) {
+                    let title = change.title
+                    let body = change.body
+                    let saved = try await database.modifyNote(id: change.record.id) { stored in
+                        if let title { stored.title = title }
+                        if let body { stored.body = body }
+                    }
+                    if let saved {
                         onSaved(saved)
                     }
                     // A note deleted meanwhile has nothing left to save.

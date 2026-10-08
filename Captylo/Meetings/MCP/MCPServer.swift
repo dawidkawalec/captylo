@@ -105,9 +105,11 @@ final class MCPServer: Sendable {
                 "version": .string(version),
             ]),
             "instructions": .string("""
-                Read-only access to the meetings recorded with Captylo on this Mac. Use search_meetings \
-                to find what was said (Polish word forms match), list_meetings to browse by date, and \
-                get_meeting for the notes and the full transcript. Cite moments as [mm:ss] with the meeting title.
+                Read-only access to the meetings and notes recorded with Captylo on this Mac. Use \
+                search_meetings to find what was said or written (Polish word forms match; it lists \
+                matching notes too), list_meetings and list_notes to browse by date, get_meeting for \
+                the notes and the full transcript, and get_note for a note's text. Cite moments as \
+                [mm:ss] with the meeting title, and notes by their title.
                 """),
         ])
     }

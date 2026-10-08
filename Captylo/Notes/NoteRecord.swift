@@ -23,13 +23,12 @@ struct NoteRecord: Sendable, Equatable, Identifiable {
 
     var hasAudio: Bool { audioFileName != nil }
 
-    /// The typed title, else the first non-empty line of the body, else "Notatka bez tytułu".
+    /// The stored title (typed, or the AI title), else the first sentence of the body cut to a few
+    /// words (`NoteTitles.local`, derived live so it follows the text), else "Notatka bez tytułu".
     var displayTitle: String {
-        let typed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !typed.isEmpty { return typed }
-        let firstLine = body.split(whereSeparator: \.isNewline)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .first { !$0.isEmpty }
-        return firstLine ?? String(localized: "Notatka bez tytułu")
+        let stored = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !stored.isEmpty { return stored }
+        let local = NoteTitles.local(from: body)
+        return local.isEmpty ? String(localized: "Notatka bez tytułu") : local
     }
 }

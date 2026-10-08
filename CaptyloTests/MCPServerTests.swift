@@ -299,7 +299,7 @@ struct MCPServerTests {
         let answer = try await Self.call(Self.server(fixture), "list_notes")
         #expect(!answer.isError)
         #expect(answer.text == """
-            - 2026-10-03 08:00 · Kod do bramy u Ani: 4512. · nagranie 0:12 · id: \(fixture.gate.id.uuidString)
+            - 2026-10-03 08:00 · Kod do bramy u Ani: 4512 · nagranie 0:12 · id: \(fixture.gate.id.uuidString)
             - 2026-09-20 18:00 · Zakupy · id: \(fixture.shopping.id.uuidString)
             """)
     }
@@ -326,7 +326,7 @@ struct MCPServerTests {
         let server = Self.server(fixture)
         let answer = try await Self.call(server, "get_note", #"{"id":"\#(fixture.gate.id.uuidString)"}"#)
         #expect(!answer.isError)
-        #expect(answer.text.hasPrefix("# Kod do bramy u Ani: 4512.\n"))
+        #expect(answer.text.hasPrefix("# Kod do bramy u Ani: 4512\n"))
         #expect(answer.text.contains("2026-10-03 08:00"))
         #expect(answer.text.contains("0:12"))
         #expect(answer.text.hasSuffix("Kod do bramy u Ani: 4512.\nWejście od podwórza."))
@@ -339,7 +339,7 @@ struct MCPServerTests {
         let server = Self.server(fixture)
         let answer = try await Self.call(server, "search_meetings", #"{"query":"kod do bramy"}"#)
         #expect(!answer.isError)
-        #expect(answer.text.contains("- Notatka: Kod do bramy u Ani: 4512. (2026-10-03 08:00) · note id: \(fixture.gate.id.uuidString)"))
+        #expect(answer.text.contains("- Notatka: Kod do bramy u Ani: 4512 (2026-10-03 08:00) · note id: \(fixture.gate.id.uuidString)"))
         #expect(!answer.text.contains(fixture.budget.id.uuidString))
         // A meeting query that matches no note answers exactly as before.
         let meetings = try await Self.call(server, "search_meetings", #"{"query":"oferta"}"#)

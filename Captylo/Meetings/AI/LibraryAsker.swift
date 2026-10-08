@@ -105,10 +105,15 @@ actor LibraryAsker {
     }
 
     /// The notes the index finds for `terms` (any of them), best first.
-    private func topicNotes(terms: [String]) async throws -> [NoteRecord] {
-        guard let hits = await index.noteHits(terms: terms, all: false, limit: LibraryAskRetrieval.maxNotes),
+    private func topicNotes(terms: [String], limit: Int = LibraryAskRetrieval.maxNotes) async throws -> [NoteRecord] {
+        guard let hits = await index.noteHits(terms: terms, all: false, limit: limit),
               !hits.isEmpty else { return [] }
-        return try await database.notes(ids: hits.map(\.noteID))
+        return try await database.notes(ids: hits.map(\.noteID)).filter(Self.hasText)
+    }
+
+    /// A note worth sending: it has text (a blank or not yet transcribed note says nothing).
+    private static func hasText(_ note: NoteRecord) -> Bool {
+        !note.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// A question about time: the matching notes of the period first, then its newest ones; with
@@ -116,15 +121,20 @@ actor LibraryAsker {
     private func dateNotes(terms: [String]?, period: DateInterval?) async throws -> [NoteRecord] {
         var picked: [NoteRecord] = []
         if let terms {
-            picked = try await topicNotes(terms: terms).filter { period?.contains($0.createdAt) ?? true }
+            // Ranked over every note, then cut to the period (start included, end not, like
+            // `notes(createdIn:)`), so a match inside the period is never crowded out.
+            picked = try await topicNotes(terms: terms, limit: LibraryAskRetrieval.notesOnlyScan).filter { note in
+                guard let period else { return true }
+                return note.createdAt >= period.start && note.createdAt < period.end
+            }
         }
         if picked.isEmpty || period != nil {
             let pool = if let period {
-                try await database.notes(createdIn: period, limit: LibraryAskRetrieval.maxNotes)
+                try await database.notes(createdIn: period, limit: LibraryAskRetrieval.notesOnlyScan)
             } else {
-                try await database.notes(query: "", limit: LibraryAskRetrieval.maxNotes)
+                try await database.notes(query: "", limit: LibraryAskRetrieval.notesOnlyScan)
             }
-            for note in pool where !picked.contains(where: { $0.id == note.id }) {
+            for note in pool where Self.hasText(note) && !picked.contains(where: { $0.id == note.id }) {
                 picked.append(note)
             }
         }

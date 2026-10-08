@@ -11,7 +11,7 @@ private final class SavedNotes {
 struct NoteDraftTests {
     @Test func editsSaveOnceAfterThePause() async throws {
         let saved = SavedNotes()
-        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { saved.records.append($0); return true }, debounce: .milliseconds(50))
+        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { saved.records.append($0.record); return true }, debounce: .milliseconds(50))
         draft.edit(body: "ab")
         draft.edit(body: "abc")
         try await Task.sleep(for: .milliseconds(300))
@@ -20,7 +20,7 @@ struct NoteDraftTests {
 
     @Test func flushSavesAtOnceAndOnlyWhenChanged() async {
         let saved = SavedNotes()
-        let draft = NoteDraft(note: NoteRecord(title: "T", body: "a"), save: { saved.records.append($0); return true }, debounce: .seconds(10))
+        let draft = NoteDraft(note: NoteRecord(title: "T", body: "a"), save: { saved.records.append($0.record); return true }, debounce: .seconds(10))
         await draft.flush()
         #expect(saved.records.isEmpty)
         draft.edit(title: "Nowy")
@@ -46,9 +46,9 @@ struct NoteDraftTests {
     @Test func aFailedSaveIsTriedAgain() async {
         let saved = SavedNotes()
         var fails = true
-        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { record in
+        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { change in
             if fails { return false }
-            saved.records.append(record)
+            saved.records.append(change.record)
             return true
         }, debounce: .seconds(10))
         draft.edit(body: "ab")
@@ -58,6 +58,20 @@ struct NoteDraftTests {
         await draft.flush()
         #expect(!draft.hasUnsavedChanges)
         #expect(saved.records.map(\.body) == ["ab"])
+    }
+
+    /// A save writes only what was edited here: a title written elsewhere (the AI title) is
+    /// never overwritten by the draft's stale empty one.
+    @Test func aSaveCarriesOnlyTheEditedFields() async {
+        var changes: [NoteDraft.Change] = []
+        let draft = NoteDraft(note: NoteRecord(body: "a"), save: { changes.append($0); return true }, debounce: .seconds(10))
+        draft.edit(body: "ab")
+        await draft.flush()
+        draft.edit(title: "T")
+        await draft.flush()
+        #expect(changes.map(\.body) == ["ab", nil])
+        #expect(changes.map(\.title) == [nil, "T"])
+        #expect(draft.wasEdited)
     }
 
     @Test func aDraftKnowsItsNote() {
