@@ -7,6 +7,9 @@ enum AppRelauncher {
     static func relaunch() {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
+        // The new copy starts while this one still runs: tell it which copy it replaces, or it
+        // would hand off to this one and exit (SingleInstance).
+        configuration.environment = [SingleInstance.replacesPIDKey: String(getpid())]
         NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, error in
             if let error {
                 Log.app.error("Relaunch failed: \(error.localizedDescription, privacy: .public)")

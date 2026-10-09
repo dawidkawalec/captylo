@@ -140,6 +140,34 @@ struct DebugCommandTests {
         #expect(CaptyloMain.mode(for: ["Captylo", "--rebuild-search-index"]) == .app)
     }
 
+    /// A script or an AI agent probing the binary with `--help` used to start a second full app.
+    @Test func helpAndVersionNeverStartTheApp() {
+        let binary = "/Applications/Captylo.app/Contents/MacOS/Captylo"
+        #expect(CaptyloMain.mode(for: [binary, "--help"]) == .help)
+        #expect(CaptyloMain.mode(for: [binary, "-h"]) == .help)
+        #expect(CaptyloMain.mode(for: [binary, "--version"]) == .version)
+        #expect(CaptyloMain.mode(for: [binary, "--mcp", "--help"]) == .mcpServer)
+        #expect(CaptyloMain.usage.contains("--mcp"))
+    }
+
+    /// Only a plain launch hands off to a running Captylo; debug commands and the test host never do.
+    @Test func onlyAPlainLaunchHandsOffToARunningCopy() {
+        let binary = "/Applications/Captylo.app/Contents/MacOS/Captylo"
+        #expect(CaptyloMain.handsOffToRunningCopy(arguments: [binary], isTestHost: false))
+        #expect(CaptyloMain.handsOffToRunningCopy(arguments: [binary, "--open-section", "historia"], isTestHost: false))
+        #expect(!CaptyloMain.handsOffToRunningCopy(arguments: [binary, "--check"], isTestHost: false))
+        #expect(!CaptyloMain.handsOffToRunningCopy(arguments: [binary, "--design-preview"], isTestHost: false))
+        #expect(!CaptyloMain.handsOffToRunningCopy(arguments: [binary], isTestHost: true))
+    }
+
+    /// The copy a relaunch replaces quits right after, so it never counts as already running.
+    @Test func singleInstanceSkipsItselfAndTheReplacedCopy() {
+        #expect(SingleInstance.instanceToActivate(currentPID: 10, replacedPID: nil, running: [10]) == nil)
+        #expect(SingleInstance.instanceToActivate(currentPID: 10, replacedPID: nil, running: [7, 10]) == 7)
+        #expect(SingleInstance.instanceToActivate(currentPID: 10, replacedPID: 7, running: [7, 10]) == nil)
+        #expect(SingleInstance.instanceToActivate(currentPID: 10, replacedPID: 7, running: [7, 8, 10]) == 8)
+    }
+
     @Test func benchmarkRejectsMissingValues() {
         #expect(DebugCommand.parse(["Captylo", "--benchmark"]) == nil)
         #expect(DebugCommand.parse(["Captylo", "--benchmark", "--language", "pl"]) == nil)

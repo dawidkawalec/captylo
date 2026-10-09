@@ -28,7 +28,7 @@ Captylo is a single macOS app target plus a unit-test target. Everything is buil
 
 ```
 Captylo/
-  App/            CaptyloMain (@main: `--mcp` before AppKit, everything else CaptyloApp), CaptyloApp, AppDelegate, AppState (composition root), AppSettings, AppPaths, Log, Permissions, LaunchAtLogin,
+  App/            CaptyloMain (@main: `--mcp`, `--help` and `--version` before AppKit; a plain launch while another Captylo runs activates it and exits, SingleInstance, with AppRelauncher passing the pid it replaces; everything else CaptyloApp), CaptyloApp, AppDelegate, AppState (composition root), AppSettings, AppPaths, Log, Permissions, LaunchAtLogin,
                   WindowPresenter (+ OpenWindowBridge), OldAppDetector, StatsTicker, DebugCommands (parser), DebugRunner (executor),
                   AppStateOverrides (fake-service seam), DesignPreviewTarget / DesignPreviewData / DesignPreviewRunner (--design-preview), PeakMemory (process footprint for the debug tools),
                   AppUpdater (Sparkle wrapper) + AppUpdaterConfiguration (feed, public key, build number, version line; pure)

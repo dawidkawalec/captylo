@@ -5,25 +5,67 @@ import Foundation
 /// keeps alive for its whole session) is served before AppKit or SwiftUI start: no
 /// `NSApplication`, so no LaunchServices check-in under the app's bundle. A checked-in process
 /// would take over every later launch of Captylo (Finder, Dock, Spotlight, the login item would
-/// send it a reopen event instead of starting the real app). Everything else is `CaptyloApp`.
+/// send it a reopen event instead of starting the real app). `--help` and `--version` print and
+/// exit before AppKit too: before they existed, a script or an AI agent probing the binary with
+/// `--help` started a second full app. A plain launch while another Captylo runs hands off to it
+/// (`SingleInstance`). Everything else is `CaptyloApp`.
 @main
 enum CaptyloMain {
     enum Mode: Equatable {
         case app
         case mcpServer
+        case help
+        case version
     }
 
     static func mode(for arguments: [String]) -> Mode {
-        DebugCommand.parse(arguments) == .mcp ? .mcpServer : .app
+        if DebugCommand.parse(arguments) == .mcp { return .mcpServer }
+        let flags = arguments.dropFirst()
+        if flags.contains("--help") || flags.contains("-h") { return .help }
+        if flags.contains("--version") { return .version }
+        return .app
     }
+
+    /// Only a plain launch (or `--open-section`) hands off to a running copy: debug commands and the
+    /// unit-test host run next to the Captylo the developer may be dictating with.
+    static func handsOffToRunningCopy(arguments: [String], isTestHost: Bool) -> Bool {
+        guard !isTestHost else { return false }
+        switch DebugCommand.parse(arguments) {
+        case nil, .openSection: return true
+        default: return false
+        }
+    }
+
+    static let usage = """
+        Captylo: dictation, meeting notes and voice notes for Mac.
+
+        Usage:
+          Captylo              open the app (or bring the running one forward)
+          Captylo --mcp        read-only MCP server for your AI assistant (stdin/stdout)
+          Captylo --version    print the version
+          Captylo --help       print this help
+
+        More: https://github.com/dawidkawalec/captylo
+        """
 
     @MainActor
     static func main() {
         switch mode(for: CommandLine.arguments) {
         case .app:
+            if handsOffToRunningCopy(arguments: CommandLine.arguments, isTestHost: AppStateOverrides.isTestHost),
+               SingleInstance.handOffIfRunning() {
+                exit(0)
+            }
             CaptyloApp.main()
         case .mcpServer:
             serveMCP()
+        case .help:
+            print(usage)
+            exit(0)
+        case .version:
+            let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+            print("Captylo \(version)")
+            exit(0)
         }
     }
 
