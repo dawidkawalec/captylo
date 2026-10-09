@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Captylo 1.0.17</title>
+<link rel="stylesheet" href="../../assets/css/site.css?v=20260930a">
+<style>
+.notes{width:min(680px,100% - 2*var(--gut));margin:0 auto;padding:32px 0 48px}
+.notes h1{font-weight:800;font-size:clamp(28px,4.4vw,40px);line-height:1.08;letter-spacing:-.03em}
+.notes h2{margin-top:32px;font-weight:700;font-size:21px;line-height:1.25;letter-spacing:-.02em}
+.notes h3{margin-top:22px;font-weight:700;font-size:17px}
+.notes p{margin-top:12px;line-height:1.6}
+.notes ul{margin-top:10px;padding-left:22px;list-style:disc;display:grid;gap:6px}
+.notes li{line-height:1.55}
+.notes a{text-decoration:underline;text-underline-offset:3px}
+.notes code{font-size:.92em;padding:1px 5px;border-radius:6px;background:rgba(16,39,44,.06)}
+</style>
+</head>
+<body>
+<main class="notes">
+<h1>Captylo 1.0.17</h1>
+<h2>One Captylo at a time</h2>
+<ul>
+<li><strong>No more double Captylo.</strong> Starting Captylo while it already runs now brings the running copy forward instead of opening a second one. Before, a second copy could start when the app was launched from a script or a terminal, and you got two menu bar icons and every dictation twice.</li>
+<li>**<code>--help</code> and <code>--version</code>.** Running the app from a terminal with <code>--help</code> or <code>--version</code> prints a short help or the version and quits, without opening the app. <code>--mcp</code> for your AI assistant works as before.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li>Changing the app language or granting Accessibility still restarts Captylo cleanly.</li>
+</ul>
+</main>
+</body>
+</html>
